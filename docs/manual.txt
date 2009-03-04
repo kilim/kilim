@@ -1,0 +1,210 @@
+(Copyright 2007 Sriram Srinivasan)
+======================================================================
+Kilim. Release 0.5
+Last updated: May 24, 2008.
+
+by Sriram Srinivasan
+University of Cambridge.
+
+Please send comments, encouragements, money, cakes, code fixes to
+kilim@malhar.net. Thank you.
+
+======================================================================
+What is Kilim?
+======================================================================
+A Java framework for fast, safe, cheap message passing. 
+
+The message passing (MP) paradigm is often seen as a superior
+alternative to the typical mix of idioms in concurrent (shared-memory,
+locks) and distributed programming (CORBA/RMI). MP eliminates worries
+endemic to the shared-memory mindset: lock ordering, failure-coupling,
+low-level data races and memory models. It simplifies synchronization
+between data and control planes (no lost signals or updates), and
+unifies APIs for local and remote process interaction.
+
+Curiously however, there are no efficient _and_ safe frameworks for
+intra-process message-passing, except for Ada and Erlang. The Kilim
+framework is intended to fix this state of affairs. It provides:
+
+1. Extremely lightweight user-level threads (actors) with automatic
+ stack management, obtained via CPS transformation.
+
+2. A simple type system that ensures actor isolation by controlling
+ pointer aliasing in messages at compile time, and by ensuring
+ linear ownership of mutable message objects. This permits safe,
+ zero-copy communication.
+ (NOTE: This feature is NOT included in this release because it
+  is undergoing a rewrite. The docs/kilim_ecoop08.pdf paper gives
+  details about what you can expect).
+
+3. A compact run-time library containing typed mailboxes (with
+ optional flow control), user-definable scheduling and python style
+ generators.
+
+Kilim is portable; one of our explicit goals was to not require
+changes to the Java language syntax or to the JVM.
+
+Kilim scales comfortably to handle hundreds of thousands of actors and
+messages on modest hardware. It is fast as well ­ task-switching is
+1000x faster than Java threads and 60x faster than other lightweight
+tasking frameworks, and message-passing is 3x faster than Erlang
+(currently the gold standard for concurrency-oriented programming).
+
+The term "Kilim" refers to a class of rugs in a number of
+middle-eastern and central european countries. Kilims are light and
+are flat-woven with thin threads (as opposed to deep-pile carpets).
+
+======================================================================
+Getting started. 
+======================================================================
+The first few pages of the docs/kilim_ecoop08 paper give an overview
+of the facilities and the programming model. 
+
+Take a look at the examples to get an idea. The only important classes 
+to begin with are kilim.Task and kilim.Mailbox.
+
+Let's start with conventional thread programming. This is how you
+create your own thread in Java.
+
+   class MyThread extends Thread {
+      public void run() {
+      }
+   }
+
+And spawn a thread thus:
+  new MyThread().start();
+
+Now, if you replace the words "Thread" with "Task", "run" with
+"execute" and add a @pausable annotation to execute(),  you have a
+Kilim Task. Simple.
+
+   import kilim.*;
+
+   public class MyTask extends Task {
+
+     @pausable
+     public void execute() {
+     }
+   }
+and to start it, you say "new MyTask().start()"
+
+A method marked pausable is one that calls another pausable method; the
+built-in ones are Task.yield() and Task.sleep() (mailbox.get() calls
+Task.yield()).
+
+The only difference is that you can spawn a million of these
+without turning your computer into a room heater. These tasks
+get executed on a thread pool. 
+
+======================================================================
+Communication
+======================================================================
+
+Mailboxes are the medium of communication between tasks. They are
+typed buffers that can have at most one consumer task waiting on it at
+any point in time, but multiple producers are allowed. Mailboxes are
+not owned by anyone (unlike Erlang's process mailbox). They can be
+static fields, instance variables, local variables .. it is your
+design choice. They can even be sent as part of messages themselves,
+which can make for an extremely dynamic and mobile topology.
+
+Creating a mailbox:
+   // This mailbox only allows Strings
+   Mailbox<String> mb = new Mailbox<String>(); 
+
+Sending and receiving messages:
+   mb.put("hello"); 
+   String s = mb.get();
+
+These two methods block the task (not the java Thread) when they are
+unable to perform the operation. How does one know ? They are marked
+@pausable.
+
+mailbox.getnb() and putnb() are the non-blocking versions: they are
+not pausable, and they return quickly.
+
+mailbox.getb() and putb are the *thread*-blocking versions. Use them
+if you want to wait for a message but cannot make the calling method
+pausable (like main(), for example). You shouldn't be using these
+inside a task.
+
+======================================================================
+How does it work?
+======================================================================
+First, the lightweight thread part. 
+
+This package comes with a bytecode transformation tool called Weaver
+(package: kilim.tools.Weaver) that post-processes .class files
+looking for the @pausable annotation.
+
+When a task needs to block (or "pause", calling Task.sleep(), for
+example), the task unwinds its stack, squirrels away all state that
+it'll need later on resumption.  This unwinding and rewinding the
+stack is automatically performed by the code introduced by the Weaver.
+(Debug information is adjusted so that the transformed code can be
+debugged inside eclipse)
+
+The transformation is a variation of continuation passing style; the
+details are in the paper entitled "A Thread of Ones Own" presented at
+the Workshop on New Horizons in Compilers (2006). A simple introduction
+to CPS is in the accompanying IFAQ.txt.
+
+======================================================================
+Building, running the examples
+======================================================================
+Build the sources by running ant (or build.sh) at the topmost
+level. 
+
+To manually compile a kilim task (say kilim.examples.SimpleTask), 
+
+Now, compile (into "./classes")
+   javac -d ./classes ./examples/kilim/examples/SimpleTask.java
+
+Weave the class (and overwrite it).
+  java kilim.tools.Weaver -d ./classes kilim.examples.SimpleTask
+
+Run it like any regular java program.
+  java -cp ./classes kilim.examples.SimpleTask
+
+Create a million tasks just for the heck of it.
+  Try java kilim.bench.LotsOfTasks 1000000
+  (Notice the JIT's effect after the first round)
+
+You can supply a different directory for the weaver's output, but
+remember to include that directory in the classpath before the 
+original, otherwise you will "class not woven" errors at run time.
+
+NOTE: It is safer (and convenient) to supply the entire directory to 
+weave, like this:
+
+ java kilim.tools.Weave  -d ./classes  ./classes  
+                                        ^^^^^^^^^^
+
+That eliminates the chances of mistakenly omitting to weave inner
+and anonymous classes.
+
+Eclipse notes:
+-------------
+
+Loading kilim under eclipse is like any other java project.
+Select File -> New -> Java Project, 
+"Create project from existing source"
+
+There is no plugin (yet) to run the weaver automatically; you will have
+to run the weaver separately in the command line. If you are changing
+the kilim examples, you can just run "build.sh" or "ant" from the 
+command line once the project's been created.
+
+Debugging and profiling should work as usual.
+
+======================================================================
+
+Future directions
+
+The immediate future release will include the type system for process isolation and 
+then, remote mailboxes for distributed programming.
+
+Suggestions most welcome and will be duly acknowledged.
+
+--Sriram Srinivasan
+(kilim _at_ malhar.net)

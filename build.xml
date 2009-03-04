@@ -1,0 +1,146 @@
+<?xml version="1.0"?>
+<project name="kilim" default="all">
+  <path id="kilim.classpath">
+    <pathelement location="classes/" />
+    <fileset dir="./libs">
+      <include name="**/*.jar"/>
+    </fileset>
+    <pathelement path="${java.class.path}" />
+  </path>
+  <path id="kilim.testwovenclasspath">
+    <pathelement location="testclasses/" />
+    <pathelement location="classes/" />
+    <fileset dir="./libs">
+      <include name="**/*.jar"/>
+    </fileset>
+    <pathelement path="${java.class.path}" />
+  </path>
+
+
+  <target name="all" depends="clean,weave" />
+  <target name="test" depends="testnotwoven,testwoven" />
+  
+  <target name="compile">
+    <echo message="Compiling src ===================" />
+    <javac debug="on" srcdir="src" destdir="classes" 
+           classpathref="kilim.classpath"/>
+    <echo message="Compiling examples ===================" />
+    <javac debug="on" srcdir="examples" destdir="classes" 
+           classpathref="kilim.classpath"/>
+    <echo message="Compiling benchmarks ===================" />
+    <javac debug="on" srcdir="bench" destdir="classes" 
+           classpathref="kilim.classpath"/>
+  </target>
+  
+  <!-- Glob a list of .j files into a space-separated list -->
+  <pathconvert property="dotjfiles" pathsep=" ">
+    <path>
+      <fileset dir="." includes="**/*.j" />
+    </path>
+  </pathconvert>
+  
+  <target name="asm" depends="compile">
+    <echo message="Assembling test .j files ===================" />
+    <java classname="kilim.tools.Asm" classpathref="kilim.classpath" fork="yes">
+      <arg line="-d ./classes" />
+      <arg line="${dotjfiles}" />
+    </java>
+  </target>
+  
+  <target name="testcompile" depends="asm">
+    <echo message="Compiling test ===================" />
+    <javac debug="on" srcdir="test" destdir="classes" 
+           classpathref="kilim.classpath"/>
+  </target>
+  
+
+  <target name="weave" depends="testcompile">
+    <echo message="Weaving files ===================" />
+    <java classname="kilim.tools.Weaver" fork ="yes">
+      <classpath refid="kilim.classpath"/>
+      <assertions>
+	<enable/>
+      </assertions>
+      <arg value="-x" />
+       <!-- Skip classes that match ExInvalid. These are negative tests 
+            for the weaver. Also skip tests for this pass-->
+      <arg value="ExInvalid|test" /> 
+      <arg value="-d" />
+      <arg value="./classes" />
+      <arg line="./classes" />
+    </java>
+    <echo message="Weaving test classes ==============" />
+    <java classname="kilim.tools.Weaver" fork ="yes">
+      <classpath refid="kilim.classpath"/>
+      <assertions>
+	<enable/>
+      </assertions>
+      <arg value="-x" />
+       <!-- Weave tests separately into testclasses --> 
+      <arg value="ExInvalid" /> 
+      <arg value="-d" />
+      <arg value="./testclasses" />
+      <arg line="./classes" />
+    </java>
+
+  </target>
+    
+  <target name="clean">
+    <echo message="deleting files" />
+    <delete>
+      <fileset defaultexcludes="no" dir="." includes="*~,#*,foo,bar,x,y" />
+    </delete>
+    <delete dir="./classes" />
+    <delete dir="./testclasses" />
+    <mkdir dir="./classes" />
+    <mkdir dir="./testclasses" />
+  </target>
+  
+  
+  <!-- This runs those tests that do not depend on generated classes
+       present in testclasses. For those, see "testwoven"  -->
+  <target name="testnotwoven" >
+    <echo message="Testing =========================" />
+    <java classname="junit.textui.TestRunner" fork="yes">
+      <classpath refid="kilim.classpath"/>
+      <assertions>
+        <enable/>
+      </assertions>
+      <arg value="kilim.test.AllNotWoven" />
+    </java>
+  </target>
+  
+  <!-- This runs those tests depend on generated classes in testclasses-->
+  <target name="testwoven" >
+    <echo message="Testing Tasks ======================" />
+    <java classname="junit.textui.TestRunner" fork="yes">
+      <classpath refid="kilim.testwovenclasspath"/>
+      <assertions>
+        <enable/>
+      </assertions>
+      <arg value="kilim.test.AllWoven" />
+    </java>
+  </target>
+
+  <target name="jar" description="generate the distribution">
+    <copy file="License" todir="classes/kilim" />
+    <jar jarfile="kilim.jar" basedir="classes">
+      <zipgroupfileset dir="libs" includes="*.jar">
+	<exclude name="junit.jar" />
+      </zipgroupfileset>
+      <exclude name="kilim/test/**" />
+      <exclude name="kilim/examples/**" />
+      <exclude name="kilim/bench/**" />
+      <manifest>
+	<attribute name="Main-Class" value="kilim.tools.Weaver"/>
+      </manifest>	
+    </jar>
+    <jar jarfile="kilim-runtime.jar" basedir="classes">
+      <exclude name="kilim/test/**" />
+      <exclude name="kilim/examples/**" />
+      <exclude name="kilim/bench/**" />
+      <exclude name="kilim/tools/**" />
+      <exclude name="kilim/analysis/**" />
+    </jar>
+  </target>
+</project>

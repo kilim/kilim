@@ -1,0 +1,49 @@
+See task_states.pdf
+
+Explanation of states:
+
+new:      start not called
+
+ready:    task.start()/resume() called. Task is in the 
+          scheduler q or has been taken out of it and handed to 
+          the thread. Note that task.running = true (doesn't reflect
+          the 'running' state below)
+          
+running:  stack is resumed. task runs normally to completion
+          or until Task.pause/yield/exit is called.
+
+pausing:  pause called with a PauseReason object
+          pauseReason can be user-defined. Predefined ones are
+          YieldReason, TaskDoneReason, Empty_MsgAvListener, 
+          Full_SpcAvListener etc.
+
+          Task.running remains true until it moves to paused state.
+
+paused:   waiting for a message. 
+          Task.running = false /\ Task.pauseReason.isValid()
+
+done  :   task.execute() returned normally or with an unchecked exception
+          or Task.exit() called
+
+====================================================================
+Messages and task scheduling
+
+What happens when a message arrives in each of the above states?
+
+new: no scheduling on msgs. start() explicitly schedules the task whether
+     or not there are mailboxes.
+
+ready:
+running:   
+    no scheduling necessary when msg is put into mbox; task will rcv
+    the message on get() The distinction between ready and running is
+    not really important from a scheduling or message interaction
+    perspective.
+
+pausing: no scheduling yet, because the task is still unwinding,
+    But after the task is fully unwound, it'll be scheduled again if there
+    are messages in an mbox that caused that task to pause in the first
+    place. 
+
+paused: Schedule the task.
+
