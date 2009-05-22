@@ -27,11 +27,16 @@ public class WorkerThread extends Thread {
     }
     
     public void run() {
+        try {
         while (true) {
             Task t = scheduler.getNextTask(this); // blocks until task available
             if (t == null) break; // scheduler shut down
             runningTask = t;
             t._runExecute(this);
+        }
+        } catch (Throwable ex) {
+            ex.printStackTrace();
+            System.out.println(runningTask);
         }
     }
 

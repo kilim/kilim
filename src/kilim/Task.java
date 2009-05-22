@@ -19,6 +19,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  */
 public abstract class Task implements EventSubscriber {
+    public volatile Thread currentThread = null;
+
     static PauseReason         yieldReason = new YieldReason();
     /**
      * Task id, automatically generated
@@ -194,7 +196,7 @@ public abstract class Task implements EventSubscriber {
 
     public static void exit(Object aExitValue) throws Pausable {    }
     public static void exit(Object aExitValue, Fiber f) {
-        assert f.pc == 0;
+        assert f.pc == 0 : "f.pc != 0";
         f.task.setPauseReason(new TaskDoneReason(aExitValue));
         f.togglePause();
     }
@@ -206,7 +208,7 @@ public abstract class Task implements EventSubscriber {
      */
     public static void errorExit(Throwable ex) throws Pausable {  }
     public static void errorExit(Throwable ex, Fiber f)  {
-        assert f.pc == 0;
+        assert f.pc == 0 : "fc.pc != 0";
         f.task.setPauseReason(new TaskDoneReason(ex));
         f.togglePause();
     }
@@ -250,6 +252,8 @@ public abstract class Task implements EventSubscriber {
     public static void yield(Fiber f) {
         if (f.pc == 0) {
             f.task.setPauseReason(yieldReason);
+        } else {
+        	f.task.setPauseReason(null);
         }
         f.togglePause();
     }
@@ -330,13 +334,14 @@ public abstract class Task implements EventSubscriber {
         Fiber f = fiber;
         boolean isDone = false; 
         try {
+            currentThread = Thread.currentThread();
             assert (preferredResumeThread == null || preferredResumeThread == thread) : "Resumed " + id + " in incorrect thread. ";
             // start execute. fiber is wound to the beginning.
             execute(f.begin());
         
             // execute() done. Check fiber if it is pausing and reset it.
             isDone = f.end() || (pauseReason instanceof TaskDoneReason);
-
+            assert (pauseReason == null && isDone) || (pauseReason != null && !isDone) : "pauseReason:" + pauseReason + ",isDone =" + isDone;
         } catch (Throwable th) {
             th.printStackTrace();
             // Definitely done
@@ -368,15 +373,18 @@ public abstract class Task implements EventSubscriber {
                     preferredResumeThread = null;
                 }
             }
+            
+            PauseReason pr = this.pauseReason;
             synchronized (this) {
                 running = false;
+                currentThread = null;
             }
-            
+
             // The task has been in "running" mode until now, and may have missed
             // notifications to the pauseReason object (that is, it would have
             // resisted calls to resume(). If the pauseReason is not valid any
             // more, we'll resume. 
-            if (!pauseReason.isValid(this)) {
+            if (!pr.isValid(this)) {
                 resume();
             }
         }

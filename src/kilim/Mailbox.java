@@ -389,8 +389,8 @@ class EmptySet_MsgAvListener implements PauseReason, EventSubscriber {
     }
 
     public boolean isValid(Task t) {
-        // The pauseReason is "Empty" if the none of the mboxes have any
-        // elements
+        // The pauseReason is true (there is valid reason to continue
+        // pausing) if none of the mboxes have any elements
         for (Mailbox mb : mbxs) {
             if (mb.hasMessage())
                 return false;

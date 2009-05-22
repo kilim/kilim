@@ -16,7 +16,6 @@ import java.util.TimerTask;
  */
 
 public class Cell<T> implements PauseReason, EventPublisher {
-    // TODO. Give mbox a config name and id and make monitorable
     T msg;
     EventSubscriber sink;
     
@@ -46,19 +45,23 @@ public class Cell<T> implements PauseReason, EventPublisher {
      */
     public T get(EventSubscriber eo) {
         EventSubscriber producer = null;
+        T ret;
         synchronized(this) {
-        	if (msg == null) {
+            if (msg == null) {
+                ret = null;
                 addMsgAvailableListener(eo);
-        	} else {
+            } else {
+                ret = msg;
+                msg = null;
                 if (srcs.size() > 0) {
                     producer = srcs.poll();
                 }
-        	}
+            }
         }
         if (producer != null)  {
             producer.onEvent(this, spaceAvailble);
         }
-        return msg;
+        return ret;
     }
     
     /**
@@ -128,11 +131,11 @@ public class Cell<T> implements PauseReason, EventPublisher {
         long begin = System.currentTimeMillis();
         while (msg == null) {
             TimerTask tt = new TimerTask() {
-                public void run() {
-                    Cell.this.removeMsgAvailableListener(t);
-                    t.onEvent(Cell.this, timedOut);
-                }
-            };
+                    public void run() {
+                        Cell.this.removeMsgAvailableListener(t);
+                        t.onEvent(Cell.this, timedOut);
+                    }
+                };
             Task.timer.schedule(tt, timeoutMillis);
             Task.pause(this);
             tt.cancel();
@@ -145,28 +148,28 @@ public class Cell<T> implements PauseReason, EventPublisher {
     }
     
     public synchronized void addSpaceAvailableListener(EventSubscriber spcSub) {
-        srcs.add(spcSub);
-    }
+            srcs.add(spcSub);
+        }
 
     public synchronized void removeSpaceAvailableListener(EventSubscriber spcSub) {
-        srcs.remove(spcSub);
-    }
+            srcs.remove(spcSub);
+        }
 
 
     public synchronized void addMsgAvailableListener(EventSubscriber msgSub) {
-        if (sink != null) {
-            throw new AssertionError(
-                    "Error: A mailbox can not be shared by two consumers.  New = "
-                            + msgSub + ", Old = " + sink);
+            if (sink != null) {
+                throw new AssertionError(
+                  "Error: A mailbox can not be shared by two consumers.  New = "
+                  + msgSub + ", Old = " + sink);
+            }
+            sink = msgSub;
         }
-        sink = msgSub;
-    }
 
     public synchronized void removeMsgAvailableListener(EventSubscriber msgSub) {
-        if (sink == msgSub) {
-            sink = null;
+            if (sink == msgSub) {
+                sink = null;
+            }
         }
-    }
 
     public boolean putnb(T msg) {
         return put(msg, null);
@@ -184,11 +187,11 @@ public class Cell<T> implements PauseReason, EventPublisher {
         long begin = System.currentTimeMillis();
         while (!put(msg, t)) {
             TimerTask tt = new TimerTask() {
-                public void run() {
-                    Cell.this.removeSpaceAvailableListener(t);
-                    t.onEvent(Cell.this, timedOut);
-                }
-            };
+                    public void run() {
+                        Cell.this.removeSpaceAvailableListener(t);
+                        t.onEvent(Cell.this, timedOut);
+                    }
+                };
             Task.timer.schedule(tt, timeoutMillis);
             Task.pause(this);
             if (System.currentTimeMillis() - begin >= timeoutMillis) {
@@ -237,12 +240,12 @@ public class Cell<T> implements PauseReason, EventPublisher {
     }
 
     public synchronized boolean hasMessage() {
-        return msg != null;
-    }
+            return msg != null;
+        }
 
     public synchronized boolean hasSpace() {
-        return msg == null;
-    }
+            return msg == null;
+        }
 
     /**
      * retrieve a message, blocking the thread indefinitely. Note, this is a
@@ -279,8 +282,8 @@ public class Cell<T> implements PauseReason, EventPublisher {
     }
 
     public synchronized String toString() {
-        return "id:" + System.identityHashCode(this) + " " + msg;
-    }
+            return "id:" + System.identityHashCode(this) + " " + msg;
+        }
 
     // Implementation of PauseReason
     public boolean isValid(Task t) {

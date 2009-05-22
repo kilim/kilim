@@ -56,6 +56,7 @@ public class Scheduler {
         WorkerThread wt = null;
         
         synchronized(this) {
+            assert t.running == true :  "Task " + t + " scheduled even though running is false";
             runnableTasks.put(t);
             if (!waitingThreads.isEmpty())
                 wt = waitingThreads.poll();
@@ -97,6 +98,7 @@ public class Scheduler {
             if (t == null) {
                 wt.waitForMsgOrSignal();                
             } else if (prefThread == null || prefThread == wt) {
+                assert t.currentThread == null: " Task " + t + " already running";
                 return t;
             } else {
                 prefThread.addRunnableTask(t);

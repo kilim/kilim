@@ -67,7 +67,7 @@ public class MethodWeaver {
         this.classWeaver = cw;
         this.methodFlow = mf;
         isPausable = mf.isPausable();
-        fiberVar = methodFlow.maxLocals; // alloc fresh var 
+        fiberVar =  methodFlow.maxLocals;
         maxVars = fiberVar + 1;
         maxStack = methodFlow.maxStack + 1; // plus Fiber 
         if (!mf.isAbstract()) {
