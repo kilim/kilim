@@ -23,7 +23,7 @@ public class Scheduler {
     LinkedList<WorkerThread> allThreads = new LinkedList<WorkerThread>();
     LinkedList<WorkerThread> waitingThreads = new LinkedList<WorkerThread>();
     protected boolean shutdown = false;
-    protected RingQueue<Task> runnableTasks = new RingQueue<Task>(1000);
+    protected RingQueue<Task> runnableTasks = new RingQueue<Task>(100);
 
     static {
         String s = System.getProperty("kilim.Scheduler.numThreads");

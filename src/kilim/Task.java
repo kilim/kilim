@@ -350,6 +350,7 @@ public abstract class Task implements EventSubscriber {
         }
 
         if (isDone) {
+        	done = true;
             // inform on exit
             if (numActivePins > 0) {
                 throw new AssertionError("Task ended but has active locks");

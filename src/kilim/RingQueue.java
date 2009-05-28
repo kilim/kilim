@@ -79,6 +79,9 @@ public class RingQueue<T> {
     	return false;
     }
     
+    public void reset() {
+    	icons = iprod = 0;
+    }
     @Override
     public String toString() {
     	StringBuilder sb = new StringBuilder();
