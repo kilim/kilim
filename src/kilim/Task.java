@@ -94,11 +94,16 @@ public abstract class Task implements EventSubscriber {
         return id;
     }
 
-    public synchronized void setScheduler(Scheduler s) {
+    public synchronized Task setScheduler(Scheduler s) {
         if (running) {
             throw new AssertionError("Attempt to change task's scheduler while it is running");
         }
         scheduler = s;
+        return this;
+    }
+    
+    public synchronized Scheduler getScheduler() {
+      return scheduler;
     }
     
     protected void resumeOnScheduler(Scheduler s) throws Pausable {
@@ -150,22 +155,24 @@ public abstract class Task implements EventSubscriber {
         } 
     }
     /**
-     * This is typically called by a pauseReason to resume the task.
+     * Add itself to scheduler if it is neither already running nor done.
+     * @return True if it scheduled itself.
      */
-    public void resume() {
-        if (scheduler == null) return;
+    public boolean resume() {
+        if (scheduler == null) return false;
         
         boolean doSchedule = false;
         // We don't check pauseReason while resuming (to verify whether
         // it is worth returning to a pause state. The code at the top of stack 
         // will be doing that anyway.
         synchronized(this) {
-            if (done || running) return;
+            if (done || running) return false;
             running = doSchedule = true;
         }
         if (doSchedule) {
             scheduler.schedule(this);
         }
+        return doSchedule;
     }
     
     public void informOnExit(Mailbox<ExitMsg> exit) {
