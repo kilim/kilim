@@ -106,7 +106,7 @@ public abstract class Task implements EventSubscriber {
       return scheduler;
     }
     
-    protected void resumeOnScheduler(Scheduler s) throws Pausable {
+    public void resumeOnScheduler(Scheduler s) throws Pausable {
         if (scheduler == s) return; 
         scheduler = s;
         Task.yield();
