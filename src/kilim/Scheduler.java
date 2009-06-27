@@ -18,12 +18,12 @@ import java.util.LinkedList;
  * 
  */
 public class Scheduler {
-    static Scheduler defaultScheduler = null;
-    static int defaultNumberThreads;
-    LinkedList<WorkerThread> allThreads = new LinkedList<WorkerThread>();
-    LinkedList<WorkerThread> waitingThreads = new LinkedList<WorkerThread>();
+    public static Scheduler defaultScheduler = null;
+    public static int defaultNumberThreads;
+    public LinkedList<WorkerThread> allThreads = new LinkedList<WorkerThread>();
+    public LinkedList<WorkerThread> waitingThreads = new LinkedList<WorkerThread>();
     protected boolean shutdown = false;
-    protected RingQueue<Task> runnableTasks = new RingQueue<Task>(100);
+    public RingQueue<Task> runnableTasks = new RingQueue<Task>(100);
 
     static {
         String s = System.getProperty("kilim.Scheduler.numThreads");
@@ -50,7 +50,6 @@ public class Scheduler {
     /**
      * Schedule a task to run. It is the task's job to ensure that
      * it is not scheduled when it is runnable.
-     * ensure that 
      */
     public void schedule(Task t) {
         WorkerThread wt = null;
@@ -75,6 +74,11 @@ public class Scheduler {
         }
     }
     
+    /**
+     * This is called in the WorkerThread's stack and blocks until a task is available
+     *   
+     * @return
+     */
     Task getNextTask(WorkerThread wt) {
         while (true) {
             Task t = null;

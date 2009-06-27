@@ -9,6 +9,7 @@ package kilim;
 import java.util.LinkedList;
 import java.util.HashMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class WorkerThread extends Thread {
     Task runningTask;
@@ -19,10 +20,11 @@ public class WorkerThread extends Thread {
      */
     RingQueue<Task> tasks = new RingQueue<Task>(10);
     Scheduler scheduler;
-
+    static AtomicInteger gid = new AtomicInteger();
     public int numResumes = 0;
     
     WorkerThread(Scheduler ascheduler) {
+      super("KilimWorker-" + gid.incrementAndGet());
         scheduler=ascheduler;
     }
     

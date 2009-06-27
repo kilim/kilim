@@ -95,9 +95,9 @@ public abstract class Task implements EventSubscriber {
     }
 
     public synchronized Task setScheduler(Scheduler s) {
-        if (running) {
-            throw new AssertionError("Attempt to change task's scheduler while it is running");
-        }
+//        if (running) {
+//            throw new AssertionError("Attempt to change task's scheduler while it is running");
+//        }
         scheduler = s;
         return this;
     }
