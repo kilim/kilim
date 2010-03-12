@@ -16,9 +16,11 @@ public class Chain extends Task {
     Mbx  mymb, nextmb;
     static long startTime;
     
+    static Mailbox<Integer> signalMbx = new Mailbox<Integer>();
+    
     
     public static void main(String[] args) {
-        Scheduler.setDefaultScheduler(new Scheduler(2)); // 2 threads.
+//        Scheduler.setDefaultScheduler(new Scheduler(2)); // 2 threads.
         try {
             for (int i = 0; i < args.length; i++) {
                 String arg = args[i];
@@ -33,7 +35,10 @@ public class Chain extends Task {
             System.err.println("Integer argument expected");
         }
         System.out.println("Num tasks in chain: " + nTasks + ". Num messages sent:" + nMsgs);
-        bench(nMsgs, nTasks);
+        for (int i = 0; i < 5; i++) {
+          bench(nMsgs, nTasks);
+        }
+        System.exit(0);
     }
     
     static void bench(int nMsgs, int nTasks) {
@@ -42,14 +47,21 @@ public class Chain extends Task {
         Mbx mb = new Mbx();
         Mbx nextmb = null;
         // Create a chain of tasks.
+        
         for (int i = 0; i < nTasks; i++) {
-           new Chain(mb, nextmb).start();
+           Task t = new Chain(mb, nextmb);
+           t.start();
            nextmb = mb;
            mb = new Mbx();
         }
         for (int i = 0; i < nMsgs; i++) {
             nextmb.putnb(0); // enqueue a message for the head of the chain.
         }
+        signalMbx.getb();
+        System.out.println("Bench finished");
+        try {Thread.sleep(500);}catch (Exception ignore) {}
+        System.gc();
+        
     }
     
     public Chain(Mbx mb, Mbx next) {
@@ -67,14 +79,20 @@ public class Chain extends Task {
             if (nextmb == null) {
                 numReceived++;
                 if (numReceived == nMsgs) {
-                    System.out.println("Elapsed time: " + 
-                            (System.currentTimeMillis() - startTime)
-                            + " ms "); 
-                    System.exit(0);
+                  done();
+                  break;
                 }
             } else {
                 nextmb.put(val);
             }
         }
     }
-}
+    
+    public void done() {
+      System.out.println("Elapsed time: " + 
+          (System.currentTimeMillis() - startTime)
+          + " ms "); 
+      signalMbx.putnb(0);
+//      System.exit(0);
+    }
+  }

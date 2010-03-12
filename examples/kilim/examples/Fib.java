@@ -43,6 +43,7 @@ public class Fib extends Generator<BigInteger> {
             yield(j);
             BigInteger f = i.add(j);
             i = j;
+            sleep(1000);
             j = f;
         }
     }

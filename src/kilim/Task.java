@@ -6,10 +6,11 @@
 
 package kilim;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.LinkedList;
-import java.util.TimerTask;
 import java.util.Timer;
-import java.util.HashMap;
+import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -236,6 +237,94 @@ public abstract class Task implements EventSubscriber {
         System.exit(0);
     }
 
+    static class ArgState extends kilim.State {
+      Object mthd;
+      Object obj;
+      Object[] fargs;
+    }
+
+    /**
+     * Invoke a pausable method via reflection. Equivalent to Method.invoke(). 
+     * 
+     * @param mthd:   The method to be invoked. (Implementation note: the corresponding woven method is invoked instead). 
+     * @param target:  The object on which the method is invoked. Can be null if the method is static.
+     * @param args:    Arguments to the method
+     * @return
+     * @throws Pausable
+     * @throws IllegalAccessException
+     * @throws IllegalArgumentException
+     * @throws InvocationTargetException
+     */
+    public static Object invoke(Method mthd, Object target, Object ... args)
+    throws Pausable, IllegalAccessException, IllegalArgumentException,
+    InvocationTargetException
+    {
+      Fiber f = getCurrentTask().fiber;
+      Object[] fargs;
+      if (f.pc == 0) {
+        mthd = getWovenMethod(mthd);
+        // Normal invocation.
+        if (args == null) {
+          fargs = new Object[1];
+        } else {
+          fargs = new Object[args.length + 1]; // for fiber
+          System.arraycopy(args, 0, fargs, 0, args.length);
+        }
+        fargs[fargs.length-1] = f;
+      } else {
+        // Resuming from a previous yield
+        ArgState as = (ArgState)f.getState();
+        mthd = (Method)as.mthd;
+        target = as.obj;
+        fargs = as.fargs;
+      }
+      f.down();
+      Object ret = mthd.invoke(target, fargs);
+      switch (f.up()) {
+        case   Fiber.NOT_PAUSING__NO_STATE:
+        case   Fiber.NOT_PAUSING__HAS_STATE: 
+          return ret;
+        case Fiber.PAUSING__NO_STATE : 
+          ArgState as = new ArgState();
+          as.fargs = fargs;
+          as.pc = 1;
+          as.mthd = mthd;
+          f.setState(as);
+          return null;
+        case   Fiber.PAUSING__HAS_STATE: 
+          return null;
+      }
+      throw new IllegalAccessException("Internal Error");
+    }
+
+    // Given a method corresp. to "f(int)", return the equivalent woven method for "f(int, kilim.Fiber)" 
+    private static Method getWovenMethod(Method m) {
+      Class[] ptypes = m.getParameterTypes();
+      if (!(ptypes.length > 0 && ptypes[ptypes.length-1].getName().equals("kilim.Fiber"))) {
+        // The last param is not "Fiber", so m is not woven.  
+        // Get the woven method corresponding to m(..., Fiber)
+        boolean found = false;
+        LOOP:
+          for (Method wm: m.getDeclaringClass().getDeclaredMethods()) {
+            if (wm != m && wm.getName().equals(m.getName()) ) {
+              // names match. Check if the wm has the exact parameter types as m, plus a fiber.
+              Class[] wptypes = wm.getParameterTypes();
+              if (wptypes.length != ptypes.length + 1 || 
+                  !(wptypes[wptypes.length-1].getName().equals("kilim.Fiber"))) continue LOOP;
+              for (int i = 0; i < ptypes.length; i++) {
+                  if (ptypes[i] != wptypes[i]) continue LOOP;
+              }
+              m = wm;
+              found = true;
+              break;
+            }
+          }
+        if (!found) {
+          throw new IllegalArgumentException("Found no pausable method corresponding to supplied method: " +m);
+        }
+      }
+      return m;
+    }
     /**
      * @param millis
      * to sleep. Like thread.sleep, except it doesn't throw an interrupt, and it

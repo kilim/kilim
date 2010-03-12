@@ -313,17 +313,18 @@ public class MethodWeaver {
         // load fiber from last var
         int lastVar = getFiberArgVar();
 
-        if (callWeavers.size() == 0) {
-            // Can happen if Task.getCurrentTask() is the only pausable method
-            // call. We don't need the rest of the prelude.
-            return; 
-        }
         mv.visitVarInsn(ALOAD, lastVar);
         if (lastVar < fiberVar) {
             mv.visitInsn(DUP); // for storing into fiberVar
             mv.visitVarInsn(ASTORE, getFiberVar());
         }
         
+        if (callWeavers.size() == 0) {
+          // Can happen if Task.getCurrentTask() is the only pausable method
+          // call. We don't need the rest of the prelude.
+          return; 
+        }
+
         mv.visitFieldInsn(GETFIELD, FIBER_CLASS, "pc", D_INT);
         // The prelude doesn't need more than two words in the stack.
         // The callweaver gen* methods may need more. 

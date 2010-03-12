@@ -71,6 +71,7 @@ public class BigPingPong extends Task {
                 schedulers[i].shutdown();
             }
         }
+        System.exit(0);
     }
 
     int n; // Task's position in the slot array

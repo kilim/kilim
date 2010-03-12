@@ -16,7 +16,7 @@ public class TestBasicBlock extends Base {
     }
 
     public void testNumFlows() {
-        assertEquals(getFlows().size(), 7);
+        assertEquals(getFlows().size(), 8);
     }
 
     private void checkSize(String methodName, int expectedSize) {

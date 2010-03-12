@@ -71,6 +71,8 @@ public class ClassFlow extends ClassNode {
                 isWoven = true; break;
             }
         }
+        if (isWoven && !forceAnalysis) 
+          return new ArrayList<MethodFlow>(); // This is a hack. 
         
         cr = null; // We don't need this any more.
         classDesc = TypeDesc.getInterned("L" + name + ';');

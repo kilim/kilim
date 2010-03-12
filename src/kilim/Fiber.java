@@ -67,23 +67,23 @@ public final class Fiber {
      *
      * normal return, nothing to restore
      */
-    private static final int   NOT_PAUSING__NO_STATE  = 0;
+    public static final int   NOT_PAUSING__NO_STATE  = 0;
     
     /*
      * Normal return, have saved state to restore before resuming
      */
-    private static final int   NOT_PAUSING__HAS_STATE = 1;
+    public static final int   NOT_PAUSING__HAS_STATE = 1;
     
     /*
      * Pausing, and need to save state before returning
      */
-    private static final int   PAUSING__NO_STATE      = 2;
+    public static final int   PAUSING__NO_STATE      = 2;
     
     /*
      * Pausing, and have saved state from an earlier invocation,
      * so nothing left to do.
      */
-    private static final int   PAUSING__HAS_STATE     = 3;
+    public static final int   PAUSING__HAS_STATE     = 3;
 
     static {
         PAUSE_STATE.pc = 1;
@@ -285,6 +285,10 @@ public final class Fiber {
         stateStack[iStack] = state;
         isPausing = true;
 //        System.out.println("setState[" + + iStack + "] = " + this);
+    }
+    
+    public State getState() {
+      return stateStack[iStack];
     }
 
     void togglePause() {

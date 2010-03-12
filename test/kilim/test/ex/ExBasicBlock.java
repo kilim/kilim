@@ -1,6 +1,7 @@
 package kilim.test.ex;
 
 import kilim.Pausable;
+import kilim.Task;
 
 public class ExBasicBlock {
     void noop() throws ArrayIndexOutOfBoundsException {
@@ -8,6 +9,15 @@ public class ExBasicBlock {
     
     static void pausable() throws Pausable {
         
+    }
+    
+    static int testFiber(Object testArgs1, Object[] testArgs) throws Pausable {
+      Task.getCurrentTask();
+      int a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0;
+      for (int i = 0; i < g; i++) {
+        g = a + b + c + d + e + f;
+      }
+      return g;
     }
     
     int loop() throws Pausable {

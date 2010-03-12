@@ -43,7 +43,7 @@ public class ClassWeaver {
     
     private void weave() throws KilimException {
         classFlow.analyze(false);
-        if (classFlow.isPausable() && needsWeaving()) {
+        if (needsWeaving() && classFlow.isPausable()) {
             ClassWriter cw = new ClassWriter(false);
             accept(cw);
             addClassInfo(new ClassInfo(classFlow.getClassName(), cw.toByteArray()));
