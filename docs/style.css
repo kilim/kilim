@@ -1,35 +1,33 @@
-* {border-style: none; font-family: helvetica;}
+* {
+    line-height: 150%;
+/*    font-size: 12pt;*/
+    border-style:none; 
+    font-family: verdana, helvetica; 
+/*    margin: 1em; */
+}
 
 /* Links */
-a:link {color: #ff9b0a; text-decoration:none}     /* unvisited link */
-a:visited {color: ff9b0a; text-decoration:none}  /* visited link */
-a:hover {color: yellow; font-size: 110%; text-decoration:none}   /* mouse over link */
-a:active {color: red}   /* selected link */
+a:link {color: red; text-decoration:none}     /* unvisited link */
+a:visited {color: red; text-decoration:none}  /* visited link */
+a:hover {color: blue; background: yellow; text-decoration:none}   /* mouse over link */
+a:active {color: grey}   /* selected link */
 
-* {line-height: 150%; font-size: 10pt}
-
-body {
-    min-width: 700px;
-    margin: 0px 0; padding: 0px;
+p,pre {
+  line-height: 1.5em 
 }
 
-pre {font: 12pt Courier New, Courier;}
-code {font: 12pt Courier New, Courier;}
-
-/* Centered box within body*/
-#content {
-    text-align: justify; 
-    width: 700px; 
-    margin: 0px auto;
+h1 { 
+  background-color: #1bf;
+  Color: white;
+  padding: 5px;
+  padding-left: 20px;
+  margin-left: -20px;
+  margin-right: -20px;
+/*  font-size: 15pt;*/
 }
 
-h1 {font-size: 15pt}
 
-hr {
-    height:1px;
-    width:100%;
-    background-color:#995533;
-    color:#995533
-}
+pre {font-family: Monaco, Courier New, Courier; font-size:80%}
+code {font-family: Monaco, Courier New, Courier; font-size:80%}
 
-/*p + blockquote {margin-bottom:0;margin-top:0}*/
+p code {margin: 5px}

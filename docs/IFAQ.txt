@@ -1,12 +1,10 @@
 (Copyright 2007 Sriram Srinivasan)
 
-Kilim IFAQ: Infrequently Asked Questions. Kilim v 0.5
--- sriram srinivasan (kilim@malhar.net)
-
+Kilim IFAQ: Infrequently Asked Questions. Kilim v 0.7
+-- sriram srinivasan (Kilim _at_ malhar.net)
 
 ======================================================================
-Why do people make such a big deal about the how hard it is to do
-thread programming?
+Why is multi-threaded programming considered so hard? 
 ======================================================================
 It is relatively easy to get thread programming correct (to a first
 approximation) by synchronizing all your shared data structures and
@@ -23,7 +21,7 @@ Kilim uses kernel threads. Where do tasks and threads meet?
 ======================================================================
 
 Kilim's tasks are cooperatively scheduled and Java threads are
-preemptively scheduled. (I'd prefer kilim's tasks to be preemptable as
+preemptively scheduled. (I'd prefer Kilim's tasks to be preemptible as
 well, but cannot do that without changing the JVM). Tasks are needed
 when you want to split up your workflow into small stages and write
 code as if it is blocking (instead of writing a callback and having to
@@ -33,7 +31,7 @@ not the end of the world. That's what other threads are for .. they'll
 take care of the other tasks meanwhile.
 
 A Kilim task is owned and managed by a scheduler, which also manages a
-thread pool. When a task needs to block, it removes itself from the
+thread pool. When a task needs to pause, it removes itself from the
 thread by popping its call stack, remembering enough about each
 activation frame in order to help rebuild the stack and resume, at a
 later point). The scheduler then reuses that thread for some other
@@ -71,19 +69,16 @@ Alef etc. and Kilim's mailboxes?
 
 Most of these languages use synchronous channels as their basic
 construct, where a sending task can proceed only after the receiver
-has received (or vice-versa). I have a few issues with these approaches.
+has received (or vice-versa). 
 
-1. These systems are easy to reason about because of
-   using synchronous channels), but also because channels are not first
-   class objects. When a language allows a channel to itself be a
-   first class value, it becomes Turing complete and quite resistant
-   to model checking on a practical level.  Still, minds far greater
-   than mine (Tony Hoare, Robin Milner, Rob Pike, John Reppy) have
-   spoken of the benefits of synchronous programming, so I will take
+1. Synchronous channels are easier to reason about because there is
+   automatic flow control; the sender does not proceed unless the
+   recipient drains the channel. Tony Hoare, Robin Milner, Rob Pike and John Reppy have
+   all written extensively  about synchronous programming, so I will take
    their word for it. However, I still find asynchronous programming
    (through buffering) a better default choice for practical reasons:
 
-2. Context switching has a cost, however inexpensive kilim's tasks are
+2. Context switching has a cost, however inexpensive Kilim's tasks are
    to create and context-switch (unlike the Occam/transputer world
    with its hardware assisted switching).  Although Kilim's mailboxes
    can be configured to be synchronous, it is not the default.  There
@@ -188,7 +183,7 @@ control, timeouts, streaming etc.
 
 Kilim, in a concurrent (local) setting, is at least 100x faster than
 Java RMI on even the simplest benchmarks. In a distributed setting,
-the kilim approach is better because asynchronous messaging is much
+the Kilim approach is better because asynchronous messaging is much
 more scalable. Combine this with automatic stack management and you
 get a far easier programming model
 
@@ -205,8 +200,8 @@ The notions of procedures calling procedures by building up a stack
 has been burnt into our collective programming consciousness.  If a()
 calls b() calls c(), we think, the stack must be three deep.
 
-Suppose a() has nothing more to do after calling b(). It really
-doesn't need b() to return, so there is no use pushing a return
+Suppose a() has nothing more to do after calling b(). It (that is, a()) really
+doesn't need b() to return to it, so there is no use pushing a return
 address on the stack. In other words, the flow of control _continues_
 from a to b, never to return.  Most respectable code generators
 recognize this special case and prevent the stack from building up
@@ -283,8 +278,7 @@ Are there any disadvantages of continuations? Oh yes. Machines are
 so well optimized for stack usage and no tail calls that the
 system is biased against continuations, performance-wise. The 
 continuation object has to be allocated from the heap and depends
-on garbage collection. This is one reason why OCaml doesn't support
-continuations. 
+on garbage collection. This is one reason why OCaml doesn't use CPS.
 
 That said, the current crop of garbage collectors and the amortized
 cost of garbage collection often matches that of stack-based
@@ -299,4 +293,3 @@ with the Java verifier that doesn't allow random gotos to be inserted
 in the code willy-nilly. More details in the paper "A Thread of One's
 Own" (included in the docs directory)
 
-So much for my idea of a few words! 
