@@ -71,19 +71,19 @@ public class Cell<T> implements PauseReason, EventPublisher {
      * @return buffered message if there's one, or null 
      */
     public boolean put(T amsg, EventSubscriber eo) {
-    	boolean ret = true; // assume we'll be able to enqueue
+        boolean ret = true; // assume we'll be able to enqueue
         EventSubscriber subscriber;
         synchronized(this) {
             if (amsg == null) {
                 throw new NullPointerException("Null message supplied to put");
             }
             if (msg == null) { // space available
-            	msg = amsg;
+                msg = amsg;
                 subscriber = sink;
                 sink = null;
             } else {
-            	ret = false;
-            	// unable to enqueue. Cell is full
+                ret = false;
+                // unable to enqueue. Cell is full
                 subscriber = null;
                 if (eo != null) {
                     srcs.add(eo);

@@ -349,7 +349,7 @@ public abstract class Task implements EventSubscriber {
         if (f.pc == 0) {
             f.task.setPauseReason(yieldReason);
         } else {
-        	f.task.setPauseReason(null);
+            f.task.setPauseReason(null);
         }
         f.togglePause();
     }
@@ -446,7 +446,7 @@ public abstract class Task implements EventSubscriber {
         }
 
         if (isDone) {
-        	done = true;
+            done = true;
             // inform on exit
             if (numActivePins > 0) {
                 throw new AssertionError("Task ended but has active locks");

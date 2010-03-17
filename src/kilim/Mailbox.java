@@ -78,6 +78,7 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
             if (n > 0) {
                 int ic = icons;
                 msg = msgs[ic];
+                msgs[ic] = null;
                 icons = (ic + 1) % msgs.length;
                 numMsgs = n - 1;
                 
@@ -317,7 +318,7 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
     }
 
     public synchronized int size() {
-    	return numMsgs;
+        return numMsgs;
     }
     
     public synchronized boolean hasMessage() {

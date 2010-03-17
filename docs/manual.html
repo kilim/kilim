@@ -5,11 +5,12 @@
 </head>
 
 <body>
-<h1>Kilim. Release 0.5</h1>
-<p>Last updated: May 24, 2008.
+
+<h1>Kilim v0.7</h1>
+<p>Last updated: March 17, 2010
+
 
 <p>by Sriram Srinivasan
-<p>University of Cambridge.
 
 <p>Please send comments, encouragements, money, cakes, code fixes to
 <b>kilim@malhar.net</b>. Thank you.
@@ -84,7 +85,7 @@ create your own thread in Java.
   new MyThread().start();
 </pre>
 <p>Now, if you replace the words "Thread" with "Task", "run" with
-"execute" and add an <code>@pausable</code> annotation to <code>execute()</code>,  you have a
+"execute" and add an exception called <code>Pausable</code> to <code>execute()</code>,  you have a
 Kilim Task. Simple.
 
 <pre>
@@ -92,20 +93,25 @@ Kilim Task. Simple.
 
    public class MyTask extends Task {
 
-     @pausable
-     public void execute() {
+     public void execute() throws Pausable{
      }
    }
 </pre>
 and to start it, you say <code>new MyTask().start()</code>
 
-<p>A method marked pausable is one that calls another pausable method; the
-built-in ones are Task.yield() and Task.sleep() (mailbox.get() calls
-Task.yield()).
 
-<p>The only difference is that you can spawn a million of these
-without turning your computer into a room heater. These tasks
-get executed on a thread pool. 
+<p>The "Pausable" exception is used as an annotation, and is never actually thrown (it replaces
+@pausable from earlier versions). A method with such an annotation is deemed "pausable". Pausing refers to 
+voluntarily yielding control to the scheduler so that another task may run. For example,
+Task.sleep() is a pausable method that pauses a task
+for a give time. Another example is Mailbox.get(), which pauses a task until a mailbox is
+non-empty. 
+
+<p>A pausbale method is similar to blocking calls such as InputStream.read() and
+Thread.wait(), except that it makes its intention clear in its signature with
+the Pausable annotation. This annotation is used by the Kilim weaver to rewrite the bytecode
+of all pausable methods to incorporate the voluntary yielding logic. One important property
+of this scheme is that a pausable method can only be called by another pausable method.
 
 
 <h1>Communication</h1>
@@ -128,12 +134,9 @@ which can make for an extremely dynamic and mobile topology.
    mb.put("hello"); 
    String s = mb.get();
 </pre>
-<p>These two methods block the task (not the java Thread) when they are
-unable to perform the operation. How does one know ? They are marked
-<code>@pausable</code>.
+<p>These two methods pause the task when they are unable to perform the operation.
 
-<p><code>mailbox.getnb()</code> and <code>putnb()</code> are the non-blocking versions: they are
-not pausable, and they return quickly.
+<p><code>mailbox.getnb()</code> and <code>putnb()</code> are variants that neither pause the task, nor block the thread. They return immediately indicating whether they were able to dequeue (respectively enqueue) an object from the mailbox.
 
 <p><code>mailbox.getb()</code> and putb are the *thread*-blocking versions. Use them if you want to wait for a message but cannot make the calling method
 pausable (like <code>main()</code>, for example). You shouldn't be using these
@@ -145,10 +148,9 @@ inside a task.
 
 <p>This package comes with a bytecode transformation tool called Weaver
 (package: kilim.tools.Weaver) that post-processes .class files
-looking for the @pausable annotation.
+looking for the "throws Pausable" annotation.
 
-<p>When a task needs to block (or "pause", calling <code>Task.sleep()</code>, for
-example), the task unwinds its stack, squirrels away all state that
+<p>When a task needs to pause, it unwinds its stack, squirrels away all state that
 it'll need later on resumption.  This unwinding and rewinding the
 stack is automatically performed by the code introduced by the Weaver.
 (Debug information is adjusted so that the transformed code can be
@@ -158,7 +160,6 @@ debugged inside eclipse)
 details are in the paper entitled "A Thread of Ones Own" presented at
 the Workshop on New Horizons in Compilers (2006). A simple introduction
 to CPS is in the accompanying IFAQ.txt.
-
 
 <h1>Building, running the examples</h1>
 
@@ -179,12 +180,11 @@ level.
 <pre>  java -cp ./classes kilim.examples.SimpleTask</pre>
 
 <p>Create a million tasks just for the heck of it.
-<p>  Try <code>java kilim.bench.LotsOfTasks 1000000</code>
-<p>  (Notice the JIT's effect after the first round)
+<p>  Try <code>java kilim.bench.LotsOfTasks -ntasks 300000</code>
 
 <p>You can supply a different directory for the weaver's output, but
 remember to include that directory in the classpath before the 
-original, otherwise you will "class not woven" errors at run time.
+original, otherwise you will see "class not woven" errors at run time.
 
 <p>NOTE: It is safer (and convenient) to supply the entire directory to 
 weave, like this:

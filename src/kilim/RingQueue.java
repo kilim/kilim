@@ -2,28 +2,31 @@ package kilim;
 
 public class RingQueue<T> {
     protected T[] elements;
-    protected int iprod; // producer index
-    protected int icons; // consumer index;
+    protected int iprod;   // producer index
+    protected int icons;   // consumer index;
     protected int maxSize;
     protected int size;
 
     public RingQueue(int initialSize) {
         this(initialSize, Integer.MAX_VALUE);
     }
+
     public RingQueue(int initialSize, int maxSize) {
-        elements = (T[])new Object[initialSize];
-        size = 0    ;
+        elements = (T[]) new Object[initialSize];
+        size = 0;
         this.maxSize = maxSize;
     }
 
-    public int size() {return size;}
+    public int size() {
+        return size;
+    }
 
     public T get() {
         T elem;
         T[] elems;
         int n = size;
         if (n > 0) {
-        	elems = elements;
+            elems = elements;
             int ic = icons;
             elem = elems[ic];
             elems[ic] = null;
@@ -31,7 +34,7 @@ public class RingQueue<T> {
             size = n - 1;
         } else {
             elem = null;
-        }         
+        }
         return elem;
     }
 
@@ -42,7 +45,7 @@ public class RingQueue<T> {
         }
         int ip = iprod;
         int ic = icons;
-        int n  = size;
+        int n = size;
         if (n == elements.length) {
             assert ic == ip : "numElements == elements.length && ic != ip";
             if (n < maxSize) {
@@ -66,33 +69,35 @@ public class RingQueue<T> {
         }
         return ret;
     }
-    
+
     public boolean contains(T obj) {
-    	int i = icons;
-    	int c = 0;
-    	T[] elems = elements;
-    	while (c < size) {
-    		if (obj == elems[i]) return true;
-    		i = (i + 1) % elems.length;
-    		c++;
-    	}
-    	return false;
+        int i = icons;
+        int c = 0;
+        T[] elems = elements;
+        while (c < size) {
+            if (obj == elems[i])
+                return true;
+            i = (i + 1) % elems.length;
+            c++;
+        }
+        return false;
     }
-    
+
     public void reset() {
-    	icons = iprod = 0;
+        icons = iprod = 0;
     }
+
     @Override
     public String toString() {
-    	StringBuilder sb = new StringBuilder();
-    	int i = icons;
-    	int c = 0;
-    	T[] elems = elements;
-    	while (c < size) {
-    		sb.append(elems[i]);
-    		i = (i + 1) % elems.length;
-    		c++;
-    	}
-    	return sb.toString();
+        StringBuilder sb = new StringBuilder();
+        int i = icons;
+        int c = 0;
+        T[] elems = elements;
+        while (c < size) {
+            sb.append(elems[i]);
+            i = (i + 1) % elems.length;
+            c++;
+        }
+        return sb.toString();
     }
 }

@@ -27,18 +27,49 @@ public class WorkerThread extends Thread {
   public void run() {
     try {
       while (true) {
-        Task t = scheduler.getNextTask(this); // blocks until task available
-        if (t == null)
-          break; // scheduler shut down
+        Task t = getNextTask(this); // blocks until task available
         runningTask = t;
         t._runExecute(this);
         runningTask = null;
       }
+    } catch (ShutdownException se) {
+      // nothing to do.
+    } catch (OutOfMemoryError ex) {
+        System.err.println("Out of memory"); 
+        System.exit(1); 
     } catch (Throwable ex) {
       ex.printStackTrace();
-      System.out.println(runningTask);
+      System.err.println(runningTask);
     }
     runningTask = null;
+  }
+
+  protected Task getNextTask(WorkerThread workerThread) throws ShutdownException {
+    Task t = null;
+    while (true) {
+      if (scheduler.isShutdown()) 
+        throw new ShutdownException();
+
+      t = getNextTask();
+      if (t != null) 
+        break;
+      
+      // try loading from scheduler
+      scheduler.loadNextTask(this);
+      synchronized(this) { /////////////////////////////////////////
+        // Wait if still no task to execute. 
+        t = tasks.get(); 
+        if (t != null) 
+          break;
+        
+        scheduler.addWaitingThread(this);
+        try {
+          wait();
+        } catch (InterruptedException ignore) {} // shutdown indicator checked above
+      } ////////////////////////////////////////////////////////////
+    }
+    assert t != null: "Returning null task";
+    return t;
   }
 
   public Task getCurrentTask() {
