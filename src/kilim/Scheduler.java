@@ -73,7 +73,7 @@ public class Scheduler {
         wt = getWaitingThread();
         if (wt != null) {
             synchronized(wt) {
-                wt.notify();
+                wt.notify(); //TODO: Move to workerthread, because wait has moved.
             }
         }
     }
@@ -144,7 +144,7 @@ public class Scheduler {
 //          w.dumpStack();
 //      }
     }
-
+/*
     public static boolean isRunnable(Task task) {
         Scheduler s = defaultScheduler;
         synchronized (s) {
@@ -157,4 +157,5 @@ public class Scheduler {
         }
         return false;
     }
+    */
 }

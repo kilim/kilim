@@ -59,7 +59,7 @@ public abstract class Task implements EventSubscriber {
      * to be pinned to a thread.
      * @see kilim.ReentrantLock
      */
-    WorkerThread    preferredResumeThread;
+    volatile WorkerThread    preferredResumeThread;
 
     /**
      * @see Task#preferredResumeThread
@@ -149,6 +149,7 @@ public abstract class Task implements EventSubscriber {
     }
     
     public void onEvent(EventPublisher ep, Event e) {
+        // TODO: FIX HORRIBLE HACK. 
         // This is sneaky. We _know_ that the only time a task will get registered 
         // is mailbox.put or get(), and that it'll be the pausereason as well. 
         if (ep == pauseReason) {
@@ -332,7 +333,7 @@ public abstract class Task implements EventSubscriber {
      */
     public static void sleep(final long millis) throws Pausable {
         // create a temp mailbox, and wait on it.
-        final Mailbox<Integer> sleepmb = new Mailbox<Integer>();
+        final Mailbox<Integer> sleepmb = new Mailbox<Integer>(1); // TODO: will need a better mechanism for monitoring later on.
         timer.schedule(new TimerTask() {
             public void run() {
                 sleepmb.putnb(0);
