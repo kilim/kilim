@@ -149,12 +149,7 @@ public abstract class Task implements EventSubscriber {
     }
     
     public void onEvent(EventPublisher ep, Event e) {
-        // TODO: FIX HORRIBLE HACK. 
-        // This is sneaky. We _know_ that the only time a task will get registered 
-        // is mailbox.put or get(), and that it'll be the pausereason as well. 
-        if (ep == pauseReason) {
-            resume();
-        } 
+        resume();
     }
     /**
      * Add itself to scheduler if it is neither already running nor done.

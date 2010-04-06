@@ -8,29 +8,28 @@ Why is multi-threaded programming considered so hard?
 ======================================================================
 It is relatively easy to get thread programming correct (to a first
 approximation) by synchronizing all your shared data structures and
-taking locks in the right order. You could have one giant lock and
-just do things one at a time (like the current python interpreter
-with its Global Interpreter Lock). 
+taking locks in the right order. 
 
-It is incredibly hard to get multiple threads to work correctly *and*
-to perform efficiently. A lot of painful bugs are created in the
-transition from "get it correct first, then optimize".
+You could have one giant lock and just do things one at a time (like
+the current python interpreter with its Global Interpreter Lock).
+Clearly, this is not efficient.  Increasing concurrent access of a
+data structure (by using finer-grained locks) is what makes it 
+error-prone and hard to debug. 
 
 ======================================================================
 Kilim uses kernel threads. Where do tasks and threads meet?
 ======================================================================
 
-Kilim's tasks are cooperatively scheduled and Java threads are
-preemptively scheduled. (I'd prefer Kilim's tasks to be preemptible as
-well, but cannot do that without changing the JVM). Tasks are needed
-when you want to split up your workflow into small stages and write
-code as if it is blocking (instead of writing a callback and having to
-jump to that function when it gets called).  Tasks should not ideally
-make thread-blocking calls, although if you *have* to call one, it is
-not the end of the world. That's what other threads are for .. they'll
-take care of the other tasks meanwhile.
+Kilim's tasks are cooperatively scheduled on a kernel thread pool. 
 
-A Kilim task is owned and managed by a scheduler, which also manages a
+Tasks are needed when you want to split up your workflow into small
+stages and write code as if it is blocking (instead of writing a
+callback and having to jump to that function when it gets called).
+Tasks should not ideally make thread-blocking calls, although if you
+*have* to call one, it is not the end of the world. That's what other
+threads are for .. they'll take care of the other tasks meanwhile.
+
+A Kilim task is owned and managed by a scheduler, which manages the
 thread pool. When a task needs to pause, it removes itself from the
 thread by popping its call stack, remembering enough about each
 activation frame in order to help rebuild the stack and resume, at a
@@ -73,14 +72,15 @@ has received (or vice-versa).
 
 1. Synchronous channels are easier to reason about because there is
    automatic flow control; the sender does not proceed unless the
-   recipient drains the channel. Tony Hoare, Robin Milner, Rob Pike and John Reppy have
-   all written extensively  about synchronous programming, so I will take
-   their word for it. However, I still find asynchronous programming
-   (through buffering) a better default choice for practical reasons:
+   recipient drains the channel. Tony Hoare, Robin Milner, Rob Pike
+   and John Reppy have all written extensively about synchronous
+   programming, so I will take their word for it. However, I still
+   find asynchronous programming (through buffering) a better default
+   choice for practical reasons:
 
 2. Context switching has a cost, however inexpensive Kilim's tasks are
    to create and context-switch (unlike the Occam/transputer world
-   with its hardware assisted switching).  Although Kilim's mailboxes
+   with its hardware-assisted switching).  Although Kilim's mailboxes
    can be configured to be synchronous, it is not the default.  There
    are many cases where you want to send messages to multiple
    recipients before waiting to collect replies. I find tedious the
@@ -118,13 +118,15 @@ types (or even Smalltalk); but compared to Java-style types, I prefer
 the simplicity of Erlang's soft types.
 
 The argument for Java lies not in the language, but in the incredible
-JDK, enormous open code base and community, excellent IDEs, good
-network, database, GUI and systems support. Why throw away all that?
+JIT compilers, JDK, enormous open code base and community, excellent
+IDEs, good network, database, GUI and systems support. Why throw away
+all that?
 
-The Erlang *environment* offers lightweight processes, fast messaging,
-uniform abstraction for concurrency and distribution and many, many
-systemic features (process monitoring, automatic restart), process
-isolation, failure isolation etc. 
+The Erlang *environment* (not the language) offers lightweight
+processes, fast messaging, uniform abstraction for concurrency and
+distribution and many, many systemic features (process monitoring,
+automatic restart), process isolation, failure isolation etc. These can be
+built atop Kilim as well. 
 
 The idea behind Kilim is that one can have all the features of the
 Erlang environment without having to move to the Erlang

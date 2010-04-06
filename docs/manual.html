@@ -7,8 +7,7 @@
 <body>
 
 <h1>Kilim v0.7</h1>
-<p>Last updated: March 17, 2010
-
+<p>Last updated: April 6, 2010
 
 <p>by Sriram Srinivasan
 
@@ -45,6 +44,7 @@ framework is intended to fix this state of affairs. It provides:
 <li> A compact run-time library containing typed mailboxes (with
  optional flow control), user-definable scheduling and python style
  generators.</li>
+ <li> The library also contains bindings to the NIO selector, and a rudimentary HTTP server</li>
 </ol>
 <p>
 Kilim is portable; one of our explicit goals was to not require
@@ -154,7 +154,8 @@ looking for the "throws Pausable" annotation.
 it'll need later on resumption.  This unwinding and rewinding the
 stack is automatically performed by the code introduced by the Weaver.
 (Debug information is adjusted so that the transformed code can be
-debugged inside eclipse)
+debugged inside eclipse) This is identical to what a programmer would have
+written 
 
 <p>The transformation is a variation of continuation passing style; the
 details are in the paper entitled <a href="thread_of_ones_own.pdf">"A Thread of Ones Own"</a> presented at
@@ -207,11 +208,25 @@ command line once the project's been created.
 
 <p>Debugging and profiling should work as usual.
 
-<h1>Future directions</h1>
 
-<p>The immediate future release will include the type system for process isolation and 
-then, remote mailboxes for distributed programming.
+<h2>Next Steps</h2>
 
-<p>Suggestions most welcome and will be duly acknowledged.
+<p> Check the examples and the bench directory for ideas on how to use
+multiple schedulers, nio, http, generators and so on. 
+
+<h1>Release notes</h1>
+
+v.0.7 (April 2010): Added support for reflection, NIO and HTTP, and fixed a data race in the scheduler.
+
+<h1>Acknowledgments</h1>
+Adrian Quark
+Jan Kotek
+Colin Fleming
+Chris Moulang
+Kresten Krab Thorup
+Jan Schäfer
+Andrey Tarantsov
+
 
 </body> </html>
+

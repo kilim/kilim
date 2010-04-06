@@ -6,7 +6,6 @@
 
 package kilim.examples;
 
-import kilim.ExitMsg;
 import kilim.Mailbox;
 import kilim.Pausable;
 import kilim.Task;
