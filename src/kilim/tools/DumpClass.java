@@ -17,6 +17,7 @@ import java.lang.reflect.Modifier;
 import java.util.Enumeration;
 import java.util.Formatter;
 import java.util.HashMap;
+import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 
@@ -47,7 +48,7 @@ public class DumpClass implements Opcodes, ClassVisitor {
         
         if (name.endsWith(".jar")) {
             try {
-                Enumeration e = new JarFile(name).entries();
+                Enumeration<JarEntry> e = new JarFile(name).entries();
                 while (e.hasMoreElements()) {
                     ZipEntry en = (ZipEntry) e.nextElement();
                     String n = en.getName();

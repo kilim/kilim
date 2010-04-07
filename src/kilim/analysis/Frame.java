@@ -246,6 +246,7 @@ public class Frame {
         stacklen = 0;
     }
     
+    @Override
     public boolean equals(Object other) {
         Frame that = (Frame)other;
         for (int i = 0; i < locals.length; i++) {
@@ -257,6 +258,7 @@ public class Frame {
         return true;
     }
     
+    @Override
     public int hashCode() {
         int hash = 0;
         for (int i = 0; i < this.locals.length;i++) hash ^= this.locals[i].hashCode();
@@ -264,6 +266,7 @@ public class Frame {
         return hash;
     }
     
+    @Override
     public String toString() {
         StringBuffer sb = new StringBuffer(100);
         int numDefined = 0;

@@ -60,6 +60,7 @@ class DirIterator implements Iterator<FileLister.Entry> {
         final File file;
         DirEntry(File f) {file = f;}
         
+        @Override
         public String getFileName() {
             try {
                 return file.getCanonicalPath();
@@ -67,6 +68,7 @@ class DirIterator implements Iterator<FileLister.Entry> {
             return null;
         }
 
+        @Override
         public InputStream getInputStream() throws IOException {
             return new BufferedInputStream(new FileInputStream(file));
         }
@@ -119,10 +121,12 @@ class JarIterator implements Iterator<FileLister.Entry> {
         private final JarEntry jarEntry;
         JEntry(JarEntry j) {jarEntry = j;}
         
+        @Override
         public String getFileName() {
             return jarEntry.getName();
         }
         
+        @Override
         public InputStream getInputStream() throws IOException {
             return jarFile.getInputStream(jarEntry);
         }

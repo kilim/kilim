@@ -9,13 +9,14 @@ package kilim.test;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.MethodInsnNode;
-
+import junit.framework.TestCase;
 import kilim.analysis.BasicBlock;
 import kilim.analysis.ClassFlow;
+import kilim.analysis.Detector;
 import kilim.analysis.MethodFlow;
-import junit.framework.TestCase;
+
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.MethodInsnNode;
 
 public class Base extends TestCase {
     private static ArrayList<MethodFlow> stflows;
@@ -23,7 +24,7 @@ public class Base extends TestCase {
 
     protected void cache(String className) throws Exception {
         if (lastClassName != className) {
-            ClassFlow cf = new ClassFlow(className);
+            ClassFlow cf = new ClassFlow(className, Detector.DEFAULT);
             stflows = cf.analyze(/* forceAnalysis = */true);
             lastClassName = className;
         }

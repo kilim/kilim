@@ -4,8 +4,6 @@
  * specified in the file "License"
  */
 package kilim.analysis;
-import kilim.*;
-
 import static kilim.Constants.D_ARRAY_BOOLEAN;
 import static kilim.Constants.D_ARRAY_BYTE;
 import static kilim.Constants.D_ARRAY_CHAR;
@@ -25,8 +23,8 @@ import static kilim.Constants.D_NULL;
 import static kilim.Constants.D_RETURN_ADDRESS;
 import static kilim.Constants.D_SHORT;
 import static kilim.Constants.D_VOID;
-import static kilim.Constants.THROWABLE_CLASS;
 import static kilim.Constants.TASK_CLASS;
+import static kilim.Constants.THROWABLE_CLASS;
 import static org.objectweb.asm.Opcodes.*;
 
 import java.util.ArrayList;
@@ -36,6 +34,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Stack;
+
+import kilim.KilimException;
 
 import org.objectweb.asm.Label;
 import org.objectweb.asm.tree.AbstractInsnNode;
@@ -220,6 +220,10 @@ public class BasicBlock implements Comparable<BasicBlock> {
         successors = new ArrayList<BasicBlock>(2);
     }
 
+    Detector detector() {
+    	return flow.detector();
+    }
+    
     /**
      * Absorb as many instructions until the next label or the next transfer of
      * control instruction. In the first pass we may end up creating many many
@@ -232,6 +236,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
      *   3. A pausable method is treated like a labeled instruction, and is 
      *      given a label if there isn't one already. Constraint 2 applies.
      */
+    @SuppressWarnings("unchecked")
     int initialize(int pos) {
         AbstractInsnNode ain;
         startPos = pos;
@@ -318,7 +323,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
                 case TABLESWITCH:
                 case LOOKUPSWITCH:
                     Label defaultLabel;
-                    List otherLabels;
+                    List<Label> otherLabels;
                     if (opcode == TABLESWITCH) {
                         defaultLabel = ((TableSwitchInsnNode) ain).dflt;
                         otherLabels = ((TableSwitchInsnNode) ain).labels;
@@ -326,7 +331,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
                         defaultLabel = ((LookupSwitchInsnNode) ain).dflt;
                         otherLabels = ((LookupSwitchInsnNode) ain).labels;
                     }
-                    for (Iterator it = otherLabels.iterator(); it.hasNext();) {
+                    for (Iterator<Label> it = otherLabels.iterator(); it.hasNext();) {
                         l = (Label) it.next();
                         addSuccessor(flow.getOrCreateBasicBlock(l));
                     }
@@ -355,6 +360,9 @@ public class BasicBlock implements Comparable<BasicBlock> {
                     break;
 
                 default:
+                	if (opcode >= 26 && opcode <= 45)
+                    	throw new IllegalStateException("instruction variants not expected here");
+                	
                     break;
             }
 
@@ -476,6 +484,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
             frame.push(Value.make(startPos, D_RETURN_ADDRESS));
         }
         String componentType = null;
+        @SuppressWarnings("unused")
         boolean canThrowException = false;
         boolean propagateFrame = true;
         int i = 0;
@@ -1078,16 +1087,16 @@ public class BasicBlock implements Comparable<BasicBlock> {
         }
 
     }
-
+ /*
     private boolean checkReceiverType(Value v, MethodInsnNode min) {
         String t = v.getTypeDesc();
         if (t == D_NULL) {
             return true;
         }
         t = TypeDesc.getInternalName(t);
-        return Detector.getPausableStatus(t, min.name, min.desc)  != Detector.METHOD_NOT_FOUND;
+        return detector().getPausableStatus(t, min.name, min.desc)  != Detector.METHOD_NOT_FOUND;
     }
-
+ */
     public boolean isCatchHandler() {
         return caughtExceptionType != null;
     }
@@ -1402,6 +1411,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
         return flow.getBasicBlock(l);
     }
 
+    @Override
     public String toString() {
         StringBuffer sb = new StringBuffer(200);
         sb.append("\n========== BB #").append(id).append("[").append(System.identityHashCode(this)).append("]\n");

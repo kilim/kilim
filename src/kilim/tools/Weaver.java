@@ -19,6 +19,7 @@ import java.util.regex.Pattern;
 import kilim.KilimException;
 import kilim.analysis.ClassInfo;
 import kilim.analysis.ClassWeaver;
+import kilim.analysis.Detector;
 import kilim.analysis.FileLister;
 
 /**
@@ -34,6 +35,9 @@ public class Weaver {
 
     public static void main(String[] args) throws IOException {
 //        System.out.println(System.getProperty("java.class.path"));
+    	
+    	Detector detector = Detector.DEFAULT;
+    	
         String currentName = null;
         for (String name : parseArgs(args)) {
             try {
@@ -42,7 +46,7 @@ public class Weaver {
                         continue;
                     currentName = name;
                     weaveFile(name, new BufferedInputStream(
-                            new FileInputStream(name)));
+                            new FileInputStream(name)), detector);
                 } else if (name.endsWith(".jar")) {
                     for (FileLister.Entry fe : new FileLister(name)) {
                         currentName = fe.getFileName();
@@ -51,7 +55,7 @@ public class Weaver {
                                     '.');
                             if (exclude(currentName))
                                 continue;
-                            weaveFile(currentName, fe.getInputStream());
+                            weaveFile(currentName, fe.getInputStream(), detector);
                         }
                     }
                 } else if (new File(name).isDirectory()) {
@@ -60,11 +64,11 @@ public class Weaver {
                         if (currentName.endsWith(".class")) {
                             if (exclude(currentName))
                                 continue;
-                            weaveFile(currentName, fe.getInputStream());
+                            weaveFile(currentName, fe.getInputStream(), detector);
                         }
                     }
                 } else {
-                    weaveClass(name);
+                    weaveClass(name, detector);
                 }
             } catch (KilimException ke) {
                 System.err.println("Error weaving " + currentName + ". " + ke.getMessage());
@@ -87,13 +91,17 @@ public class Weaver {
                 .find();
     }
 
-    static void weaveFile(String name, InputStream is) throws IOException {
+    static void weaveFile(String name, InputStream is, Detector detector) throws IOException {
         try {
-            ClassWeaver cw = new ClassWeaver(is);
+            ClassWeaver cw = new ClassWeaver(is, detector);
             writeClasses(cw);
         } catch (KilimException ke) {
             System.err.println("***** Error weaving " + name + ". " + ke.getMessage());
 //          ke.printStackTrace();
+            err = 1;
+	} catch (RuntimeException re) {
+            System.err.println("***** Error weaving " + name + ". " + re.getMessage());
+	    re.printStackTrace();
             err = 1;
         } catch (IOException ioe) {
             err = 1;
@@ -101,17 +109,35 @@ public class Weaver {
         }
     }
 
-    public static void weaveClass(String name) throws IOException {
+    public static void weaveClass(String name, Detector detector)  {
         try {
-            ClassWeaver cw = new ClassWeaver(name);
+            ClassWeaver cw = new ClassWeaver(name, detector);
             writeClasses(cw);
         } catch (KilimException ke) {
             err = 1;
             System.err.println("***** Error weaving " + name + ". " + ke.getMessage());
 //          ke.printStackTrace();
+            
         } catch (IOException ioe) {
             err = 1;
           System.err.println("***** Unable to find/process '" + name + "'\n" + ioe.getMessage());
+        }
+    }
+
+    public static void weaveClass2(String name, Detector detector) throws IOException {
+        try {
+            ClassWeaver cw = new ClassWeaver(name, detector);
+            writeClasses(cw);
+        } catch (KilimException ke) {
+            err = 1;
+            System.err.println("***** Error weaving " + name + ". " + ke.getMessage());
+//          ke.printStackTrace();
+            throw ke;
+            
+        } catch (IOException ioe) {
+            err = 1;
+          System.err.println("***** Unable to find/process '" + name + "'\n" + ioe.getMessage());
+          throw ioe;
         }
     }
 

@@ -130,9 +130,9 @@ public class Value {
                 if (sites[i] != other.sites[i]) {
                     return false;
                 }
+            }
                 return true;
             }
-        }
         return false;
     }
 
@@ -161,6 +161,7 @@ public class Value {
         return category() == 1;
     }
     
+    @Override
     public String toString() {
         if (numSites == 0 && typeDesc == D_UNDEFINED) return "undef";
         StringBuffer sb = new StringBuffer(40);

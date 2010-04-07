@@ -50,6 +50,7 @@ public class HttpFileServer extends HttpSession {
         // create a listener on port 7262. An instance of HttpFileServer is created upon
         // every new socket connection to this port.
         new HttpServer(7262, HttpFileServer.class);
+        System.out.println("HttpFileServer listening on http://localhost:7262");
     }
 
     public static void usage() {
@@ -98,10 +99,15 @@ public class HttpFileServer extends HttpSession {
     }
 
     public boolean check(HttpResponse resp, File file) throws IOException, Pausable {
-        if (!file.exists())
-            problem(file, resp, HttpResponse.ST_NOT_FOUND, "File Not Found");
-        else if (!file.canRead()) {
-            problem(file, resp, HttpResponse.ST_FORBIDDEN, "Unable to read file");
+        byte[] status = HttpResponse.ST_OK;
+        String msg = "";
+        
+        if (!file.exists()) {
+            status = HttpResponse.ST_NOT_FOUND;
+            msg = "File Not Found: " + file.getName();
+        } else if (!file.canRead()) {
+            status = HttpResponse.ST_FORBIDDEN;
+            msg = "Unable to read file " + file.getName();
         } else {
             try {
                 String path = file.getCanonicalPath();
@@ -109,14 +115,15 @@ public class HttpFileServer extends HttpSession {
                     throw new SecurityException();
                 }
             } catch (Exception e) {
-                problem(file, resp, HttpResponse.ST_FORBIDDEN, "Error: " + e.getMessage());
+                status = HttpResponse.ST_FORBIDDEN;
+                msg = "Error retrieving " + file.getName() + ":<br>" + e.getMessage();
             }
         }
-        if (resp.status == HttpResponse.ST_OK) {
-            return true;
-        } else {
-            super.sendResponse(resp);
+        if (status != HttpResponse.ST_OK) {
+            problem(file, resp, status, msg);
             return false;
+        } else {
+            return true;
         }
     }
 
@@ -154,7 +161,7 @@ public class HttpFileServer extends HttpSession {
         p.print(relDir);
         p.print("</title></head><body ");
         p.print("><h2>Index of ");
-        p.print(relDir);
+        p.print(relDir.equals(".") ? "/" : relDir);
         p.print("</h2>");
         String names[] = file.list();
         if (names == null) {
@@ -171,7 +178,7 @@ public class HttpFileServer extends HttpSession {
                 p.print("</a><br>");
             }
         }
-        p.print("</body>");
+        p.print("</body></html>");
         p.flush();
         super.sendResponse(resp);
     }
@@ -186,7 +193,8 @@ public class HttpFileServer extends HttpSession {
         if (!path.startsWith(baseDirectoryName)) {
             throw new SecurityException();
         }
-        return path.substring(baseDirectoryName.length()); // include the "/"
+        path =  path.substring(baseDirectoryName.length()); // include the "/"
+        return (path.length() == 0) ? "." : path;
     }
 
     public static HashMap<String, String> mimeTypes = new HashMap<String, String>();

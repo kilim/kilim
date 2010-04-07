@@ -5,8 +5,6 @@
  */
 
 package kilim.analysis;
-import kilim.*;
-
 import static kilim.Constants.D_FIBER;
 import static kilim.Constants.D_INT;
 import static kilim.Constants.D_VOID;
@@ -25,6 +23,8 @@ import static org.objectweb.asm.Opcodes.RETURN;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import kilim.Constants;
 
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Attribute;
@@ -124,7 +124,7 @@ public class MethodWeaver {
         n = mf.visibleParameterAnnotations == null ? 0
                 : mf.visibleParameterAnnotations.length;
         for (i = 0; i < n; ++i) {
-            List l = mf.visibleParameterAnnotations[i];
+            List<?> l = mf.visibleParameterAnnotations[i];
             if (l == null) {
                 continue;
             }
@@ -136,7 +136,7 @@ public class MethodWeaver {
         n = mf.invisibleParameterAnnotations == null ? 0
                 : mf.invisibleParameterAnnotations.length;
         for (i = 0; i < n; ++i) {
-            List l = mf.invisibleParameterAnnotations[i];
+            List<?> l = mf.invisibleParameterAnnotations[i];
             if (l == null) {
                 continue;
             }
@@ -181,7 +181,7 @@ public class MethodWeaver {
         for (BasicBlock bb : mf.getBasicBlocks()) {
             int from = bb.startPos;
             
-            if (bb.isPausable()) {
+            if (bb.isPausable() && bb.startFrame != null) {
                 genPausableMethod(mv, bb);
                 from = bb.startPos + 1; // first instruction is consumed
             } else if (bb.isCatchHandler()) {
@@ -217,9 +217,11 @@ public class MethodWeaver {
                     if (cwList == null) {
                         cwList = new ArrayList<CallWeaver>(callWeavers.size()); 
                     }
+                    if (!cwList.contains(cw)) {
                     cwList.add(cw);
                 }
             }
+        }
         }
         return cwList;
     }
@@ -281,7 +283,7 @@ public class MethodWeaver {
     private void createCallWeavers() {
         MethodFlow mf = methodFlow;
         for (BasicBlock bb : mf.getBasicBlocks()) {
-            if (!bb.isPausable()) continue;
+            if (!bb.isPausable() || bb.startFrame==null) continue;
             // No prelude needed for Task.getCurrentTask(). 
             if (bb.isGetCurrentTask()) continue; 
             CallWeaver cw = new CallWeaver(this, bb);

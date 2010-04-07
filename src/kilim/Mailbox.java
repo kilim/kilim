@@ -77,8 +77,7 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
             int n = numMsgs;
             if (n > 0) {
                 int ic = icons;
-                msg = msgs[ic];
-                msgs[ic] = null;
+                msg = msgs[ic]; msgs[ic]=null;
                 icons = (ic + 1) % msgs.length;
                 numMsgs = n - 1;
                 
@@ -180,7 +179,7 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
     public T get(long timeoutMillis) throws Pausable {
         final Task t = Task.getCurrentTask();
         T msg = get(t);
-        long begin = System.currentTimeMillis();
+        long end = System.currentTimeMillis() + timeoutMillis;
         while (msg == null) {
             TimerTask tt = new TimerTask() {
                 public void run() {
@@ -191,10 +190,14 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
             Task.timer.schedule(tt, timeoutMillis);
             Task.pause(this);
             tt.cancel();
-            if (System.currentTimeMillis() - begin > timeoutMillis) {
+            
+            msg = get(t);
+            
+            timeoutMillis = end - System.currentTimeMillis();
+            if (timeoutMillis <= 0) {
+            	removeMsgAvailableListener(t);
                 break;
             }
-            msg = get(t);
         }
         return msg;
     }
@@ -235,7 +238,7 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
 
 
     public synchronized void addMsgAvailableListener(EventSubscriber msgSub) {
-        if (sink != null) {
+        if (sink != null && sink != msgSub) {
             throw new AssertionError(
                     "Error: A mailbox can not be shared by two consumers.  New = "
                             + msgSub + ", Old = " + sink);

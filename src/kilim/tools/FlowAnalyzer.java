@@ -17,11 +17,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 
 import kilim.analysis.BasicBlock;
 import kilim.analysis.ClassFlow;
+import kilim.analysis.Detector;
 import kilim.analysis.Frame;
 import kilim.analysis.MethodFlow;
 import kilim.analysis.TypeDesc;
@@ -43,18 +45,18 @@ public class FlowAnalyzer {
         }
         String name = args[0];
         if (name.endsWith(".jar")) {
-            analyzeJar(name);
+            analyzeJar(name, Detector.DEFAULT);
         } else {
-            analyzeClass(name);
+            analyzeClass(name, Detector.DEFAULT);
         }
     }
     
-    private static void analyzeClass(String className) {
+    private static void analyzeClass(String className, Detector detector) {
         try {
             pn("-------------------------------------------------");
             pn("Class: " + className);
             System.out.flush();
-            ArrayList<MethodFlow> flows = new ClassFlow(className).analyze(true);
+            ArrayList<MethodFlow> flows = new ClassFlow(className, detector).analyze(true);
             for (MethodFlow flow: flows) {
                 reportFlow(flow, className);
             }
@@ -168,15 +170,15 @@ public class FlowAnalyzer {
         return ret;
     }
     
-    public static void analyzeJar(String jarFile) {
+    public static void analyzeJar(String jarFile, Detector detector) {
         try {
-            Enumeration e = new JarFile(jarFile).entries();
+            Enumeration<JarEntry> e = new JarFile(jarFile).entries();
             while (e.hasMoreElements()) {
                 ZipEntry en = (ZipEntry) e.nextElement();
                 String n = en.getName();
                 if (!n.endsWith(".class")) continue;
                 n = n.substring(0, n.length() - 6).replace('/','.');
-                analyzeClass(n);
+                analyzeClass(n, detector);
             }
         } catch (Exception e) {
             e.printStackTrace();
