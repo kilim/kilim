@@ -10,8 +10,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import junit.framework.TestCase;
-import kilim.Event;
-import kilim.EventPublisher;
 import kilim.Mailbox;
 import kilim.Pausable;
 import kilim.Task;
@@ -62,7 +60,68 @@ public class TestMailbox extends TestCase {
         assertTrue(mb.getnb() == null); 
     }
     
+    public void testSimpleTask() {
+
+        Mailbox<Msg> mainmb = new Mailbox<Msg>();
+        
+        final int nTasks = 1;
+        final int nTimes = 1000;
+        final int nMsgs = nTasks * nTimes;
+        
+        for (int i = 0; i < nTasks ; i++) {
+            TaskMB t = new TaskMB(mainmb);
+            t.start();
+            t.mymb.putnb(new Msg(i, nTimes));
+        }
+        
+        HashMap<Integer, Integer> lastRcvd = new HashMap<Integer,Integer>();
+        int nNewThreads = 0;
+        for (int i = 0; i < nMsgs; i++) {
+            Msg m = mainmb.getb();
+            // assert that the number received is one more than the last received 
+            // from that thread.
+            Integer last = lastRcvd.put(m.tid, m.num);
+            if (last == null) {
+                nNewThreads++;
+            } else {
+                assertTrue(m.num == last.intValue() + 1);
+            }
+        }
+        assertTrue(nNewThreads == nTasks);
+        // Make sure we have heard from all threads
+        assertTrue(lastRcvd.keySet().size() == nTasks);
+        int lastVal = nTimes - 1;
+        for(Integer tid : lastRcvd.keySet()) {
+            Integer v = lastRcvd.get(tid);
+            assertTrue(v != null);
+            assertTrue(v.intValue() == lastVal);
+        }
+        try {Thread.sleep(1000);} catch (InterruptedException ignore) {}
+        // Make sure there are no extra messages floating around.
+        assertTrue(mainmb.getnb() == null); 
+
+    }
+    
+    
+    public void testMbxBounds() {
+        Mailbox<Msg> mainmb = new Mailbox<Msg>(2, 2);
+        
+        TaskMB t = new TaskMB(mainmb);
+        t.start();
+        t.mymb.putnb(new Msg(1, 100));
+        for (int i = 0; i < 100; i++) {
+            if (i % 5 == 0) {
+                // Every so often, make sure that the task is forced to block on put, by delaying draining the mbx
+                try {Thread.sleep(100);} catch (InterruptedException ignore) {}
+            }
+            mainmb.getb();
+        }
+        try {Thread.sleep(500);} catch (InterruptedException ignore) {}
+        assertTrue(mainmb.getnb() == null);
+    }
+        
     public void testTasks() {
+
         Mailbox<Msg> mb = new Mailbox<Msg>();
         
         final int nTasks = 100;

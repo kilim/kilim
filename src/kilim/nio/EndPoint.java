@@ -102,7 +102,8 @@ public class EndPoint extends Mailbox<SockEvent> { // Mailbox for receiving sock
     public ByteBuffer fill(ByteBuffer buf, int atleastN) throws IOException, Pausable {
         if (buf.remaining() < atleastN) {
             ByteBuffer newbb = ByteBuffer.allocate(Math.max(buf.capacity() * 3 / 2, atleastN));
-            buf.put(newbb);
+            buf.rewind();
+            newbb.put(buf);
             buf = newbb;
         }
 
