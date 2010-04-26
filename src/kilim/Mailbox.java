@@ -17,7 +17,8 @@ import java.util.TimerTask;
  * 
  * We use the term "block" to mean thread block, and "pause" to mean
  * fiber pausing. The suffix "nb" on some methods (such as getnb())
- * stands for non-blocking.
+ * stands for non-blocking. Both put() and get() have blocking and
+ * non-blocking variants in the form of putb(), putnb
  */
 
 public class Mailbox<T> implements PauseReason, EventPublisher {
@@ -99,8 +100,11 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
      * Non-blocking, nonpausing put. 
      * @param eo. If non-null, registers this observer and calls it with an SpaceAvailable event 
      * when there's space.
-     * @return buffered message if there's one, or null 
+     * @return buffered message if there's one, or null
+     * @see #putnb(Object)
+     * @see #putb(Object) 
      */
+    @SuppressWarnings("unchecked")
     public boolean put(T msg, EventSubscriber eo) {
         boolean ret = true; // assume we will be able to enqueue
         EventSubscriber subscriber;
@@ -173,7 +177,7 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
 
     
     /**
-     * @return non-null message.
+     * @return non-null message, or null if timed out.
      * @throws Pausable
      */
     public T get(long timeoutMillis) throws Pausable {
@@ -208,6 +212,8 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
      * that has a message. It is possible that because of race conditions, an
      * earlier mailbox in the list may also have received a message.
      */
+    // TODO: need timeout variant
+    @SuppressWarnings("unchecked")
     public static int select(Mailbox... mboxes) throws Pausable {
         while (true) {
             for (int i = 0; i < mboxes.length; i++) {
@@ -252,9 +258,18 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
         }
     }
 
+    /**
+     * Attempt to put a message, and return true if successful. The thread is not blocked, nor is the task
+     * paused under any circumstance. 
+     */
     public boolean putnb(T msg) {
         return put(msg, null);
     }
+
+    /**
+     * put a non-null message in the mailbox, and pause the calling task  until the
+     * mailbox has space
+     */
 
     public void put(T msg) throws Pausable {
         Task t = Task.getCurrentTask();
@@ -262,6 +277,11 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
             Task.pause(this);
         }
     }
+
+    /**
+     * put a non-null message in the mailbox, and pause the calling task  for timeoutMillis
+     * if the mailbox is full. 
+     */
 
     public boolean put(T msg, int timeoutMillis) throws Pausable {
         final Task t = Task.getCurrentTask();
@@ -310,6 +330,11 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
         }
     }
     
+    
+    /**
+     * put a non-null message in the mailbox, and block the calling thread  for timeoutMillis
+     * if the mailbox is full. 
+     */
     public void putb(T msg, final long timeoutMillis) {
         BlockingSubscriber evs = new BlockingSubscriber();
         if (!put(msg, evs)) {
@@ -345,8 +370,7 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
     /**
      * retrieve a msg, and block the Java thread for the time given.
      * 
-     * @param millis.
-     *            max wait time
+     * @param millis. max wait time
      * @return null if timed out.
      */
     public T getb(final long timeoutMillis) {
@@ -385,9 +409,9 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
 
 class EmptySet_MsgAvListener implements PauseReason, EventSubscriber {
     final Task task;
-    final Mailbox[] mbxs;
+    final Mailbox<?>[] mbxs;
 
-    EmptySet_MsgAvListener(Task t, Mailbox[] mbs) {
+    EmptySet_MsgAvListener(Task t, Mailbox<?>[] mbs) {
         task = t;
         mbxs = mbs;
     }
@@ -395,7 +419,7 @@ class EmptySet_MsgAvListener implements PauseReason, EventSubscriber {
     public boolean isValid(Task t) {
         // The pauseReason is true (there is valid reason to continue
         // pausing) if none of the mboxes have any elements
-        for (Mailbox mb : mbxs) {
+        for (Mailbox<?> mb : mbxs) {
             if (mb.hasMessage())
                 return false;
         }
@@ -403,16 +427,16 @@ class EmptySet_MsgAvListener implements PauseReason, EventSubscriber {
     }
 
     public void onEvent(EventPublisher ep, Event e) {
-        for (Mailbox m : mbxs) {
+        for (Mailbox<?> m : mbxs) {
             if (m != ep) {
-                ((Mailbox)ep).removeMsgAvailableListener(this);
+                ((Mailbox<?>)ep).removeMsgAvailableListener(this);
             }
         }
         task.resume();
     }
 
     public void cancel() {
-        for (Mailbox mb : mbxs) {
+        for (Mailbox<?> mb : mbxs) {
             mb.removeMsgAvailableListener(this);
         }
     }

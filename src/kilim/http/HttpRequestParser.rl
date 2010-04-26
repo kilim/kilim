@@ -138,7 +138,7 @@ public class HttpRequestParser {
     byte[] data = bb.array();
     int p = 0;
     int pe = headerLength;
-    int eof = pe;
+//  int eof = pe;
     int cs = 0;
 
     // variables used by actions in http_req_parser machine above.
@@ -218,10 +218,12 @@ public class HttpRequestParser {
     write data;
   }%%
 
+  @SuppressWarnings("unused")
   public static String kw_lookup(byte[] data, int start, int len) {
-    String req = null;
+//    String req = null;
     int ts, te, act;
-    int wb = 0;
+
+//    int wb = 0;
     int p = start;
     int pe = start + len;
     int eof = pe;
@@ -280,9 +282,10 @@ public class HttpRequestParser {
   public static long parseDate(byte[] data, int pos, int len) {
     int p = 0;
     int pe = len;
-    int eof = pe;
+//    int eof = pe;
     int cs;
-    int wkday = 0, day = 0, month = 0, year = 0;
+//    int wkday = 0;
+    int day = 0, month = 0, year = 0;
     int hh = 0, mm = 0, ss = 0;
         
     %%write init;

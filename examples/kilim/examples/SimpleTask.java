@@ -27,11 +27,11 @@ public class SimpleTask extends Task {
     static Mailbox<String> mb = new Mailbox<String>();
     
     public static void main(String[] args) throws Exception {
-        Task t = new SimpleTask().start();
+        new SimpleTask().start();
         Thread.sleep(10);
         mb.putnb("Hello ");
         mb.putnb("World\n");
-//        mb.putnb("done");
+        mb.putnb("done");
     }
 
     /**

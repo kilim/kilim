@@ -295,7 +295,7 @@ public abstract class Task implements EventSubscriber {
 
     // Given a method corresp. to "f(int)", return the equivalent woven method for "f(int, kilim.Fiber)" 
     private static Method getWovenMethod(Method m) {
-      Class[] ptypes = m.getParameterTypes();
+      Class<?>[] ptypes = m.getParameterTypes();
       if (!(ptypes.length > 0 && ptypes[ptypes.length-1].getName().equals("kilim.Fiber"))) {
         // The last param is not "Fiber", so m is not woven.  
         // Get the woven method corresponding to m(..., Fiber)
@@ -304,7 +304,7 @@ public abstract class Task implements EventSubscriber {
           for (Method wm: m.getDeclaringClass().getDeclaredMethods()) {
             if (wm != m && wm.getName().equals(m.getName()) ) {
               // names match. Check if the wm has the exact parameter types as m, plus a fiber.
-              Class[] wptypes = wm.getParameterTypes();
+              Class<?>[] wptypes = wm.getParameterTypes();
               if (wptypes.length != ptypes.length + 1 || 
                   !(wptypes[wptypes.length-1].getName().equals("kilim.Fiber"))) continue LOOP;
               for (int i = 0; i < ptypes.length; i++) {

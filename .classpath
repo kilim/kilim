@@ -4,7 +4,7 @@
 	<classpathentry kind="src" path="examples"/>
 	<classpathentry excluding="scala/" kind="src" path="bench"/>
 	<classpathentry kind="src" path="test"/>
-	<classpathentry kind="lib" path="libs/asm-all-2.2.3.jar"/>
+	<classpathentry kind="lib" path="libs/asm-all-2.2.3.jar" sourcepath="/Users/s/sw/asm-2.2.3/src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="libs/junit.jar"/>
 	<classpathentry kind="output" path="classes"/>

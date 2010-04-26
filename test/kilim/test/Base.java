@@ -7,7 +7,6 @@
 package kilim.test;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import junit.framework.TestCase;
 import kilim.analysis.BasicBlock;
@@ -68,8 +67,7 @@ public class Base extends TestCase {
         ArrayList<BasicBlock> bbs = flow.getBasicBlocks();
         // Verify that all instructions are covered and that the only ones that
         // aren't are labelnodes. Also verify that there are no overlaps.
-        List instructions = flow.instructions;
-        int size = instructions.size();
+        int size = flow.instructions.size();
         boolean coverage[] = new boolean[size];
         for (int i = 0; i < size; i++) {
             coverage[i] = false;

@@ -10,7 +10,8 @@ public class RingQueue<T> {
     public RingQueue(int initialSize) {
         this(initialSize, Integer.MAX_VALUE);
     }
-
+    
+    @SuppressWarnings("unchecked")
     public RingQueue(int initialSize, int maxSize) {
         elements = (T[]) new Object[initialSize];
         size = 0;
@@ -38,6 +39,7 @@ public class RingQueue<T> {
         return elem;
     }
 
+    @SuppressWarnings("unchecked")
     public boolean put(T elem) {
         boolean ret = true;
         if (elem == null) {

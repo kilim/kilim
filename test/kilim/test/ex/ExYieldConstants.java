@@ -31,7 +31,6 @@ public class ExYieldConstants extends ExYieldBase {
     	float f0 = 0;
     	float f1 = 1;
     	int i = 10;
-    	float f = 10.0f;
     	String s = "10";
         if (doPause) { 
             Task.sleep(50);

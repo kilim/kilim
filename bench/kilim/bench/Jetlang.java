@@ -13,7 +13,6 @@ import kilim.Task;
  * See http://code.google.com/p/jetlang/
  */
 public class Jetlang extends Task {
-    @SuppressWarnings("unchecked")
     
     /* limit number  of msgs in mailbox */
     static Mailbox<Integer> mb = new Mailbox<Integer>(1000,1000);

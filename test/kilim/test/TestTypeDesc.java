@@ -17,7 +17,7 @@ public class TestTypeDesc extends TestCase {
     public void testInterning() throws Exception {
         // Verify all strings in Constants that start with "D_"
         // are indeed interned.
-        Class c = Class.forName("kilim.Constants");
+        Class<?> c = Class.forName("kilim.Constants");
         Field[] fields = c.getFields();
         for (Field f:fields) {
             if (f.getName().startsWith("D_")) {

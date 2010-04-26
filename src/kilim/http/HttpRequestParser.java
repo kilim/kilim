@@ -211,7 +211,7 @@ static final int http_parser_en_main = 1;
     byte[] data = bb.array();
     int p = 0;
     int pe = headerLength;
-    int eof = pe;
+//  int eof = pe;
     int cs = 0;
 
     // variables used by actions in http_req_parser machine above.
@@ -953,17 +953,19 @@ static final int http_keywords_en_main = 307;
 // line 219 "HttpRequestParser.rl"
 
 
+  @SuppressWarnings("unused")
   public static String kw_lookup(byte[] data, int start, int len) {
-    String req = null;
+//    String req = null;
     int ts, te, act;
-    int wb = 0;
+
+//    int wb = 0;
     int p = start;
     int pe = start + len;
     int eof = pe;
     int cs;
     String kw = null;
     
-// line 967 "HttpRequestParser.java"
+// line 969 "HttpRequestParser.java"
 	{
 	cs = http_keywords_start;
 	ts = -1;
@@ -971,9 +973,9 @@ static final int http_keywords_en_main = 307;
 	act = 0;
 	}
 
-// line 231 "HttpRequestParser.rl"
+// line 233 "HttpRequestParser.rl"
     
-// line 977 "HttpRequestParser.java"
+// line 979 "HttpRequestParser.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -1002,7 +1004,7 @@ case 1:
 // line 1 "HttpRequestParser.rl"
 	{ts = p;}
 	break;
-// line 1006 "HttpRequestParser.java"
+// line 1008 "HttpRequestParser.java"
 		}
 	}
 
@@ -1261,7 +1263,7 @@ case 3:
 // line 169 "HttpRequestParser.rl"
 	{{p = ((te))-1;}{ kw = "Accept";}}
 	break;
-// line 1265 "HttpRequestParser.java"
+// line 1267 "HttpRequestParser.java"
 			}
 		}
 	}
@@ -1275,7 +1277,7 @@ case 2:
 // line 1 "HttpRequestParser.rl"
 	{ts = -1;}
 	break;
-// line 1279 "HttpRequestParser.java"
+// line 1281 "HttpRequestParser.java"
 		}
 	}
 
@@ -1302,13 +1304,13 @@ case 5:
 	break; }
 	}
 
-// line 232 "HttpRequestParser.rl"
+// line 234 "HttpRequestParser.rl"
 
     return kw;
   }
 
   
-// line 1312 "HttpRequestParser.java"
+// line 1314 "HttpRequestParser.java"
 private static byte[] init__http_date_actions_0()
 {
 	return new byte [] {
@@ -1486,7 +1488,7 @@ static final int http_date_error = 0;
 static final int http_date_en_main = 1;
 
 
-// line 276 "HttpRequestParser.rl"
+// line 278 "HttpRequestParser.rl"
 
 
     public static TimeZone GMT = TimeZone.getTimeZone("GMT");
@@ -1494,20 +1496,21 @@ static final int http_date_en_main = 1;
   public static long parseDate(byte[] data, int pos, int len) {
     int p = 0;
     int pe = len;
-    int eof = pe;
+//    int eof = pe;
     int cs;
-    int wkday = 0, day = 0, month = 0, year = 0;
+//    int wkday = 0;
+    int day = 0, month = 0, year = 0;
     int hh = 0, mm = 0, ss = 0;
         
     
-// line 1504 "HttpRequestParser.java"
+// line 1507 "HttpRequestParser.java"
 	{
 	cs = http_date_start;
 	}
 
-// line 289 "HttpRequestParser.rl"
+// line 292 "HttpRequestParser.rl"
     
-// line 1511 "HttpRequestParser.java"
+// line 1514 "HttpRequestParser.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -1587,74 +1590,74 @@ case 1:
 			switch ( _http_date_actions[_acts++] )
 			{
 	case 0:
-// line 245 "HttpRequestParser.rl"
+// line 247 "HttpRequestParser.rl"
 	{day = day * 10 + (data[p] - 48);}
 	break;
 	case 1:
-// line 246 "HttpRequestParser.rl"
+// line 248 "HttpRequestParser.rl"
 	{year = year * 10 + (data[p] - 48);}
 	break;
 	case 2:
-// line 247 "HttpRequestParser.rl"
+// line 249 "HttpRequestParser.rl"
 	{hh = hh * 10 + (data[p] - 48) ;}
 	break;
 	case 3:
-// line 248 "HttpRequestParser.rl"
+// line 250 "HttpRequestParser.rl"
 	{mm = mm * 10 + (data[p] - 48) ;}
 	break;
 	case 4:
-// line 249 "HttpRequestParser.rl"
+// line 251 "HttpRequestParser.rl"
 	{ss = ss * 10 + (data[p] - 48) ;}
 	break;
 	case 5:
-// line 253 "HttpRequestParser.rl"
+// line 255 "HttpRequestParser.rl"
 	{ month = 0;}
 	break;
 	case 6:
-// line 254 "HttpRequestParser.rl"
+// line 256 "HttpRequestParser.rl"
 	{ month = 1;}
 	break;
 	case 7:
-// line 255 "HttpRequestParser.rl"
+// line 257 "HttpRequestParser.rl"
 	{ month = 2;}
 	break;
 	case 8:
-// line 256 "HttpRequestParser.rl"
+// line 258 "HttpRequestParser.rl"
 	{ month = 3;}
 	break;
 	case 9:
-// line 257 "HttpRequestParser.rl"
+// line 259 "HttpRequestParser.rl"
 	{ month = 4;}
 	break;
 	case 10:
-// line 258 "HttpRequestParser.rl"
+// line 260 "HttpRequestParser.rl"
 	{ month = 5;}
 	break;
 	case 11:
-// line 259 "HttpRequestParser.rl"
+// line 261 "HttpRequestParser.rl"
 	{ month = 6;}
 	break;
 	case 12:
-// line 260 "HttpRequestParser.rl"
+// line 262 "HttpRequestParser.rl"
 	{ month = 7;}
 	break;
 	case 13:
-// line 261 "HttpRequestParser.rl"
+// line 263 "HttpRequestParser.rl"
 	{ month = 8;}
 	break;
 	case 14:
-// line 262 "HttpRequestParser.rl"
+// line 264 "HttpRequestParser.rl"
 	{ month = 90;}
 	break;
 	case 15:
-// line 263 "HttpRequestParser.rl"
+// line 265 "HttpRequestParser.rl"
 	{ month = 10;}
 	break;
 	case 16:
-// line 264 "HttpRequestParser.rl"
+// line 266 "HttpRequestParser.rl"
 	{ month = 11;}
 	break;
-// line 1658 "HttpRequestParser.java"
+// line 1661 "HttpRequestParser.java"
 			}
 		}
 	}
@@ -1674,7 +1677,7 @@ case 5:
 	break; }
 	}
 
-// line 290 "HttpRequestParser.rl"
+// line 293 "HttpRequestParser.rl"
 
     if (year < 100) {year += 1900;}
 

@@ -3,6 +3,7 @@ package kilim;
 import java.util.concurrent.TimeUnit;
 
 public class ReentrantLock extends java.util.concurrent.locks.ReentrantLock {
+    private static final long serialVersionUID = 1L;
     public ReentrantLock() {
         super(false);
     }

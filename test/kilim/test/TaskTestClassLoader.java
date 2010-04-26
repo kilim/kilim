@@ -68,7 +68,7 @@ public class TaskTestClassLoader extends ClassLoader {
     }
     
     public static void main(String[] args) throws Exception {
-        Class c = new TaskTestClassLoader(Thread.currentThread().getContextClassLoader()).loadClass(args[0], true);
+        Class<?> c = new TaskTestClassLoader(Thread.currentThread().getContextClassLoader()).loadClass(args[0], true);
         c.newInstance();
     }
 }
