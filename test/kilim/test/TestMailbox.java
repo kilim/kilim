@@ -60,7 +60,21 @@ public class TestMailbox extends TestCase {
         assertTrue(mb.getnb() == null); 
     }
     
-    public void testSimpleTask() {
+    public void testSimpleTask_NotPausing() {
+        final int numMsgs = 100;
+        Mailbox<Msg> mainmb = new Mailbox<Msg>();
+        
+        for (int i = 0; i < numMsgs ; i++) {
+            TaskMB_NoPause t = new TaskMB_NoPause(mainmb, numMsgs);
+            t.start(); 
+        }
+        for (int i = 0; i < numMsgs ; i++) {
+            Msg m = mainmb.getb(1000);
+            assertTrue(m.num == i);
+        }
+    }
+
+    public void testSimpleTask_Pausing() {
 
         Mailbox<Msg> mainmb = new Mailbox<Msg>();
         
@@ -70,7 +84,7 @@ public class TestMailbox extends TestCase {
         
         for (int i = 0; i < nTasks ; i++) {
             TaskMB t = new TaskMB(mainmb);
-            t.start();
+            t.start(); 
             t.mymb.putnb(new Msg(i, nTimes));
         }
         
@@ -220,6 +234,29 @@ class TaskMB extends Task {
             if (i % 10 == 0) {
                 Task.yield();
             }
+        }
+    }
+}
+
+
+/** 
+ * A Task that only makes nonpausing calls.
+ * @author s
+ */
+class TaskMB_NoPause extends Task {
+    Mailbox<Msg> mainmb;
+    int numMsgs;
+    
+    TaskMB_NoPause(Mailbox<Msg> ms, int numMsgs) {
+        mainmb = ms;
+        this.numMsgs = numMsgs;
+    }
+    
+    public void execute() throws Pausable {
+        int n = numMsgs;
+        
+        for (int i = 0; i < n; i++) {
+            mainmb.putnb(new Msg(id, i));
         }
     }
 }

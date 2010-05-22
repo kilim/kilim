@@ -179,7 +179,7 @@ public class CallWeaver {
             resumeLabel = new Label();
         assignRegisters();
         stateClassName = createStateClass();
-        methodWeaver.ensureMaxStack(getNumBottom() + 2); // Fiber + state
+        methodWeaver.ensureMaxStack(getNumBottom() + 3); // 
     }
 
     /**

@@ -317,7 +317,9 @@ public class MethodWeaver {
 
         mv.visitVarInsn(ALOAD, lastVar);
         if (lastVar < fiberVar) {
-            mv.visitInsn(DUP); // for storing into fiberVar
+            if (callWeavers.size() > 0) {
+                mv.visitInsn(DUP); // for storing into fiberVar
+            }
             mv.visitVarInsn(ASTORE, getFiberVar());
         }
         
