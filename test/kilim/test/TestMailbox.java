@@ -64,10 +64,8 @@ public class TestMailbox extends TestCase {
         final int numMsgs = 100;
         Mailbox<Msg> mainmb = new Mailbox<Msg>();
         
-        for (int i = 0; i < numMsgs ; i++) {
-            TaskMB_NoPause t = new TaskMB_NoPause(mainmb, numMsgs);
-            t.start(); 
-        }
+        TaskMB_NoPause t = new TaskMB_NoPause(mainmb, numMsgs);
+        t.start(); 
         for (int i = 0; i < numMsgs ; i++) {
             Msg m = mainmb.getb(1000);
             assertTrue(m.num == i);
