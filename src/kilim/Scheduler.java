@@ -18,8 +18,9 @@ import java.util.LinkedList;
  * 
  */
 public class Scheduler {
-    public static Scheduler defaultScheduler = null;
+    public static volatile Scheduler defaultScheduler = null;
     public static int defaultNumberThreads;
+    
     public LinkedList<WorkerThread> allThreads = new LinkedList<WorkerThread>();
     public RingQueue<WorkerThread> waitingThreads = new RingQueue<WorkerThread>(10);
     protected volatile boolean shutdown = false;
@@ -79,9 +80,14 @@ public class Scheduler {
     }
     
     public void shutdown() {
-        synchronized(this) {
-            shutdown = true;
-            notifyAll();
+        shutdown = true;
+        if (defaultScheduler == this) {
+            defaultScheduler = null;
+        }
+        for (WorkerThread wt: allThreads) {
+            synchronized(wt) {
+                wt.notify();
+            }
         }
     }
     

@@ -262,17 +262,25 @@ public class HttpRequest extends HttpMsg {
     public void readTrailers(EndPoint endpoint) {
     }
 
+    /*
+     * Read all chunks until  a chunksize of 0 is received, then consolidate the chunks into a single contiguous chunk.
+     * At the end of this method, the entire content is available in the requests buffer, starting at contentOffset and
+     * of length contentLength.
+     */
     public void readAllChunks(EndPoint endpoint) throws IOException, Pausable {
-        IntList chunkRanges = new IntList();
+        IntList chunkRanges = new IntList(); // alternate numbers in this list refer to the start and end offsets of chunks.
         do {
-            int n = readLine(endpoint);
+            int n = readLine(endpoint); // read chunk size text into buffer
             int beg = iread;
-            int size = parseHex(buffer, iread - n, iread);
+            int size = parseChunkSize(buffer, iread - n, iread); // Parse size in hex, ignore extension
             if (size == 0)
                 break;
-            fill(endpoint, iread, size);
-            chunkRanges.add(beg);
-            chunkRanges.add(beg + size);
+            // If the chunk has not already been read in, do so
+            fill(endpoint, iread, size+2 /*chunksize + CRLF*/);
+            // record chunk start and end
+            chunkRanges.add(beg); 
+            chunkRanges.add(beg + size); // without the CRLF
+            iread += size + 2; // for the next round.
         } while (true);
 
         // / consolidate all chunkRanges
@@ -292,15 +300,19 @@ public class HttpRequest extends HttpMsg {
         }
         // TODO move all trailer stuff up
         contentLength = endOfLastChunk - contentOffset;
+        
+        // At this point, the contentOffset and contentLen give the entire content 
     }
+    
 
     public static byte CR = (byte) '\r';
     public static byte LF = (byte) '\n';
     static final byte  b0 = (byte) '0', b9 = (byte) '9';
     static final byte  ba = (byte) 'a', bf = (byte) 'f';
     static final byte  bA = (byte) 'A', bF = (byte) 'F';
+    static final byte  SEMI = (byte)';';
 
-    public static int parseHex(ByteBuffer buffer, int start, int end) throws IOException {
+    public static int parseChunkSize(ByteBuffer buffer, int start, int end) throws IOException {
         byte[] bufa = buffer.array();
         int size = 0;
         for (int i = start; i < end; i++) {
@@ -311,8 +323,11 @@ public class HttpRequest extends HttpMsg {
                 size = size * 16 + ((b - ba) + 10);
             } else if (b >= bA && b <= bF) {
                 size = size * 16 + ((b - bA) + 10);
+            } else if (b == CR || b == SEMI) { 
+                // SEMI-colon starts a chunk extension. We ignore extensions currently.
+                break;
             } else {
-                throw new IOException("Expected hex digit at " + i);
+                throw new IOException("Error parsing chunk size; unexpected char " + b + " at offset " + i);
             }
         }
         return size;
@@ -336,7 +351,7 @@ public class HttpRequest extends HttpMsg {
             for (; i < end; i++) {
                 if (bufa[i] == CR) {
                     ++i;
-                    if (i == end + 1) {
+                    if (i >= end) {
                         buffer = endpoint.fill(buffer, 1);
                         bufa = buffer.array(); // fill could have changed the buffer.
                         end = buffer.position();
@@ -344,6 +359,7 @@ public class HttpRequest extends HttpMsg {
                     if (bufa[i] != LF) {
                         throw new IOException("Expected LF at " + i);
                     }
+                    ++i;
                     int lineLength = i - ireadSave;
                     iread = i;
                     return lineLength;

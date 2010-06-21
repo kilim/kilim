@@ -26,7 +26,7 @@ public class HttpRequestParser {
   public static final Charset UTF8 = Charset.forName("UTF-8");
 
   
-// line 127 "HttpRequestParser.rl"
+// line 134 "HttpRequestParser.rl"
 
 
   
@@ -36,8 +36,7 @@ private static byte[] init__http_parser_actions_0()
 	return new byte [] {
 	    0,    1,    0,    1,    1,    1,    2,    1,    3,    1,    4,    1,
 	    5,    1,    6,    1,    7,    1,    8,    1,    9,    1,   10,    1,
-	   11,    1,   12,    1,   13,    2,    0,    6,    2,    0,    7,    2,
-	    1,    4,    2,    1,    7,    2,    2,    6
+	   11,    1,   12,    2,    0,    3,    2,    0,    6,    2,    1,    5
 	};
 }
 
@@ -49,9 +48,9 @@ private static short[] init__http_parser_key_offsets_0()
 	return new short [] {
 	    0,    0,    8,   10,   12,   14,   16,   18,   19,   29,   39,   48,
 	   50,   51,   52,   53,   54,   56,   59,   61,   64,   65,   67,   68,
-	   70,   71,   73,   82,   91,   97,  103,  112,  118,  124,  133,  137,
-	  141,  151,  157,  163,  173,  182,  191,  197,  203,  212,  214,  216,
-	  218,  220,  222,  226,  228,  230,  232
+	   70,   71,   73,   82,   91,   97,  103,  109,  115,  119,  123,  133,
+	  139,  145,  154,  163,  169,  175,  177,  179,  181,  183,  185,  189,
+	  191,  193,  195
 	};
 }
 
@@ -69,18 +68,15 @@ private static char[] init__http_parser_trans_keys_0()
 	   57,   13,   48,   57,   10,   13,   58,   58,   13,   32,   13,   10,
 	   58,   32,   37,   60,   62,  127,    0,   31,   34,   35,   32,   37,
 	   60,   62,  127,    0,   31,   34,   35,   48,   57,   65,   70,   97,
-	  102,   48,   57,   65,   70,   97,  102,   32,   37,   60,   62,  127,
-	    0,   31,   34,   35,   48,   57,   65,   70,   97,  102,   48,   57,
-	   65,   70,   97,  102,   32,   34,   35,   37,   60,   62,  127,    0,
-	   31,   32,   35,   59,   63,   32,   35,   59,   63,   32,   34,   35,
-	   37,   60,   62,   63,  127,    0,   31,   48,   57,   65,   70,   97,
-	  102,   48,   57,   65,   70,   97,  102,   32,   34,   35,   37,   60,
-	   62,   63,  127,    0,   31,   32,   34,   35,   37,   60,   62,  127,
-	    0,   31,   32,   34,   35,   37,   60,   62,  127,    0,   31,   48,
-	   57,   65,   70,   97,  102,   48,   57,   65,   70,   97,  102,   32,
-	   34,   35,   37,   60,   62,  127,    0,   31,   69,  101,   84,  116,
-	   69,  101,   65,   97,   68,  100,   79,   85,  111,  117,   83,  115,
-	   84,  116,   84,  116,   58,    0
+	  102,   48,   57,   65,   70,   97,  102,   48,   57,   65,   70,   97,
+	  102,   48,   57,   65,   70,   97,  102,   32,   35,   59,   63,   32,
+	   35,   59,   63,   32,   34,   35,   37,   60,   62,   63,  127,    0,
+	   31,   48,   57,   65,   70,   97,  102,   48,   57,   65,   70,   97,
+	  102,   32,   34,   35,   37,   60,   62,  127,    0,   31,   32,   34,
+	   35,   37,   60,   62,  127,    0,   31,   48,   57,   65,   70,   97,
+	  102,   48,   57,   65,   70,   97,  102,   69,  101,   84,  116,   69,
+	  101,   65,   97,   68,  100,   79,   85,  111,  117,   83,  115,   84,
+	  116,   84,  116,   58,    0
 	};
 }
 
@@ -92,9 +88,9 @@ private static byte[] init__http_parser_single_lengths_0()
 	return new byte [] {
 	    0,    8,    2,    2,    2,    2,    2,    1,    4,    2,    7,    2,
 	    1,    1,    1,    1,    0,    1,    0,    1,    1,    2,    1,    2,
-	    1,    2,    5,    5,    0,    0,    5,    0,    0,    7,    4,    4,
-	    8,    0,    0,    8,    7,    7,    0,    0,    7,    2,    2,    2,
-	    2,    2,    4,    2,    2,    2,    1
+	    1,    2,    5,    5,    0,    0,    0,    0,    4,    4,    8,    0,
+	    0,    7,    7,    0,    0,    2,    2,    2,    2,    2,    4,    2,
+	    2,    2,    1
 	};
 }
 
@@ -106,9 +102,9 @@ private static byte[] init__http_parser_range_lengths_0()
 	return new byte [] {
 	    0,    0,    0,    0,    0,    0,    0,    0,    3,    4,    1,    0,
 	    0,    0,    0,    0,    1,    1,    1,    1,    0,    0,    0,    0,
-	    0,    0,    2,    2,    3,    3,    2,    3,    3,    1,    0,    0,
-	    1,    3,    3,    1,    1,    1,    3,    3,    1,    0,    0,    0,
-	    0,    0,    0,    0,    0,    0,    0
+	    0,    0,    2,    2,    3,    3,    3,    3,    0,    0,    1,    3,
+	    3,    1,    1,    3,    3,    0,    0,    0,    0,    0,    0,    0,
+	    0,    0,    0
 	};
 }
 
@@ -120,9 +116,9 @@ private static short[] init__http_parser_index_offsets_0()
 	return new short [] {
 	    0,    0,    9,   12,   15,   18,   21,   24,   26,   34,   41,   50,
 	   53,   55,   57,   59,   61,   63,   66,   68,   71,   73,   76,   78,
-	   81,   83,   86,   94,  102,  106,  110,  118,  122,  126,  135,  140,
-	  145,  155,  159,  163,  173,  182,  191,  195,  199,  208,  211,  214,
-	  217,  220,  223,  228,  231,  234,  237
+	   81,   83,   86,   94,  102,  106,  110,  114,  118,  123,  128,  138,
+	  142,  146,  155,  164,  168,  172,  175,  178,  181,  184,  187,  192,
+	  195,  198,  201
 	};
 }
 
@@ -140,18 +136,15 @@ private static byte[] init__http_parser_indicies_0()
 	    1,   24,    1,   25,   26,    1,   27,    1,   28,   27,    1,   29,
 	    1,   31,    1,   30,   33,   32,   35,   36,   34,   38,   37,   39,
 	   33,   32,   40,   42,    1,    1,    1,    1,    1,   41,   43,   45,
-	    1,    1,    1,    1,    1,   44,   46,   46,   46,    1,   47,   47,
-	   47,    1,   48,   50,    1,    1,    1,    1,    1,   49,   51,   51,
-	   51,    1,   52,   52,   52,    1,   53,    1,   55,   56,    1,    1,
-	    1,    1,   54,   16,   17,   58,   59,   57,   60,   61,   62,   63,
-	   57,   16,    1,   17,   64,    1,    1,   59,    1,    1,   58,   65,
-	   65,   65,    1,   66,   66,   66,    1,   53,    1,   55,   68,    1,
-	    1,   69,    1,    1,   67,   70,    1,   72,   73,    1,    1,    1,
-	    1,   71,   74,    1,   76,   77,    1,    1,    1,    1,   75,   78,
-	   78,   78,    1,   79,   79,   79,    1,   80,    1,   82,   83,    1,
-	    1,    1,    1,   81,   84,   84,    1,   85,   85,    1,   86,   86,
-	    1,   87,   87,    1,   88,   88,    1,   89,   90,   89,   90,    1,
-	   91,   91,    1,   92,   92,    1,   93,   93,    1,   33,   32,    0
+	    1,    1,    1,    1,    1,   44,   46,   46,   46,    1,   44,   44,
+	   44,    1,   47,   47,   47,    1,   15,   15,   15,    1,   16,   17,
+	   49,   50,   48,   51,   52,   53,   54,   48,   16,    1,   17,   55,
+	    1,    1,   50,    1,    1,   49,   56,   56,   56,    1,   49,   49,
+	   49,    1,   57,    1,   59,   60,    1,    1,    1,    1,   58,   61,
+	    1,   63,   64,    1,    1,    1,    1,   62,   65,   65,   65,    1,
+	   62,   62,   62,    1,   66,   66,    1,   67,   67,    1,   68,   68,
+	    1,   69,   69,    1,   70,   70,    1,   71,   72,   71,   72,    1,
+	   73,   73,    1,   74,   74,    1,   75,   75,    1,   33,   32,    0
 	};
 }
 
@@ -161,14 +154,13 @@ private static final byte _http_parser_indicies[] = init__http_parser_indicies_0
 private static byte[] init__http_parser_trans_targs_0()
 {
 	return new byte [] {
-	    2,    0,   45,   47,   50,    3,    4,    5,    6,    7,    8,    9,
-	   34,   10,    9,   10,   11,   26,   31,   12,   13,   14,   15,   16,
+	    2,    0,   41,   43,   46,    3,    4,    5,    6,    7,    8,    9,
+	   32,   10,    9,   10,   11,   26,   30,   12,   13,   14,   15,   16,
 	   17,   18,   17,   19,   20,   21,   22,   25,   22,   23,   24,   20,
-	   23,   24,   20,   54,   11,   27,   28,   11,   27,   28,   29,   30,
-	   11,   27,   28,   32,   33,   11,   10,   26,   31,   35,   36,   40,
-	   11,   26,   36,   40,   37,   38,   39,   36,   37,   40,   11,   41,
-	   26,   42,   11,   41,   26,   42,   43,   44,   11,   41,   26,   42,
-	   46,    7,   48,   49,    7,   51,   53,   52,    7,    7
+	   23,   24,   20,   50,   11,   27,   28,   11,   27,   28,   29,   31,
+	   33,   34,   37,   11,   26,   34,   37,   35,   36,   11,   38,   26,
+	   39,   11,   38,   26,   39,   40,   42,    7,   44,   45,    7,   47,
+	   49,   48,    7,    7
 	};
 }
 
@@ -178,14 +170,13 @@ private static final byte _http_parser_trans_targs[] = init__http_parser_trans_t
 private static byte[] init__http_parser_trans_actions_0()
 {
 	return new byte [] {
-	    0,    0,    0,    0,    0,    0,    0,    0,    0,   23,    0,    3,
-	    3,    3,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-	    3,    0,    0,    0,   17,    0,    3,    3,    0,    7,    3,   35,
-	    3,    0,    9,    0,   38,    3,    3,   15,    0,    0,    0,    0,
-	   32,    1,    1,    0,    0,    1,    1,    1,    1,    0,    0,    0,
-	   11,   11,   11,   11,    0,    0,    0,    1,    1,    1,   41,    5,
-	   41,    5,   13,    0,   13,    0,    0,    0,   29,    1,   29,    1,
-	    0,   19,    0,    0,   25,    0,    0,    0,   21,   27
+	    0,    0,    0,    0,    0,    0,    0,    0,    0,   21,    0,    1,
+	    1,    1,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
+	    1,    0,    0,    0,   15,    0,    1,    1,    0,    5,    1,   27,
+	    1,    0,    7,    0,   30,    1,    1,   13,    0,    0,    0,    0,
+	    0,    0,    0,    9,    9,    9,    9,    0,    0,   33,    3,   33,
+	    3,   11,    0,   11,    0,    0,    0,   17,    0,    0,   23,    0,
+	    0,    0,   19,   25
 	};
 }
 
@@ -193,13 +184,13 @@ private static final byte _http_parser_trans_actions[] = init__http_parser_trans
 
 
 static final int http_parser_start = 1;
-static final int http_parser_first_final = 54;
+static final int http_parser_first_final = 50;
 static final int http_parser_error = 0;
 
 static final int http_parser_en_main = 1;
 
 
-// line 130 "HttpRequestParser.rl"
+// line 137 "HttpRequestParser.rl"
 
   public static void err(String msg) throws IOException{
     throw new IOException(msg);
@@ -218,17 +209,16 @@ static final int http_parser_en_main = 1;
     int query_start = 0;
     int mark = 0;
     String field_name = "";
-    boolean need_decode = false;
 
     
-// line 225 "HttpRequestParser.java"
+// line 215 "HttpRequestParser.java"
 	{
 	cs = http_parser_start;
 	}
 
-// line 151 "HttpRequestParser.rl"
+// line 157 "HttpRequestParser.rl"
     
-// line 232 "HttpRequestParser.java"
+// line 222 "HttpRequestParser.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -310,18 +300,14 @@ case 1:
 			{
 	case 0:
 // line 31 "HttpRequestParser.rl"
-	{need_decode = true;}
+	{mark = p; }
 	break;
 	case 1:
 // line 33 "HttpRequestParser.rl"
-	{mark = p; }
+	{query_start = p; }
 	break;
 	case 2:
 // line 35 "HttpRequestParser.rl"
-	{query_start = p; }
-	break;
-	case 3:
-// line 37 "HttpRequestParser.rl"
 	{ 
       field_name = kw_lookup(data, mark, p);
       if (field_name == null) {// not a known keyword
@@ -329,65 +315,74 @@ case 1:
       }
     }
 	break;
-	case 4:
-// line 44 "HttpRequestParser.rl"
+	case 3:
+// line 42 "HttpRequestParser.rl"
 	{
       int value = encodeRange(mark, p);
       req.addField(field_name, value);
     }
 	break;
-	case 5:
-// line 49 "HttpRequestParser.rl"
+	case 4:
+// line 47 "HttpRequestParser.rl"
 	{
       req.uriPath = req.extractRange(mark, p);
-      if (need_decode) {
-        // TODO: Correct this. URLDecoder is broken for path (upto JDK1.6):  it converts '+' to ' ', which should
-        // be done only for the query part of the url.
-        try {
-          req.uriPath = URLDecoder.decode(req.uriPath, "UTF-8");
-        } catch (UnsupportedEncodingException ignore){}
+      String s = req.uriPath;
+      int len = s.length();
+      boolean need_decode;
+      // Scan the string to see if the string requires any conversion.
+      for (int i = 0; i < len; i++) {
+         char c = s.charAt(i);
+         if (c == '%' || c > 0x7F) {
+           try {
+              // TODO: Correct this. URLDecoder is broken for path (upto
+              // JDK1.6): it converts'+' to ' ', which should
+              // be done only for the query part of the url.
+              req.uriPath = URLDecoder.decode(req.uriPath, "UTF-8");
+              break;
+           } catch (UnsupportedEncodingException ignore){}
+         }
       }
     }
 	break;
-	case 6:
-// line 65 "HttpRequestParser.rl"
+	case 5:
+// line 72 "HttpRequestParser.rl"
 	{
       req.queryStringRange = encodeRange(query_start, p);
     }
 	break;
-	case 7:
-// line 69 "HttpRequestParser.rl"
+	case 6:
+// line 76 "HttpRequestParser.rl"
 	{ 
       req.uriFragmentRange = encodeRange(mark, p);
     }
 	break;
-	case 8:
-// line 73 "HttpRequestParser.rl"
+	case 7:
+// line 80 "HttpRequestParser.rl"
 	{
       req.versionRange = encodeRange(mark, p);
     }
 	break;
-	case 9:
-// line 112 "HttpRequestParser.rl"
+	case 8:
+// line 119 "HttpRequestParser.rl"
 	{req.method = "GET";}
 	break;
-	case 10:
-// line 113 "HttpRequestParser.rl"
+	case 9:
+// line 120 "HttpRequestParser.rl"
 	{req.method = "POST";}
 	break;
-	case 11:
-// line 114 "HttpRequestParser.rl"
+	case 10:
+// line 121 "HttpRequestParser.rl"
 	{req.method = "DELETE";}
 	break;
-	case 12:
-// line 115 "HttpRequestParser.rl"
+	case 11:
+// line 122 "HttpRequestParser.rl"
 	{req.method = "HEAD";}
 	break;
-	case 13:
-// line 116 "HttpRequestParser.rl"
+	case 12:
+// line 123 "HttpRequestParser.rl"
 	{req.method = "PUT";}
 	break;
-// line 391 "HttpRequestParser.java"
+// line 386 "HttpRequestParser.java"
 			}
 		}
 	}
@@ -407,7 +402,7 @@ case 5:
 	break; }
 	}
 
-// line 152 "HttpRequestParser.rl"
+// line 158 "HttpRequestParser.rl"
     
     if (cs == http_parser_error) {
       throw new IOException("Malformed HTTP Header. p = " + p +", cs = " + cs);
@@ -422,7 +417,7 @@ case 5:
   }
 
   
-// line 426 "HttpRequestParser.java"
+// line 421 "HttpRequestParser.java"
 private static byte[] init__http_keywords_actions_0()
 {
 	return new byte [] {
@@ -950,7 +945,7 @@ static final int http_keywords_error = 0;
 static final int http_keywords_en_main = 307;
 
 
-// line 219 "HttpRequestParser.rl"
+// line 225 "HttpRequestParser.rl"
 
 
   @SuppressWarnings("unused")
@@ -965,7 +960,7 @@ static final int http_keywords_en_main = 307;
     int cs;
     String kw = null;
     
-// line 969 "HttpRequestParser.java"
+// line 964 "HttpRequestParser.java"
 	{
 	cs = http_keywords_start;
 	ts = -1;
@@ -973,9 +968,9 @@ static final int http_keywords_en_main = 307;
 	act = 0;
 	}
 
-// line 233 "HttpRequestParser.rl"
+// line 239 "HttpRequestParser.rl"
     
-// line 979 "HttpRequestParser.java"
+// line 974 "HttpRequestParser.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -1004,7 +999,7 @@ case 1:
 // line 1 "HttpRequestParser.rl"
 	{ts = p;}
 	break;
-// line 1008 "HttpRequestParser.java"
+// line 1003 "HttpRequestParser.java"
 		}
 	}
 
@@ -1072,198 +1067,198 @@ case 3:
 	{te = p+1;}
 	break;
 	case 3:
-// line 170 "HttpRequestParser.rl"
+// line 176 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Accept-Charset";}}
 	break;
 	case 4:
-// line 171 "HttpRequestParser.rl"
+// line 177 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Accept-Encoding";}}
 	break;
 	case 5:
-// line 172 "HttpRequestParser.rl"
+// line 178 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Accept-Language";}}
 	break;
 	case 6:
-// line 173 "HttpRequestParser.rl"
+// line 179 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Accept-Ranges";}}
 	break;
 	case 7:
-// line 174 "HttpRequestParser.rl"
+// line 180 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Age";}}
 	break;
 	case 8:
-// line 175 "HttpRequestParser.rl"
+// line 181 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Allow";}}
 	break;
 	case 9:
-// line 176 "HttpRequestParser.rl"
+// line 182 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Authorization";}}
 	break;
 	case 10:
-// line 177 "HttpRequestParser.rl"
+// line 183 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Cache-Control";}}
 	break;
 	case 11:
-// line 178 "HttpRequestParser.rl"
+// line 184 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Connection";}}
 	break;
 	case 12:
-// line 179 "HttpRequestParser.rl"
+// line 185 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Content-Encoding";}}
 	break;
 	case 13:
-// line 180 "HttpRequestParser.rl"
+// line 186 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Content-Language";}}
 	break;
 	case 14:
-// line 181 "HttpRequestParser.rl"
+// line 187 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Content-Length";}}
 	break;
 	case 15:
-// line 182 "HttpRequestParser.rl"
+// line 188 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Content-Location";}}
 	break;
 	case 16:
-// line 183 "HttpRequestParser.rl"
+// line 189 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Content-MD5";}}
 	break;
 	case 17:
-// line 184 "HttpRequestParser.rl"
+// line 190 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Content-Range";}}
 	break;
 	case 18:
-// line 185 "HttpRequestParser.rl"
+// line 191 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Content-Type";}}
 	break;
 	case 19:
-// line 186 "HttpRequestParser.rl"
+// line 192 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Date";}}
 	break;
 	case 20:
-// line 187 "HttpRequestParser.rl"
+// line 193 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "ETag";}}
 	break;
 	case 21:
-// line 188 "HttpRequestParser.rl"
+// line 194 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Expect";}}
 	break;
 	case 22:
-// line 189 "HttpRequestParser.rl"
+// line 195 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Expires";}}
 	break;
 	case 23:
-// line 190 "HttpRequestParser.rl"
+// line 196 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "From";}}
 	break;
 	case 24:
-// line 191 "HttpRequestParser.rl"
+// line 197 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Host";}}
 	break;
 	case 25:
-// line 192 "HttpRequestParser.rl"
+// line 198 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "If-Match";}}
 	break;
 	case 26:
-// line 193 "HttpRequestParser.rl"
+// line 199 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "If-Modified-Since";}}
 	break;
 	case 27:
-// line 194 "HttpRequestParser.rl"
+// line 200 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "If-None-Match";}}
 	break;
 	case 28:
-// line 195 "HttpRequestParser.rl"
+// line 201 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "If-Range";}}
 	break;
 	case 29:
-// line 196 "HttpRequestParser.rl"
+// line 202 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "If-Unmodified-Since";}}
 	break;
 	case 30:
-// line 197 "HttpRequestParser.rl"
+// line 203 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Last-Modified";}}
 	break;
 	case 31:
-// line 198 "HttpRequestParser.rl"
+// line 204 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Location";}}
 	break;
 	case 32:
-// line 199 "HttpRequestParser.rl"
+// line 205 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Max-Forwards";}}
 	break;
 	case 33:
-// line 200 "HttpRequestParser.rl"
+// line 206 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Pragma";}}
 	break;
 	case 34:
-// line 201 "HttpRequestParser.rl"
+// line 207 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Proxy-Authenticate";}}
 	break;
 	case 35:
-// line 202 "HttpRequestParser.rl"
+// line 208 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Proxy-Authorization";}}
 	break;
 	case 36:
-// line 203 "HttpRequestParser.rl"
+// line 209 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Range";}}
 	break;
 	case 37:
-// line 204 "HttpRequestParser.rl"
+// line 210 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Referer";}}
 	break;
 	case 38:
-// line 205 "HttpRequestParser.rl"
+// line 211 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Retry-After";}}
 	break;
 	case 39:
-// line 206 "HttpRequestParser.rl"
+// line 212 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Server";}}
 	break;
 	case 40:
-// line 207 "HttpRequestParser.rl"
+// line 213 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "TE";}}
 	break;
 	case 41:
-// line 208 "HttpRequestParser.rl"
+// line 214 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Trailer";}}
 	break;
 	case 42:
-// line 209 "HttpRequestParser.rl"
+// line 215 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Transfer-Encoding";}}
 	break;
 	case 43:
-// line 210 "HttpRequestParser.rl"
+// line 216 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Upgrade";}}
 	break;
 	case 44:
-// line 211 "HttpRequestParser.rl"
+// line 217 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "User-Agent";}}
 	break;
 	case 45:
-// line 212 "HttpRequestParser.rl"
+// line 218 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Vary";}}
 	break;
 	case 46:
-// line 213 "HttpRequestParser.rl"
+// line 219 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Via";}}
 	break;
 	case 47:
-// line 214 "HttpRequestParser.rl"
+// line 220 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "Warning";}}
 	break;
 	case 48:
-// line 215 "HttpRequestParser.rl"
+// line 221 "HttpRequestParser.rl"
 	{te = p+1;{ kw = "WWW-Authenticate";}}
 	break;
 	case 49:
-// line 169 "HttpRequestParser.rl"
+// line 175 "HttpRequestParser.rl"
 	{te = p;p--;{ kw = "Accept";}}
 	break;
 	case 50:
-// line 169 "HttpRequestParser.rl"
+// line 175 "HttpRequestParser.rl"
 	{{p = ((te))-1;}{ kw = "Accept";}}
 	break;
-// line 1267 "HttpRequestParser.java"
+// line 1262 "HttpRequestParser.java"
 			}
 		}
 	}
@@ -1277,7 +1272,7 @@ case 2:
 // line 1 "HttpRequestParser.rl"
 	{ts = -1;}
 	break;
-// line 1281 "HttpRequestParser.java"
+// line 1276 "HttpRequestParser.java"
 		}
 	}
 
@@ -1304,13 +1299,13 @@ case 5:
 	break; }
 	}
 
-// line 234 "HttpRequestParser.rl"
+// line 240 "HttpRequestParser.rl"
 
     return kw;
   }
 
   
-// line 1314 "HttpRequestParser.java"
+// line 1309 "HttpRequestParser.java"
 private static byte[] init__http_date_actions_0()
 {
 	return new byte [] {
@@ -1488,7 +1483,7 @@ static final int http_date_error = 0;
 static final int http_date_en_main = 1;
 
 
-// line 278 "HttpRequestParser.rl"
+// line 284 "HttpRequestParser.rl"
 
 
     public static TimeZone GMT = TimeZone.getTimeZone("GMT");
@@ -1503,14 +1498,14 @@ static final int http_date_en_main = 1;
     int hh = 0, mm = 0, ss = 0;
         
     
-// line 1507 "HttpRequestParser.java"
+// line 1502 "HttpRequestParser.java"
 	{
 	cs = http_date_start;
 	}
 
-// line 292 "HttpRequestParser.rl"
+// line 298 "HttpRequestParser.rl"
     
-// line 1514 "HttpRequestParser.java"
+// line 1509 "HttpRequestParser.java"
 	{
 	int _klen;
 	int _trans = 0;
@@ -1590,74 +1585,74 @@ case 1:
 			switch ( _http_date_actions[_acts++] )
 			{
 	case 0:
-// line 247 "HttpRequestParser.rl"
+// line 253 "HttpRequestParser.rl"
 	{day = day * 10 + (data[p] - 48);}
 	break;
 	case 1:
-// line 248 "HttpRequestParser.rl"
+// line 254 "HttpRequestParser.rl"
 	{year = year * 10 + (data[p] - 48);}
 	break;
 	case 2:
-// line 249 "HttpRequestParser.rl"
+// line 255 "HttpRequestParser.rl"
 	{hh = hh * 10 + (data[p] - 48) ;}
 	break;
 	case 3:
-// line 250 "HttpRequestParser.rl"
+// line 256 "HttpRequestParser.rl"
 	{mm = mm * 10 + (data[p] - 48) ;}
 	break;
 	case 4:
-// line 251 "HttpRequestParser.rl"
+// line 257 "HttpRequestParser.rl"
 	{ss = ss * 10 + (data[p] - 48) ;}
 	break;
 	case 5:
-// line 255 "HttpRequestParser.rl"
+// line 261 "HttpRequestParser.rl"
 	{ month = 0;}
 	break;
 	case 6:
-// line 256 "HttpRequestParser.rl"
+// line 262 "HttpRequestParser.rl"
 	{ month = 1;}
 	break;
 	case 7:
-// line 257 "HttpRequestParser.rl"
+// line 263 "HttpRequestParser.rl"
 	{ month = 2;}
 	break;
 	case 8:
-// line 258 "HttpRequestParser.rl"
+// line 264 "HttpRequestParser.rl"
 	{ month = 3;}
 	break;
 	case 9:
-// line 259 "HttpRequestParser.rl"
+// line 265 "HttpRequestParser.rl"
 	{ month = 4;}
 	break;
 	case 10:
-// line 260 "HttpRequestParser.rl"
+// line 266 "HttpRequestParser.rl"
 	{ month = 5;}
 	break;
 	case 11:
-// line 261 "HttpRequestParser.rl"
+// line 267 "HttpRequestParser.rl"
 	{ month = 6;}
 	break;
 	case 12:
-// line 262 "HttpRequestParser.rl"
+// line 268 "HttpRequestParser.rl"
 	{ month = 7;}
 	break;
 	case 13:
-// line 263 "HttpRequestParser.rl"
+// line 269 "HttpRequestParser.rl"
 	{ month = 8;}
 	break;
 	case 14:
-// line 264 "HttpRequestParser.rl"
+// line 270 "HttpRequestParser.rl"
 	{ month = 90;}
 	break;
 	case 15:
-// line 265 "HttpRequestParser.rl"
+// line 271 "HttpRequestParser.rl"
 	{ month = 10;}
 	break;
 	case 16:
-// line 266 "HttpRequestParser.rl"
+// line 272 "HttpRequestParser.rl"
 	{ month = 11;}
 	break;
-// line 1661 "HttpRequestParser.java"
+// line 1656 "HttpRequestParser.java"
 			}
 		}
 	}
@@ -1677,7 +1672,7 @@ case 5:
 	break; }
 	}
 
-// line 293 "HttpRequestParser.rl"
+// line 299 "HttpRequestParser.rl"
 
     if (year < 100) {year += 1900;}
 

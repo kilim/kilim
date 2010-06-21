@@ -13,6 +13,10 @@ import java.io.ByteArrayInputStream;
  */
 public class ExposedBais extends ByteArrayInputStream {
 
+  public ExposedBais(int size) {
+      super(new byte[size]);
+  }
+  
   public ExposedBais(byte[] buf, int offset, int length) {
     super(buf, offset, length);
   }

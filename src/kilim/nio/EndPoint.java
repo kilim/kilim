@@ -91,7 +91,8 @@ public class EndPoint extends Mailbox<SockEvent> { // Mailbox for receiving sock
     
 
     /**
-     * Read into buffer buf and ensure that buf position > atLeastN before returning.
+     * Read <code>atleastN</code> bytes more into the buffer if there's space. Otherwise, allocate a bigger 
+     * buffer that'll accomodate the earlier contents and atleastN more bytes. 
      * 
      * @param buf
      *            ByteBuffer to be filled
@@ -101,7 +102,7 @@ public class EndPoint extends Mailbox<SockEvent> { // Mailbox for receiving sock
      */
     public ByteBuffer fill(ByteBuffer buf, int atleastN) throws IOException, Pausable {
         if (buf.remaining() < atleastN) {
-            ByteBuffer newbb = ByteBuffer.allocate(Math.max(buf.capacity() * 3 / 2, atleastN));
+            ByteBuffer newbb = ByteBuffer.allocate(Math.max(buf.capacity() * 3 / 2, buf.position() + atleastN));
             buf.rewind();
             newbb.put(buf);
             buf = newbb;
@@ -117,7 +118,7 @@ public class EndPoint extends Mailbox<SockEvent> { // Mailbox for receiving sock
             // System.out.println(buf);
             if (n == -1) {
                 close();
-                return buf;
+                throw new EOFException();
             }
             if (n == 0) {
                 yieldCount++;
@@ -132,10 +133,50 @@ public class EndPoint extends Mailbox<SockEvent> { // Mailbox for receiving sock
                 }
             }
             atleastN -= n;
-        } while (buf.position() < atleastN);
+        } while (atleastN > 0);
         return buf;
     }
+ 
 
+    /**
+     * Reads a length-prefixed message in its entirety.
+     * 
+     * @param bb The bytebuffer to fill, assuming there is sufficient space (including the bytes for the length). Otherwise, the
+     * contents are copied into a sufficiently big buffer, and the new buffer is returned.
+     * 
+     * @param lengthLength The number of bytes occupied by the length. Must be 1, 2 or 4, assumed to be in big-endian order.
+     * @param lengthIncludesItself  true if the packet length includes lengthLength
+     * @return the buffer bb passed in if the message fits or a new buffer. Either way, the buffer returned has the  entire
+     * message including the initial length prefix.
+     * @throws IOException
+     * @throws Pausable
+     */
+    public ByteBuffer fillMessage(ByteBuffer bb, int lengthLength, boolean lengthIncludesItself) throws IOException, Pausable {
+        int pos = bb.position();
+        int opos = pos; // save orig pos 
+        bb = fill(bb, lengthLength);
+        byte a, b, c, d;
+        a = b = c = d = 0;
+        switch (lengthLength) {
+            case 4: a = bb.get(pos); pos++;   
+                    b = bb.get(pos); pos++;  // fall through
+            case 2: c = bb.get(pos); pos++;  // fall through
+            case 1: d = bb.get(pos); break; 
+            default: throw new IllegalArgumentException("Incorrect lengthLength (may only be 1, 2 or 4): " + lengthLength);
+        }
+        int contentLen = ((a << 24) + (b << 16) + (c << 8) + (d << 0));
+        // TODO: put a limit on len
+        if (lengthIncludesItself) {
+            contentLen -= lengthLength;
+        }
+        // If the fill() above hasn't read in all the content, read the remaining
+        int remaining = contentLen - (bb.position() - opos - lengthLength);
+        if (remaining > 0) {
+            bb = fill(bb, remaining);
+        } 
+        return bb;
+    }
+    
     public void pauseUntilReadble() throws Pausable, IOException {
         SockEvent ev = new SockEvent(this, sockch, SelectionKey.OP_READ);
         sockEvMbx.putnb(ev);

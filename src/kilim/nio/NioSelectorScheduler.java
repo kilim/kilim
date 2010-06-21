@@ -13,12 +13,14 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
+import java.util.LinkedList;
 
 import kilim.Mailbox;
 import kilim.Pausable;
 import kilim.RingQueue;
 import kilim.Scheduler;
 import kilim.Task;
+import kilim.http.IntList;
 
 /**
  * This class wraps a selector and runs it in a separate thread.
@@ -55,6 +57,7 @@ public class NioSelectorScheduler extends Scheduler {
      * message on this mailbox. 
      */
     public Mailbox<SockEvent> registrationMbx = new Mailbox<SockEvent>(1000);
+    
 
     /**
      * @throws IOException
@@ -83,6 +86,12 @@ public class NioSelectorScheduler extends Scheduler {
         }
     }
 
+    @Override
+    public void shutdown() {
+        super.shutdown();
+        sel.wakeup();
+    }
+    
     synchronized void addRunnable(Task t) {
         runnableTasks.put(t);
     }
@@ -108,6 +117,22 @@ public class NioSelectorScheduler extends Scheduler {
             while (true) {
                 int n;
                 try {
+                    if (_scheduler.isShutdown()) {
+                        Iterator<SelectionKey> it = sel.keys().iterator();
+                        while (it.hasNext()) {
+                            SelectionKey sk = it.next();
+                            sk.cancel();
+                            Object o = sk.attachment();
+                            if (o instanceof SockEvent  &&   ((SockEvent)o).ch instanceof ServerSocketChannel) {
+                                // TODO FIX: Need a proper, orderly shutdown procedure for tasks. This closes down the task
+                                // irrespective of the thread it may be running on. Terrible.
+                                try {
+                                    ((ServerSocketChannel)((SockEvent)o).ch).close();
+                                } catch (IOException ignore) {}
+                            }
+                        }
+                        break;
+                    }
                     if (_scheduler.numRunnables() > 0) {
                         n = sel.selectNow();
                     } else {
@@ -187,6 +212,10 @@ public class NioSelectorScheduler extends Scheduler {
             int n = 0;
             while (true) {
                 SocketChannel ch = ssc.accept();
+                if (this.scheduler.isShutdown()) {
+                    ssc.close();
+                    break;
+                }
                 if (ch == null) {
                     endpoint.pauseUntilAcceptable();
                 } else {

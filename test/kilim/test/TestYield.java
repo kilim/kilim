@@ -6,8 +6,6 @@
 
 package kilim.test;
 
-import java.util.Timer;
-
 import junit.framework.TestCase;
 import kilim.ExitMsg;
 import kilim.Mailbox;
@@ -16,7 +14,6 @@ import kilim.Task;
 import kilim.test.ex.ExYieldBase;
 
 public class TestYield extends TestCase {
-    Timer               timer = new Timer();
     
     public void testStackBottom_st() throws Exception {
         runTask(new kilim.test.ex.ExYieldStack(0));

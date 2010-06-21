@@ -28,8 +28,6 @@ public class HttpRequestParser {
 
     machine http_parser;
 
-    action need_urldecode{need_decode = true;}
-
     action mark {mark = fpc; }
 
     action start_query {query_start = fpc; }
@@ -48,12 +46,21 @@ public class HttpRequestParser {
 
     action request_path {
       req.uriPath = req.extractRange(mark, fpc);
-      if (need_decode) {
-        // TODO: Correct this. URLDecoder is broken for path (upto JDK1.6):  it converts '+' to ' ', which should
-        // be done only for the query part of the url.
-        try {
-          req.uriPath = URLDecoder.decode(req.uriPath, "UTF-8");
-        } catch (UnsupportedEncodingException ignore){}
+      String s = req.uriPath;
+      int len = s.length();
+      boolean need_decode;
+      // Scan the string to see if the string requires any conversion.
+      for (int i = 0; i < len; i++) {
+         char c = s.charAt(i);
+         if (c == '%' || c > 0x7F) {
+           try {
+              // TODO: Correct this. URLDecoder is broken for path (upto
+              // JDK1.6): it converts'+' to ' ', which should
+              // be done only for the query part of the url.
+              req.uriPath = URLDecoder.decode(req.uriPath, "UTF-8");
+              break;
+           } catch (UnsupportedEncodingException ignore){}
+         }
       }
     }
 
@@ -84,7 +91,7 @@ public class HttpRequestParser {
     unsafe = (CTL | " " | "\"" | "#" | "%" | "<" | ">");
     national = any -- (alpha | digit | reserved | extra | safe | unsafe);
     unreserved = (alpha | digit | safe | extra | national);
-    escape = ("%" xdigit xdigit) %need_urldecode;
+    escape = ("%" xdigit xdigit);
     uchar = (unreserved | escape);
     pchar = (uchar | ":" | "@" | "&" | "=" | "+");
     tspecials = ("(" | ")" | "<" | ">" | "@" | "," | ";" | ":" | "\\" | "\"" | "/" | "[" | "]" | "?" | "=" | "{" | "}" | " " | "\t");
@@ -145,7 +152,6 @@ public class HttpRequestParser {
     int query_start = 0;
     int mark = 0;
     String field_name = "";
-    boolean need_decode = false;
 
     %% write init;
     %% write exec;
