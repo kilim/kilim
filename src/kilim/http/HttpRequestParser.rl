@@ -121,7 +121,8 @@ public class HttpRequestParser {
     delete = 'DELETE'i  @{req.method = "DELETE";};
     head = 'HEAD'i  @{req.method = "HEAD";};
     put = 'PUT'i @{req.method = "PUT";};
-    method = get | delete | post | put | head;
+    options = 'OPTIONS'i @{req.method = "OPTIONS";};
+    method = get | delete | post | put | head | options;
 
     version = "HTTP/"  ( digit+ "." digit+ )  >mark %version;
 
