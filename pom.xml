@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+    http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>kilim</groupId>
+	<artifactId>kilim</artifactId>
+	<version>0.7.2</version>
+	<packaging>jar</packaging>
+
+	<properties>
+		<jdk.version>1.6</jdk.version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>asm</groupId>
+			<artifactId>asm-all</artifactId>
+			<version>2.2.3</version>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>3.8.2</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<sourceDirectory>src/</sourceDirectory>
+		<testSourceDirectory>test/</testSourceDirectory>
+		<outputDirectory>classes/</outputDirectory>
+		<testOutputDirectory>classes/</testOutputDirectory>
+		<plugins>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>add-source</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>add-source</goal>
+						</goals>
+						<configuration>
+							<sources>
+								<source>${basedir}/bench</source>
+								<source>${basedir}/examples</source>
+								<source>${basedir}/bench</source>
+							</sources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<artifactId>maven-clean-plugin</artifactId>
+				<version>2.4.1</version>
+				<executions>
+					<execution>
+						<id>auto-clean</id>
+						<phase>initialize</phase>
+						<goals>
+							<goal>clean</goal>
+						</goals>
+					</execution>
+				</executions>
+				<!--<configuration> <filesets> <fileset> <directory>.</directory> <includes> 
+					<include>${project.build.outputDirectory}</include> <include>${project.build.testOutputDirectory}</include> 
+					</includes> </fileset> </filesets> </configuration> -->
+			</plugin><!-- <plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-javadoc-plugin</artifactId> 
+				<executions> <execution> <id>attach-javadocs</id> <goals> <goal>jar</goal> 
+				</goals> </execution> </executions> </plugin> <plugin> <groupId>org.apache.maven.plugins</groupId> 
+				<artifactId>maven-source-plugin</artifactId> <executions> <execution> <id>attach-sources</id> 
+				<goals> <goal>jar</goal> </goals> </execution> </executions> </plugin> -->
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<debug>true</debug>
+					<source>${jdk.version}</source>
+					<target>${jdk.version}</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<!-- java -ea kilim.tools.Asm -d ./classes `find . -name "*.j"` -->
+						<id>kilim-asm</id>
+						<phase>compile</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<executable>java</executable>
+							<arguments>
+								<argument>-classpath</argument>
+								<classpath />
+								<argument>-ea</argument>
+								<argument>kilim.tools.Asm</argument>
+								<argument>-d</argument>
+								<argument>${project.build.outputDirectory}</argument>
+								<argument>${project.build.testSourceDirectory}/kilim/test/ex/ExJSR.j</argument>
+								<argument>${project.build.testSourceDirectory}/kilim/test/ex/ExYieldSub.j</argument>
+							</arguments>
+						</configuration>
+					</execution>
+					<execution>
+						<!-- java -ea kilim.tools.Weaver -d ./classes -x "ExInvalid|test" ./classes -->
+						<id>kilim-weave-main</id>
+						<phase>process-test-classes</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<executable>java</executable>
+							<classpathScope>test</classpathScope>
+							<arguments>
+								<argument>-classpath</argument>
+								<classpath />
+								<argument>-ea</argument>
+								<argument>kilim.tools.Weaver</argument>
+								<argument>-d</argument>
+								<argument>${project.build.outputDirectory}</argument>
+								<argument>-x</argument>
+								<argument>ExInvalid|test</argument>
+								<argument>${project.build.outputDirectory}</argument>
+							</arguments>
+						</configuration>
+					</execution>
+					<execution>
+						<!-- java -ea kilim.tools.Weaver -d ./testclasses -x "ExInvalid" ./classes -->
+						<id>kilim-weave-test</id>
+						<phase>process-test-classes</phase>
+						<goals>
+							<goal>exec</goal>
+						</goals>
+						<configuration>
+							<executable>java</executable>
+							<classpathScope>test</classpathScope>
+							<arguments>
+								<argument>-classpath</argument>
+								<classpath />
+								<argument>-ea</argument>
+								<argument>kilim.tools.Weaver</argument>
+								<argument>-d</argument>
+								<argument>${basedir}/testclasses</argument>
+								<argument>-x</argument>
+								<argument>ExInvalid</argument>
+								<argument>${project.build.OutputDirectory}</argument>
+							</arguments>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+</project>
