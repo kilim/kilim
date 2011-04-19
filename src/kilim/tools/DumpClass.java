@@ -13,6 +13,7 @@ import static kilim.analysis.Utils.resetIndentation;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Modifier;
 import java.util.Enumeration;
 import java.util.Formatter;
@@ -64,9 +65,13 @@ public class DumpClass implements Opcodes, ClassVisitor {
         }
     }
     
-    
 
-    DumpClass(String className, boolean flags) throws IOException {
+    public DumpClass(InputStream is, boolean flags) throws IOException {
+        ClassReader cr = new ClassReader(is);
+        cr.accept(this, flags);
+    }
+
+    public DumpClass(String className, boolean flags) throws IOException {
         ClassReader cr;
         if (className.endsWith(".class")) {
             FileInputStream fis = new FileInputStream(className);

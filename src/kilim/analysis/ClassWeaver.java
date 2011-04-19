@@ -31,6 +31,10 @@ public class ClassWeaver {
     List<ClassInfo> classInfoList = new LinkedList<ClassInfo>();
     static HashSet<String> stateClasses = new HashSet<String>();
 
+    public ClassWeaver(byte[] data) {
+        this(data, Detector.DEFAULT);
+    }
+    
     public ClassWeaver(byte[] data, Detector detector) {
         classFlow = new ClassFlow(data, detector);
         weave();
