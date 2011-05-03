@@ -23,12 +23,12 @@ import java.util.zip.ZipEntry;
 
 import kilim.analysis.BasicBlock;
 import kilim.analysis.ClassFlow;
-import kilim.analysis.Detector;
 import kilim.analysis.Frame;
 import kilim.analysis.MethodFlow;
 import kilim.analysis.TypeDesc;
 import kilim.analysis.Usage;
 import kilim.analysis.Value;
+import kilim.mirrors.Detector;
 
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;

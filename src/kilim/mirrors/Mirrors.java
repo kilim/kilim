@@ -1,8 +1,6 @@
 package kilim.mirrors;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Member;
-import java.lang.reflect.Method;
+import org.objectweb.asm.tree.ClassNode;
 
 
 public abstract class Mirrors {
@@ -11,10 +9,8 @@ public abstract class Mirrors {
 		throws ClassMirrorNotFoundException;
 
 	public abstract ClassMirror  mirror(Class<?> clazz);
-	public abstract MethodMirror mirror(Method mth) ;
-	public abstract MemberMirror mirror(Member member) ;
-	public abstract FieldMirror  mirror(Field member) ;
-
+    public abstract ClassMirror  mirror(ClassNode classNode);
+	
 	public static Mirrors getRuntimeMirrors() {
 		return new RuntimeClassMirrors();
 	}

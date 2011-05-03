@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Stack;
 
 import kilim.KilimException;
+import kilim.mirrors.Detector;
 
 import org.objectweb.asm.Label;
 import org.objectweb.asm.tree.AbstractInsnNode;

@@ -19,8 +19,9 @@ import java.util.regex.Pattern;
 import kilim.KilimException;
 import kilim.analysis.ClassInfo;
 import kilim.analysis.ClassWeaver;
-import kilim.analysis.Detector;
 import kilim.analysis.FileLister;
+import kilim.mirrors.CachedClassMirrors;
+import kilim.mirrors.Detector;
 
 /**
  * This file creates a ClassWeaver object for each .class file to be found in
@@ -94,6 +95,7 @@ public class Weaver {
     static void weaveFile(String name, InputStream is, Detector detector) throws IOException {
         try {
             ClassWeaver cw = new ClassWeaver(is, detector);
+            cw.weave();
             writeClasses(cw);
         } catch (KilimException ke) {
             System.err.println("***** Error weaving " + name + ". " + ke.getMessage());
@@ -127,6 +129,7 @@ public class Weaver {
     public static void weaveClass2(String name, Detector detector) throws IOException {
         try {
             ClassWeaver cw = new ClassWeaver(name, detector);
+            cw.weave();
             writeClasses(cw);
         } catch (KilimException ke) {
             err = 1;
@@ -217,5 +220,32 @@ public class Weaver {
         }
         mkdir(outputDir);
         return ret;
+    }
+
+    private Detector detector;
+    CachedClassMirrors mirrors = new CachedClassMirrors();
+    public Weaver() {
+        detector = new Detector(new CachedClassMirrors());
+    }
+    
+    public List<ClassInfo> weave (List<byte[]> classes) throws KilimException {
+        Detector origDetector = Detector.getDetector();
+        Detector.setDetector(detector); /// set thread local detector.
+        try {
+            ArrayList<ClassInfo> ret = new ArrayList<ClassInfo>(classes.size());
+            ArrayList<ClassWeaver> weavers = new ArrayList<ClassWeaver>(classes.size());
+            for (byte[] bytes: classes) {
+                ClassWeaver cw = new ClassWeaver(bytes, detector);
+                weavers.add(cw);
+                mirrors.mirror(cw.classFlow);
+            }
+            for (ClassWeaver cw: weavers) {
+                cw.weave();
+                ret.addAll(cw.getClassInfos()); // one class file can result in multiple classes
+            }
+            return ret;
+        } finally {
+            Detector.setDetector(origDetector);
+        }
     }
 }

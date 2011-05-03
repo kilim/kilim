@@ -11,8 +11,8 @@ import java.util.ArrayList;
 import junit.framework.TestCase;
 import kilim.analysis.BasicBlock;
 import kilim.analysis.ClassFlow;
-import kilim.analysis.Detector;
 import kilim.analysis.MethodFlow;
+import kilim.mirrors.Detector;
 
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;

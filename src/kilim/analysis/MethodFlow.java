@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.PriorityQueue;
 
 import kilim.KilimException;
+import kilim.mirrors.Detector;
 
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Attribute;

@@ -4,11 +4,11 @@ public abstract class ClassMirror {
 
 	public abstract MethodMirror[] getDeclaredMethods();
 
-	public abstract boolean isAssignableFrom(ClassMirror c);
+	public abstract boolean isAssignableFrom(ClassMirror c) throws ClassMirrorNotFoundException;
 
-	public abstract ClassMirror getSuperclass();
+	public abstract ClassMirror getSuperclass() throws ClassMirrorNotFoundException;
 
-	public abstract ClassMirror[] getInterfaces();
+	public abstract ClassMirror[] getInterfaces() throws ClassMirrorNotFoundException;
 
 	public abstract boolean isInterface();
 

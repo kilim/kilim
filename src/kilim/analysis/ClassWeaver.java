@@ -6,6 +6,7 @@
 
 package kilim.analysis;
 import kilim.*;
+import kilim.mirrors.Detector;
 import static kilim.Constants.*;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,7 +28,7 @@ import org.objectweb.asm.tree.InnerClassNode;
  * CPS transformed file if needed
  */
 public class ClassWeaver {
-    ClassFlow       classFlow;
+    public ClassFlow       classFlow;
     List<ClassInfo> classInfoList = new LinkedList<ClassInfo>();
     static HashSet<String> stateClasses = new HashSet<String>();
 
@@ -37,20 +38,17 @@ public class ClassWeaver {
     
     public ClassWeaver(byte[] data, Detector detector) {
         classFlow = new ClassFlow(data, detector);
-        weave();
     }
     
     public ClassWeaver(InputStream is, Detector detector) throws IOException {
         classFlow = new ClassFlow(is, detector);
-        weave();
     }
     
     public ClassWeaver(String className, Detector detector) throws IOException {
         classFlow = new ClassFlow(className, detector);
-        weave();
     }
     
-    private void weave() throws KilimException {
+    public void weave() throws KilimException {
         classFlow.analyze(false);
         if (needsWeaving() && classFlow.isPausable()) {
             ClassWriter cw = new ClassWriter(false);
@@ -58,6 +56,7 @@ public class ClassWeaver {
             addClassInfo(new ClassInfo(classFlow.getClassName(), cw.toByteArray()));
         }
     }
+    
 
     private void accept(final ClassVisitor cv) {
         ClassFlow cf = classFlow;

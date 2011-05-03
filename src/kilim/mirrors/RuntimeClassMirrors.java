@@ -1,187 +1,152 @@
 package kilim.mirrors;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 
 import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.ClassNode;
 
 class RuntimeClassMirrors extends Mirrors {
 
-	static class RuntimeMemberMirror implements MemberMirror {
+    ClassLoader classLoader;
 
-		private final Member member;
+    @Override
+    public ClassMirror classForName(String className) throws ClassMirrorNotFoundException {
+        try {
+            return new RuntimeClassMirror(classLoader.loadClass(className));
+        } catch (ClassNotFoundException e) {
+            throw new ClassMirrorNotFoundException(e);
+        }
+    }
 
-		public RuntimeMemberMirror(Member member) {
-			this.member = member;
-		}
+    @Override
+    public ClassMirror mirror(Class<?> clazz) {
+        if (clazz == null)
+            return null;
+        return new RuntimeClassMirror(clazz);
+    }
 
-		public String getName() {
-			return member.getName();
-		}
+    @Override
+    public ClassMirror mirror(ClassNode classNode) {
+        try {
+            return classForName(classNode.name);
+        } catch (ClassMirrorNotFoundException ignore) {}
+        return null;
+    }
 
-	}
+    public RuntimeClassMirrors() {
+        this(Thread.currentThread().getContextClassLoader());
+    }
 
-	static class RuntimeFieldMirror extends RuntimeMemberMirror implements FieldMirror {
+    public RuntimeClassMirrors(ClassLoader cl) {
+        this.classLoader = cl;
+    }
+}
 
-		final private Field field;
+class RuntimeMethodMirror implements MethodMirror {
 
-		public RuntimeFieldMirror(Field field) {
-			super(field);
-			this.field = field;
-		}
+    private final Method method;
 
-		public static FieldMirror forField(Field member) {
-			if (member == null) return null;
-			else return new RuntimeFieldMirror(member);
-		}
+    public RuntimeMethodMirror(Method method) {
+        this.method = method;
+    }
 
-		public ClassMirror getType() {
-			return RuntimeClassMirror.forClass(field.getType());
-		}
-	}
-	
-	static class RuntimeMethodMirror extends RuntimeMemberMirror implements MethodMirror {
+    public static MethodMirror[] forMethods(Method[] declaredMethods) {
+        MethodMirror[] result = new MethodMirror[declaredMethods.length];
+        for (int i = 0; i < declaredMethods.length; i++) {
+            result[i] = new RuntimeMethodMirror(declaredMethods[i]);
+        }
+        return result;
+    }
 
-		private final Method method;
+    public String getName() {
+        return method.getName();
+    }
 
-		public RuntimeMethodMirror(Method method) {
-			super(method);
-			this.method = method;
-		}
+    public ClassMirror[] getExceptionTypes() {
+        ClassMirror[] ret = new ClassMirror[method.getExceptionTypes().length];
+        int i = 0;
+        for (Class<?> excl : method.getExceptionTypes()) {
+            ret[i++] = new RuntimeClassMirror(excl);
+        }
+        return ret;
+    }
 
-		static MethodMirror forMethod(Method method) {
-			if (method==null) return null;
-			else return new RuntimeMethodMirror(method);
-		}
-		
-		public static MethodMirror[] forMethods(Method[] declaredMethods) {
-			MethodMirror[] result = new MethodMirror[declaredMethods.length];
-			for (int i = 0; i < declaredMethods.length; i++) {
-				result[i] = RuntimeMethodMirror.forMethod(declaredMethods[i]);
-			}
-			return result;
-		}
+    public String getMethodDescriptor() {
+        return Type.getMethodDescriptor(method);
+    }
 
-		public ClassMirror[] getExceptionTypes() {
-			return RuntimeClassMirror.forClasses(method.getExceptionTypes());
-		}
+    public boolean isBridge() {
+        return method.isBridge();
+    }
+}
 
-		public String getMethodDescriptor() {
-			return Type.getMethodDescriptor(method);
-		}
+class RuntimeClassMirror extends ClassMirror {
 
-		public boolean isBridge() {
-			return method.isBridge();
-		}
+    private final Class<?> clazz;
 
-	}
+    public RuntimeClassMirror(Class<?> clazz) {
+        this.clazz = clazz;
+    }
 
-	static class RuntimeClassMirror extends ClassMirror {
+    @Override
+    public String getName() {
+        return clazz.getName();
+    }
 
-		private final Class<?> clazz;
-		
-		public RuntimeClassMirror(Class<?> clazz) {
-			if (clazz == null) throw new NullPointerException();
-			this.clazz = clazz;
-		}
-		
-		@Override
-		public String getName() {
-			return clazz.getName();
-		}
-		
-		@Override
-		public boolean isInterface() {
-			return clazz.isInterface();
-		}
+    @Override
+    public boolean isInterface() {
+        return clazz.isInterface();
+    }
 
-		@Override
-		public boolean equals(Object obj) {
-			if (obj instanceof RuntimeClassMirror) {
-				RuntimeClassMirror mirr = (RuntimeClassMirror) obj;
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof ClassMirror) {
+            return ((ClassMirror)obj).getName().equals(this.getName());
+        }
+        return false;
+    }
+    
+    @Override
+    public int hashCode() {
+        return clazz.hashCode();
+    }
 
-				return mirr.clazz == clazz;
-			}
+    @Override
+    public MethodMirror[] getDeclaredMethods() {
+        return RuntimeMethodMirror.forMethods(clazz.getDeclaredMethods());
+    }
 
-			return false;
-		}
+    @Override
+    public ClassMirror[] getInterfaces() {
+        return forClasses(clazz.getInterfaces());
+    }
 
-		@Override
-		public MethodMirror[] getDeclaredMethods() {
-			return RuntimeMethodMirror.forMethods(clazz.getDeclaredMethods());
-		}
+    private static ClassMirror forClass(Class<?> clazz) {
+        if (clazz == null) return null;
+        return new RuntimeClassMirror(clazz);
+    }
 
-		@Override
-		public ClassMirror[] getInterfaces() {
-			return forClasses(clazz.getInterfaces());
-		}
+    private static ClassMirror[] forClasses(Class<?>[] classes) {
+        ClassMirror[] result = new ClassMirror[classes.length];
+        for (int i = 0; i < classes.length; i++) {
+            result[i] = RuntimeClassMirror.forClass(classes[i]);
+        }
+        return result;
+    }
 
-		private static ClassMirror forClass(Class<?> clazz) {
-			if (clazz==null) return null;
-			return new RuntimeClassMirror(clazz);
-		}
-		
-		private static ClassMirror[] forClasses(Class<?>[] classes) {
-			ClassMirror[] result = new ClassMirror[classes.length];
-			for (int i = 0; i < classes.length; i++) {
-				result[i] = RuntimeClassMirror.forClass(classes[i]);
-			}
-			return result;
-		}
+    @Override
+    public ClassMirror getSuperclass() {
+        return forClass(clazz.getSuperclass());
+    }
 
-		@Override
-		public ClassMirror getSuperclass() {
-			return RuntimeClassMirror.forClass(clazz.getSuperclass());
-		}
+    @Override
+    public boolean isAssignableFrom(ClassMirror c) {
+        if (c instanceof RuntimeClassMirror) {
+            RuntimeClassMirror cc = (RuntimeClassMirror) c;
+            return clazz.isAssignableFrom(cc.clazz);
+        } else {
+            return false;
+        }
+    }
 
-		@Override
-		public boolean isAssignableFrom(ClassMirror c) {
-			if (c instanceof RuntimeClassMirror) {
-				RuntimeClassMirror cc = (RuntimeClassMirror) c;
-				return clazz.isAssignableFrom(cc.clazz);
-			} else {
-				return false;
-			}
-		}
-
-	}
-
-	@Override
-	public ClassMirror classForName(String className)
-			throws ClassMirrorNotFoundException {
-		try {
-			return new RuntimeClassMirror(Class.forName(className));
-		} catch (ClassNotFoundException e) {
-			throw new ClassMirrorNotFoundException(e);
-		}
-	}
-
-	@Override
-	public ClassMirror mirror(Class<?> clazz) {
-		if (clazz == null) return null;
-		return new RuntimeClassMirror(clazz);
-	}
-
-	@Override
-	public MethodMirror mirror(Method mth) {
-		if (mth == null) return null;
-		return RuntimeMethodMirror.forMethod(mth);
-	}
-
-	@Override
-	public FieldMirror mirror(Field member) {
-		return RuntimeFieldMirror.forField(member);
-	}
-	
-	@Override
-	public MemberMirror mirror(Member member) {
-		if (member instanceof Method) {
-			return mirror((Method)member);
-		} else if (member instanceof Field) {
-			return mirror((Field)member);
-		} else {
-			throw new RuntimeException("member is not field or method?");
-		}
-	}
 }

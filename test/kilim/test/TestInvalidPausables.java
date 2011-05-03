@@ -8,7 +8,7 @@ package kilim.test;
 
 import junit.framework.TestCase;
 import kilim.KilimException;
-import kilim.analysis.Detector;
+import kilim.mirrors.Detector;
 import kilim.tools.Weaver;
 
 public class TestInvalidPausables extends TestCase {
