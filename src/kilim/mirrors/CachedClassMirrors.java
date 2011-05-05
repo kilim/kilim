@@ -1,16 +1,32 @@
 package kilim.mirrors;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.objectweb.asm.AnnotationVisitor;
+import org.objectweb.asm.Attribute;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.MethodNode;
+
+
+/**
+ * CachedClassMirrors caches information about a set of classes that are loaded through byte arrays, and which 
+ * are not already loaded by the classloader
+ **/
 
 public class CachedClassMirrors extends Mirrors {
 
-    Mirrors delegate = RuntimeClassMirrors.getRuntimeMirrors();
+    final Mirrors delegate;
     ConcurrentHashMap<String,ClassMirror> cachedClasses = new ConcurrentHashMap<String, ClassMirror>();
 
+    public CachedClassMirrors(ClassLoader cl) {
+        delegate = new RuntimeClassMirrors(cl);
+    }
+    
     @Override
     public ClassMirror classForName(String className)
             throws ClassMirrorNotFoundException {
@@ -30,20 +46,21 @@ public class CachedClassMirrors extends Mirrors {
 
     @Override
     public ClassMirror mirror(Class<?> clazz) {
-        // param is already a class; use the get the appropriate runtime mirror
+        // param is already a class; use the delegate to get the appropriate runtime mirror
         return delegate.mirror(clazz);
     }
     
     @Override
-    public ClassMirror mirror(ClassNode classNode) {
+    public ClassMirror mirror(String className, byte[] bytecode) {
         // if it is loaded by the classLoader already, we will
         // not load the classNode, even if the bytes are different
         ClassMirror  ret = null;
         try {
-            ret = delegate.classForName(classNode.name);
+            ret = delegate.classForName(className);
         } catch (ClassMirrorNotFoundException ignore) {
-            ret = new CachedClassMirror(classNode);
-            this.cachedClasses.put(classNode.name, ret);
+            ret = new CachedClassMirror(bytecode);
+            String name = ret.getName().replace('/', '.'); // Class.forName format
+            this.cachedClasses.put(name, ret);
         }
         return ret;
     }
@@ -56,17 +73,13 @@ class CachedMethodMirror implements MethodMirror {
     private String name;
     private boolean isBridge;
     
-    public CachedMethodMirror(MethodNode method) {
-        this.name = method.name;
-        this.desc = method.desc;
-        this.exceptions = new String[method.exceptions.size()];
-        int i = 0;
-        for (Object e: method.exceptions) {
-            this.exceptions[i++] = (String) e;
-        }
-        isBridge = (method.access & Opcodes.ACC_BRIDGE) > 0;
+    public CachedMethodMirror(int access, String name, String desc, String[] exceptions) {
+        this.name = name;
+        this.desc = desc;
+        this.exceptions = exceptions;
+        isBridge = (access & Opcodes.ACC_BRIDGE) > 0;
     }
-    
+
     public String getName() {
         return name;
     }
@@ -85,26 +98,19 @@ class CachedMethodMirror implements MethodMirror {
     }
 }
 
-class CachedClassMirror extends ClassMirror {
+class CachedClassMirror extends ClassMirror implements ClassVisitor {
 
-    final String name;
-    final boolean isInterface;
-    final MethodMirror[] declaredMethods;
-    final String[] interfaceNames;
-    final String superName;
+    String name;
+    boolean isInterface;
+    MethodMirror[] declaredMethods;
+    String[] interfaceNames;
+    String superName;
     
+    private List<CachedMethodMirror> tmpMethodList; //used only while processing bytecode. 
     
-    public CachedClassMirror(ClassNode classNode) {
-        name = classNode.name;
-        superName = classNode.superName;
-        isInterface = (classNode.access & Opcodes.ACC_INTERFACE) > 0;
-        this.declaredMethods = new MethodMirror[classNode.methods.size()];
-        int i = 0;
-        for (Object omn: classNode.methods) {
-            this.declaredMethods[i++] = new CachedMethodMirror((MethodNode)omn);
-        }
-        i = 0;
-        interfaceNames = new String[classNode.interfaces.size()];
+    public CachedClassMirror(byte []bytecode) {
+        ClassReader cr = new ClassReader(bytecode);
+        cr.accept(this, true);
     }
 
     @Override
@@ -157,5 +163,60 @@ class CachedClassMirror extends ClassMirror {
                 return true;
         }
         return false;
+    }
+    
+    
+    // ClassVisitor implementation
+    @Override
+    public void visit(int version, int access, String name, String signature, String superName,
+            String[] interfaces) {
+        this.name = name;
+        this.superName = superName;
+        this.interfaceNames = interfaces;
+        this.isInterface = (access & Opcodes.ACC_INTERFACE) > 0;
+    }
+
+
+    @Override
+    public MethodVisitor visitMethod(int access, String name, String desc, String signature,
+            String[] exceptions) {
+        if (tmpMethodList == null) {
+            tmpMethodList = new ArrayList<CachedMethodMirror>();
+        }
+        tmpMethodList.add(new CachedMethodMirror(access, name, desc, exceptions));
+        return null; // null MethodVisitor to avoid examining the instructions.
+    }
+    
+    public void visitEnd() {
+        if (tmpMethodList != null) {
+            declaredMethods = new MethodMirror[tmpMethodList.size()];
+            int i = 0;
+            for (MethodMirror mm: tmpMethodList) {
+                declaredMethods[i++] = mm;
+            }
+            tmpMethodList = null;
+        }
+    }
+
+    // Dummy methods
+    
+    public void visitSource(String source, String debug) {}
+    public void visitOuterClass(String owner, String name, String desc) {}
+    public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
+        return DummyAnnotationVisitor.singleton;
+    }
+    public void visitAttribute(Attribute attr) {}
+    public void visitInnerClass(String name, String outerName, String innerName, int access) {}
+    public FieldVisitor visitField(int access, String name, String desc, String signature,
+            Object value) {
+        return null;
+    }
+    static class DummyAnnotationVisitor implements AnnotationVisitor {
+        static DummyAnnotationVisitor singleton = new DummyAnnotationVisitor();
+        public void visit(String name, Object value) {}
+        public AnnotationVisitor visitAnnotation(String name, String desc) {return this;}
+        public AnnotationVisitor visitArray(String name) {return DummyAnnotationVisitor.singleton;}
+        public void visitEnd() {}
+        public void visitEnum(String name, String desc, String value) {}
     }
 }

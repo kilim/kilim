@@ -5,14 +5,25 @@
  */
 
 package kilim.analysis;
-import kilim.*;
-import kilim.mirrors.Detector;
-import static kilim.Constants.*;
+import static kilim.Constants.ALOAD_0;
+import static kilim.Constants.D_FIBER;
+import static kilim.Constants.STATE_CLASS;
+import static kilim.Constants.WOVEN_FIELD;
+import static org.objectweb.asm.Opcodes.ACC_FINAL;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.ACC_STATIC;
+import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
+import static org.objectweb.asm.Opcodes.RETURN;
+import static org.objectweb.asm.Opcodes.V1_1;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+
+import kilim.KilimException;
+import kilim.mirrors.Detector;
 
 import org.objectweb.asm.Attribute;
 import org.objectweb.asm.ClassVisitor;

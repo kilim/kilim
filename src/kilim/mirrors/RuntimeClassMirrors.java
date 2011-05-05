@@ -3,11 +3,17 @@ package kilim.mirrors;
 import java.lang.reflect.Method;
 
 import org.objectweb.asm.Type;
-import org.objectweb.asm.tree.ClassNode;
 
 class RuntimeClassMirrors extends Mirrors {
-
     ClassLoader classLoader;
+
+    public RuntimeClassMirrors() {
+        this(Thread.currentThread().getContextClassLoader());
+    }
+
+    public RuntimeClassMirrors(ClassLoader cl) {
+        this.classLoader = cl;
+    }
 
     @Override
     public ClassMirror classForName(String className) throws ClassMirrorNotFoundException {
@@ -26,19 +32,11 @@ class RuntimeClassMirrors extends Mirrors {
     }
 
     @Override
-    public ClassMirror mirror(ClassNode classNode) {
+    public ClassMirror mirror(String className, byte[] bytecode) {
         try {
-            return classForName(classNode.name);
+            return classForName(className);
         } catch (ClassMirrorNotFoundException ignore) {}
         return null;
-    }
-
-    public RuntimeClassMirrors() {
-        this(Thread.currentThread().getContextClassLoader());
-    }
-
-    public RuntimeClassMirrors(ClassLoader cl) {
-        this.classLoader = cl;
     }
 }
 

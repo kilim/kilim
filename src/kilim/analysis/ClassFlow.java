@@ -53,6 +53,7 @@ public class ClassFlow extends ClassNode {
         this.detector = detector;
     }
 
+
     @Override
     @SuppressWarnings( { "unchecked" })
     public MethodVisitor visitMethod(
@@ -78,7 +79,6 @@ public class ClassFlow extends ClassNode {
 
         Detector save = Detector.setDetector(detector);
         try {
-
             cr.accept(this, false);
             for (Object o : this.fields) {
                 FieldNode fn = (FieldNode) o;

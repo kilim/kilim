@@ -21,6 +21,7 @@ public class AllNotWoven extends TestSuite {
         ret.addTestSuite(TestFlow.class);
         ret.addTestSuite(TestExprs.class);
 //        ret.addTestSuite(TestInvalidPausables.class);
+        ret.addTestSuite(TestDynamicWeaver.class);
         return ret;
     }
 }

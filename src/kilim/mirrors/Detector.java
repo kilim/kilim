@@ -28,7 +28,7 @@ public class Detector {
 
     public static final Detector DEFAULT = new Detector(Mirrors.getRuntimeMirrors());
 
-    private final Mirrors mirrors;
+    public final Mirrors mirrors;
 
     public Detector(Mirrors mirrors) {
         this.mirrors = mirrors;
@@ -51,8 +51,10 @@ public class Detector {
 
     public int getPausableStatus(String className, String methodName, String desc) {
         int ret = METHOD_NOT_FOUND;
+        // array methods (essentially methods deferred to Object (clone, wait etc)
+        // and constructor methods are not pausable
         if (className.charAt(0) == '[' || methodName.endsWith("init>")) {
-            return METHOD_NOT_PAUSABLE; // constructors are not pausable.
+            return METHOD_NOT_PAUSABLE; 
         }
         className = className.replace('/', '.');
         try {
@@ -78,10 +80,14 @@ public class Detector {
     }
 
     public ClassMirror classForName(String className) throws ClassMirrorNotFoundException {
+        className = className.replace('/', '.');
         return mirrors.classForName(className);
     }
 
     public ClassMirror[] classForNames(String[] classNames) throws ClassMirrorNotFoundException {
+        if (classNames == null) {
+            return new ClassMirror[0];
+        }
         ClassMirror[] ret = new ClassMirror[classNames.length];
         int i = 0;
         for (String cn : classNames) {
