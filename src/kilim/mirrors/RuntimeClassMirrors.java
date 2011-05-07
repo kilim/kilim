@@ -1,24 +1,45 @@
 package kilim.mirrors;
 
 import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.Map;
+import java.util.WeakHashMap;
+
+import kilim.KilimClassLoader;
 
 import org.objectweb.asm.Type;
 
+/**
+ * This class provides the Mirrors facade over a set of Class objects
+ * @see Mirrors 
+ */
+
 class RuntimeClassMirrors extends Mirrors {
-    ClassLoader classLoader;
+    // Weakly cache the mirror objects.
+    Map<String, RuntimeClassMirror> cachedClasses = Collections
+            .synchronizedMap(new WeakHashMap<String, RuntimeClassMirror>());
+
+    public final KilimClassLoader classLoader;
 
     public RuntimeClassMirrors() {
         this(Thread.currentThread().getContextClassLoader());
     }
 
     public RuntimeClassMirrors(ClassLoader cl) {
-        this.classLoader = cl;
+        if (!(cl instanceof KilimClassLoader)) {
+            cl = new KilimClassLoader(cl);
+        }
+        this.classLoader = (KilimClassLoader) cl;
     }
 
     @Override
     public ClassMirror classForName(String className) throws ClassMirrorNotFoundException {
         try {
-            return new RuntimeClassMirror(classLoader.loadClass(className));
+            RuntimeClassMirror ret = cachedClasses.get(className);
+            if (ret == null) {
+                ret = make(classLoader.loadClass(className));
+            }
+            return ret;
         } catch (ClassNotFoundException e) {
             throw new ClassMirrorNotFoundException(e);
         }
@@ -28,7 +49,7 @@ class RuntimeClassMirrors extends Mirrors {
     public ClassMirror mirror(Class<?> clazz) {
         if (clazz == null)
             return null;
-        return new RuntimeClassMirror(clazz);
+        return make(clazz);
     }
 
     @Override
@@ -37,6 +58,36 @@ class RuntimeClassMirrors extends Mirrors {
             return classForName(className);
         } catch (ClassMirrorNotFoundException ignore) {}
         return null;
+    }
+
+    /**
+     * Like classForName, but only if the class is already loaded. This does not force loading of a
+     * class.
+     * 
+     * @param className
+     * @return null if className not loaded, else a RuntimeClassMirror to represent the loaded
+     *         class.
+     */
+    public ClassMirror loadedClassForName(String className) {
+        Class<?> c = classLoader.getLoadedClass(className);
+        return (c == null) ? null : make(c);
+    }
+
+    public Class<?> getLoadedClass(String className) {
+        return classLoader.getLoadedClass(className);
+    }
+
+    public boolean isLoaded(String className) {
+        return classLoader.isLoaded(className);
+    }
+
+    private RuntimeClassMirror make(Class<?> c) {
+        if (c == null) {
+            throw new NullPointerException();
+        }
+        RuntimeClassMirror ret = new RuntimeClassMirror(c);
+        cachedClasses.put(c.getName(), ret);
+        return ret;
     }
 }
 
@@ -48,24 +99,21 @@ class RuntimeMethodMirror implements MethodMirror {
         this.method = method;
     }
 
-    public static MethodMirror[] forMethods(Method[] declaredMethods) {
-        MethodMirror[] result = new MethodMirror[declaredMethods.length];
-        for (int i = 0; i < declaredMethods.length; i++) {
-            result[i] = new RuntimeMethodMirror(declaredMethods[i]);
-        }
-        return result;
-    }
-
     public String getName() {
         return method.getName();
     }
 
     public ClassMirror[] getExceptionTypes() {
+        Detector d = Detector.getDetector();
         ClassMirror[] ret = new ClassMirror[method.getExceptionTypes().length];
         int i = 0;
-        for (Class<?> excl : method.getExceptionTypes()) {
-            ret[i++] = new RuntimeClassMirror(excl);
-        }
+        try {
+            for (Class<?> excl : method.getExceptionTypes()) {
+                ret[i++] = d.classForName(excl.getName());
+            }
+        } catch (ClassMirrorNotFoundException ignore) {
+            // This exception will not be thrown because the classes are already present
+        }  
         return ret;
     }
 
@@ -81,7 +129,8 @@ class RuntimeMethodMirror implements MethodMirror {
 class RuntimeClassMirror extends ClassMirror {
 
     private final Class<?> clazz;
-
+    private MethodMirror[] methods; 
+    
     public RuntimeClassMirror(Class<?> clazz) {
         this.clazz = clazz;
     }
@@ -99,11 +148,11 @@ class RuntimeClassMirror extends ClassMirror {
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof ClassMirror) {
-            return ((ClassMirror)obj).getName().equals(this.getName());
+            return ((ClassMirror) obj).getName().equals(this.getName());
         }
         return false;
     }
-    
+
     @Override
     public int hashCode() {
         return clazz.hashCode();
@@ -111,7 +160,14 @@ class RuntimeClassMirror extends ClassMirror {
 
     @Override
     public MethodMirror[] getDeclaredMethods() {
-        return RuntimeMethodMirror.forMethods(clazz.getDeclaredMethods());
+        if (methods == null) {
+           Method[] declaredMethods = clazz.getDeclaredMethods();
+           methods = new MethodMirror[declaredMethods.length];
+           for (int i = 0; i < declaredMethods.length; i++) {
+               methods[i] = new RuntimeMethodMirror(declaredMethods[i]);
+           }
+        }
+        return methods;
     }
 
     @Override
@@ -119,22 +175,25 @@ class RuntimeClassMirror extends ClassMirror {
         return forClasses(clazz.getInterfaces());
     }
 
-    private static ClassMirror forClass(Class<?> clazz) {
-        if (clazz == null) return null;
-        return new RuntimeClassMirror(clazz);
-    }
-
     private static ClassMirror[] forClasses(Class<?>[] classes) {
+        Detector d = Detector.getDetector();
         ClassMirror[] result = new ClassMirror[classes.length];
         for (int i = 0; i < classes.length; i++) {
-            result[i] = RuntimeClassMirror.forClass(classes[i]);
+            try {
+                result[i] = d.classForName(classes[i].getName());
+            } catch (ClassMirrorNotFoundException ignore) {
+                // This exception will never be thrown because the Class objects exist
+            }
         }
         return result;
     }
 
     @Override
     public ClassMirror getSuperclass() {
-        return forClass(clazz.getSuperclass());
+        try {
+            return Detector.getDetector().classForName(clazz.getSuperclass().getName());
+        } catch (ClassMirrorNotFoundException ignore) {} // will never get thrown
+        return null;
     }
 
     @Override

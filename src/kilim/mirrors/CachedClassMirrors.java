@@ -20,7 +20,7 @@ import org.objectweb.asm.Opcodes;
 
 public class CachedClassMirrors extends Mirrors {
 
-    final Mirrors delegate;
+    final RuntimeClassMirrors delegate;
     ConcurrentHashMap<String,ClassMirror> cachedClasses = new ConcurrentHashMap<String, ClassMirror>();
 
     public CachedClassMirrors(ClassLoader cl) {
@@ -31,12 +31,10 @@ public class CachedClassMirrors extends Mirrors {
     public ClassMirror classForName(String className)
             throws ClassMirrorNotFoundException {
         // defer to loaded class objects first, then to cached class mirrors.
-        ClassMirror ret = null;
-        try {
-            ret = delegate.classForName(className);
-        } catch (ClassMirrorNotFoundException ignore) {}
+        ClassMirror ret = cachedClasses.get(className);
+
         if (ret == null) {
-            ret = cachedClasses.get(className);
+            ret = delegate.classForName(className);
         }
         if (ret == null) {
             throw new ClassMirrorNotFoundException(className);
@@ -55,9 +53,7 @@ public class CachedClassMirrors extends Mirrors {
         // if it is loaded by the classLoader already, we will
         // not load the classNode, even if the bytes are different
         ClassMirror  ret = null;
-        try {
-            ret = delegate.classForName(className);
-        } catch (ClassMirrorNotFoundException ignore) {
+        if (!delegate.isLoaded(className)) {
             ret = new CachedClassMirror(bytecode);
             String name = ret.getName().replace('/', '.'); // Class.forName format
             this.cachedClasses.put(name, ret);

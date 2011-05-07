@@ -26,7 +26,7 @@ public class Detector {
     // Note that we don't have the kilim package itself in the following list.
     static final String[] STANDARD_DONT_CHECK_LIST = { "java.", "javax." };
 
-    public static final Detector DEFAULT = new Detector(Mirrors.getRuntimeMirrors());
+    public static final Detector DEFAULT = new Detector(new RuntimeClassMirrors());
 
     public final Mirrors mirrors;
 

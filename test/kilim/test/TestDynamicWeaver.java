@@ -10,6 +10,11 @@ import kilim.tools.Javac;
 import kilim.tools.Weaver;
 
 public class TestDynamicWeaver extends TestCase {
+    /**
+     * Sample code to test a wide range of functionality: separate packages, import statements, 
+     * mutually recursive classes across packages, Pausable methods, inner classes, public
+     * and non-public classes, etc.
+     */
     String code1 = 
         "package code1;" + 
         "import java.io.IOException;" + 
