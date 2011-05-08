@@ -9,7 +9,7 @@ public interface MethodMirror  {
 	/** @see org.objectweb.asm.Type#getMethodDescriptor(java.lang.reflect.Method) */
 	public abstract String getMethodDescriptor();
 
-	public abstract ClassMirror[] getExceptionTypes() throws ClassMirrorNotFoundException;
+	public abstract String[] getExceptionTypes() throws ClassMirrorNotFoundException;
 
 	public abstract boolean isBridge();
 

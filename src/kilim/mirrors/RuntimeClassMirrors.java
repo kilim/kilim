@@ -103,17 +103,12 @@ class RuntimeMethodMirror implements MethodMirror {
         return method.getName();
     }
 
-    public ClassMirror[] getExceptionTypes() {
-        Detector d = Detector.getDetector();
-        ClassMirror[] ret = new ClassMirror[method.getExceptionTypes().length];
+    public String[] getExceptionTypes() {
+        String[] ret = new String[method.getExceptionTypes().length];
         int i = 0;
-        try {
-            for (Class<?> excl : method.getExceptionTypes()) {
-                ret[i++] = d.classForName(excl.getName());
-            }
-        } catch (ClassMirrorNotFoundException ignore) {
-            // This exception will not be thrown because the classes are already present
-        }  
+        for (Class<?> excl : method.getExceptionTypes()) {
+            ret[i++] = excl.getName();
+        }
         return ret;
     }
 
@@ -171,29 +166,19 @@ class RuntimeClassMirror extends ClassMirror {
     }
 
     @Override
-    public ClassMirror[] getInterfaces() {
-        return forClasses(clazz.getInterfaces());
-    }
-
-    private static ClassMirror[] forClasses(Class<?>[] classes) {
-        Detector d = Detector.getDetector();
-        ClassMirror[] result = new ClassMirror[classes.length];
-        for (int i = 0; i < classes.length; i++) {
-            try {
-                result[i] = d.classForName(classes[i].getName());
-            } catch (ClassMirrorNotFoundException ignore) {
-                // This exception will never be thrown because the Class objects exist
-            }
+    public String[] getInterfaces() {
+        Class<?>[] ifs = clazz.getInterfaces(); 
+        String[] result = new String[ifs.length];
+        for (int i = 0; i < result.length; i++) {
+            result[i] = ifs[i].getName();
         }
         return result;
     }
 
     @Override
-    public ClassMirror getSuperclass() {
-        try {
-            return Detector.getDetector().classForName(clazz.getSuperclass().getName());
-        } catch (ClassMirrorNotFoundException ignore) {} // will never get thrown
-        return null;
+    public String getSuperclass() {
+        Class<?> supcl = clazz.getSuperclass();
+        return supcl != null ? supcl.getName() : null;
     }
 
     @Override

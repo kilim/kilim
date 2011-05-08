@@ -58,7 +58,6 @@ public class WeavingClassLoader extends KilimClassLoader {
             try {
                 File f = new File(path.getAbsolutePath() + File.separatorChar
                         + name.replace('.', File.separatorChar) + ".class");
-                System.err.println("Searching for " + f.getAbsolutePath());
                 if (!f.exists())
                     continue;
                 byte[] code = readFile(f);

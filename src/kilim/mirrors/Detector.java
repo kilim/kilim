@@ -19,9 +19,10 @@ import kilim.analysis.AsmDetector;
  * 
  */
 public class Detector {
-    public static final int METHOD_NOT_FOUND = 0;
-    public static final int PAUSABLE_METHOD_FOUND = 1;
-    public static final int METHOD_NOT_PAUSABLE = 2;
+    public static final int METHOD_NOT_FOUND_OR_PAUSABLE = 0; // either not found, or not pausable if found.
+    public static final int PAUSABLE_METHOD_FOUND = 1; // known to be pausable
+    public static final int METHOD_NOT_PAUSABLE = 2; // known to be not pausable
+    
 
     // Note that we don't have the kilim package itself in the following list.
     static final String[] STANDARD_DONT_CHECK_LIST = { "java.", "javax." };
@@ -49,19 +50,30 @@ public class Detector {
      * @return one of METHOD_NOT_FOUND, PAUSABLE_METHOD_FOUND, METHOD_NOT_PAUSABLE
      */
 
+    static boolean isNonPausableClass(String className) {
+        return className == null || className.charAt(0) == '[' || 
+           className.startsWith("java.") || className.startsWith("javax.");
+    }
+    
+    static boolean isNonPausableMethod(String methodName) {
+        return methodName.endsWith("init>");
+    }
+
+    
     public int getPausableStatus(String className, String methodName, String desc) {
-        int ret = METHOD_NOT_FOUND;
+        int ret = METHOD_NOT_FOUND_OR_PAUSABLE;
         // array methods (essentially methods deferred to Object (clone, wait etc)
         // and constructor methods are not pausable
-        if (className.charAt(0) == '[' || methodName.endsWith("init>")) {
-            return METHOD_NOT_PAUSABLE; 
+        if (isNonPausableClass(className) || isNonPausableMethod(methodName)) {
+            return METHOD_NOT_FOUND_OR_PAUSABLE; 
         }
         className = className.replace('/', '.');
         try {
-            ClassMirror cl = classForName(className);
-            MethodMirror m = findMethod(cl, methodName, desc);
+            MethodMirror m = findPausableMethod(className, methodName, desc);
             if (m != null) {
-                for (ClassMirror c : m.getExceptionTypes()) {
+                for (String ex : m.getExceptionTypes()) {
+                    if (isNonPausableClass(ex)) continue;
+                    ClassMirror c = classForName(ex);
                     if (NOT_PAUSABLE.isAssignableFrom(c)) {
                         return METHOD_NOT_PAUSABLE;
                     }
@@ -96,27 +108,15 @@ public class Detector {
         return ret;
     }
 
-    private MethodMirror findMethod(ClassMirror cl, String methodName, String desc)
+    private MethodMirror findPausableMethod(String className, String methodName, String desc)
             throws ClassMirrorNotFoundException {
-        if (cl == null)
-            return null;
-        MethodMirror m = findMethodInHierarchy(cl, methodName, desc);
-        if (m == null) {
-            cl = mirrors.mirror(Object.class);
-            for (MethodMirror om : cl.getDeclaredMethods()) {
-                if (om.getName().equals(methodName) && om.getMethodDescriptor().equals(desc)) {
-                    return om;
-                }
-            }
-        }
-        return m;
-    }
-
-    private MethodMirror findMethodInHierarchy(ClassMirror cl, String methodName, String desc)
-            throws ClassMirrorNotFoundException {
-        if (cl == null)
+        
+        if (isNonPausableClass(className) || isNonPausableMethod(methodName)) 
             return null;
 
+        ClassMirror cl = classForName(className);
+        if (cl == null) return null;
+        
         for (MethodMirror om : cl.getDeclaredMethods()) {
             if (om.getName().equals(methodName) && om.getMethodDescriptor().equals(desc)) {
                 if (om.isBridge())
@@ -128,11 +128,13 @@ public class Detector {
         if (OBJECT.equals(cl))
             return null;
 
-        MethodMirror m = findMethodInHierarchy(cl.getSuperclass(), methodName, desc);
+        MethodMirror m = findPausableMethod(cl.getSuperclass(), methodName, desc);
         if (m != null)
             return m;
-        for (ClassMirror ifcl : cl.getInterfaces()) {
-            m = findMethodInHierarchy(ifcl, methodName, desc);
+        
+        for (String ifname : cl.getInterfaces()) {
+            if (isNonPausableClass(ifname)) continue;
+            m = findPausableMethod(ifname, methodName, desc);
             if (m != null)
                 return m;
         }
@@ -144,8 +146,8 @@ public class Detector {
     @SuppressWarnings("unused")
     private static String statusToStr(int st) {
         switch (st) {
-        case METHOD_NOT_FOUND:
-            return "not found";
+        case METHOD_NOT_FOUND_OR_PAUSABLE:
+            return "not found or pausable";
         case PAUSABLE_METHOD_FOUND:
             return "pausable";
         case METHOD_NOT_PAUSABLE:
@@ -203,12 +205,16 @@ public class Detector {
         return toDesc(sca.get(lasta + 1));
     }
 
-    public ArrayList<String> getSuperClasses(String cc) throws ClassMirrorNotFoundException {
-        ClassMirror c = classForName(cc);
+    final private static ArrayList<String> EMPTY_STRINGS = new ArrayList<String>(0);
+    public ArrayList<String> getSuperClasses(String name) throws ClassMirrorNotFoundException {
+        if (name == null) {
+            return EMPTY_STRINGS;
+        }
         ArrayList<String> ret = new ArrayList<String>(3);
-        while (c != null) {
-            ret.add(c.getName());
-            c = c.getSuperclass();
+        while (name != null) {
+            ret.add(name);
+            ClassMirror c = classForName(name);
+            name = c.getSuperclass();
         }
         return ret;
 

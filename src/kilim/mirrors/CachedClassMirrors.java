@@ -19,7 +19,8 @@ import org.objectweb.asm.Opcodes;
  **/
 
 public class CachedClassMirrors extends Mirrors {
-
+    final static String[] EMPTY_SET = new String[0];
+    
     final RuntimeClassMirrors delegate;
     ConcurrentHashMap<String,ClassMirror> cachedClasses = new ConcurrentHashMap<String, ClassMirror>();
 
@@ -59,38 +60,6 @@ public class CachedClassMirrors extends Mirrors {
             this.cachedClasses.put(name, ret);
         }
         return ret;
-    }
-}
-
-class CachedMethodMirror implements MethodMirror {
-
-    private String[] exceptions;
-    private String desc;
-    private String name;
-    private boolean isBridge;
-    
-    public CachedMethodMirror(int access, String name, String desc, String[] exceptions) {
-        this.name = name;
-        this.desc = desc;
-        this.exceptions = exceptions;
-        isBridge = (access & Opcodes.ACC_BRIDGE) > 0;
-    }
-
-    public String getName() {
-        return name;
-    }
-    
-    public ClassMirror[] getExceptionTypes() throws ClassMirrorNotFoundException {
-        Detector d = Detector.getDetector();
-        return d.classForNames(exceptions);
-    }
-
-    public String getMethodDescriptor() {
-        return desc;
-    }
-
-    public boolean isBridge() {
-        return isBridge;
     }
 }
 
@@ -140,22 +109,25 @@ class CachedClassMirror extends ClassMirror implements ClassVisitor {
     }
 
     @Override
-    public ClassMirror[] getInterfaces() throws ClassMirrorNotFoundException {
-        return Detector.getDetector().classForNames(interfaceNames);
+    public String[] getInterfaces() throws ClassMirrorNotFoundException {
+        return interfaceNames;
     }
 
     @Override
-    public ClassMirror getSuperclass() throws ClassMirrorNotFoundException {
-        return Detector.getDetector().classForName(this.superName);
+    public String getSuperclass() throws ClassMirrorNotFoundException {
+        return superName;
     }
 
     @Override
     public boolean isAssignableFrom(ClassMirror c) throws ClassMirrorNotFoundException {
+        Detector d = Detector.getDetector();
         if (this.equals(c)) return true;
         
-        if (isAssignableFrom(c.getSuperclass())) return true;
-        for (ClassMirror icl: c.getInterfaces()) {
-            if (isAssignableFrom(icl))
+        ClassMirror supcl = d.classForName(c.getSuperclass());
+        if (isAssignableFrom(supcl)) return true;
+        for (String icl: c.getInterfaces()) {
+            supcl = d.classForName(icl);
+            if (isAssignableFrom(supcl))
                 return true;
         }
         return false;
@@ -168,7 +140,7 @@ class CachedClassMirror extends ClassMirror implements ClassVisitor {
             String[] interfaces) {
         this.name = name;
         this.superName = superName;
-        this.interfaceNames = interfaces;
+        this.interfaceNames = interfaces == null ? CachedClassMirrors.EMPTY_SET : interfaces;
         this.isInterface = (access & Opcodes.ACC_INTERFACE) > 0;
     }
 
@@ -216,3 +188,36 @@ class CachedClassMirror extends ClassMirror implements ClassVisitor {
         public void visitEnum(String name, String desc, String value) {}
     }
 }
+
+class CachedMethodMirror implements MethodMirror {
+
+    private String[] exceptions;
+    private String desc;
+    private String name;
+    private boolean isBridge;
+    
+    public CachedMethodMirror(int access, String name, String desc, String[] exceptions) {
+        this.name = name;
+        this.desc = desc;
+        this.exceptions = (exceptions == null) ? CachedClassMirrors.EMPTY_SET : exceptions;
+        isBridge = (access & Opcodes.ACC_BRIDGE) > 0;
+    }
+
+    public String getName() {
+        return name;
+    }
+    
+    public String[] getExceptionTypes() throws ClassMirrorNotFoundException {
+        return exceptions;
+    }
+
+    public String getMethodDescriptor() {
+        return desc;
+    }
+
+    public boolean isBridge() {
+        return isBridge;
+    }
+}
+
+
