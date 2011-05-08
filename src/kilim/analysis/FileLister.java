@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.WeakReference;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Stack;
@@ -29,19 +30,14 @@ public class FileLister implements Iterable<FileLister.Entry> {
         public abstract InputStream getInputStream() throws IOException;
     };
     
-    FileContainer container;
+    /**
+     * weak ref to a container to avoid hanging on to an open jar file. 
+     */
+    volatile WeakReference<FileContainer> containerRef;
+    String name;
     
     public FileLister(String dirOrJarName) throws IOException {
-        if (dirOrJarName.endsWith(".jar")) {
-            container = openJar(dirOrJarName);
-        } else {
-            File f = new File(dirOrJarName);
-            if (f.exists() && f.isDirectory()) {
-                container = new DirIterator(f);
-            } else {
-                throw new IOException("Expected jar file or directory name");
-            }
-        }
+        name= dirOrJarName;
     }
     
     /**
@@ -51,7 +47,29 @@ public class FileLister implements Iterable<FileLister.Entry> {
      * @throws IOException
      */
     public Entry open(String relativeFileName) throws IOException {
-        return container.open(relativeFileName);
+        return getContainer().open(relativeFileName);
+    }
+    
+    // Lazily initialize the container.
+    private FileContainer getContainer() throws IOException {
+        FileContainer container = null;
+        if (containerRef != null) {
+           container = containerRef.get();
+           if (container != null) return container;
+        }
+        
+        if (name.endsWith(".jar")) {
+            container = openJar(this.name);
+        } else {
+            File f = new File(this.name);
+            if (f.exists() && f.isDirectory()) {
+                container = new DirIterator(f);
+            } else {
+                throw new IOException("Expected jar file or directory name");
+            }
+        }
+        containerRef = new WeakReference<FileContainer>(container);
+        return container;
     }
 
     private FileContainer openJar(String jarFile) throws IOException {
@@ -59,7 +77,10 @@ public class FileLister implements Iterable<FileLister.Entry> {
     }
 
     public Iterator<FileLister.Entry> iterator() {
-        return container;
+        try {
+            return getContainer();
+        } catch (IOException ignore) {}
+        return null;
     }
 }
 
