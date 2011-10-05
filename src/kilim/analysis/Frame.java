@@ -66,8 +66,8 @@ public class Frame {
             Value[] st = stack;
             Value[] ist = inframe.stack;
             for (int i = 0; i < slen; i++) {
-                Value va = ist[i];
-                Value vb = st[i];
+                Value va = st[i];
+                Value vb = ist[i];
                 if (va == vb || va.equals(vb)) continue;
                 Value newval = va.merge(vb);
                 if (newval != va) {

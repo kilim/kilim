@@ -113,8 +113,9 @@ public class Asm {
     }
 
     // .class public final Foo/Bar/Baz 
-    private static String classNamePatternStr = "[\\w/]+";
-    private static Pattern classPattern = Pattern.compile("\\.(class|interface) (.*?)?(" + classNamePatternStr + ")$");
+    private static String classNamePatternStr = "[\\w/$]+";
+    private static String modifierPatternStr = "public|private|protected|static|final|synchronized|volatile|transient|native|abstract|strict| ";
+    private static Pattern classPattern = Pattern.compile("\\.(class|interface) ((" + modifierPatternStr + ")*)(" + classNamePatternStr + ")$");
     private void parseClass() {
         readLine();
         // match class declaration
@@ -128,7 +129,7 @@ public class Asm {
         }
         
         acc |= parseModifiers(group(2));
-        className = group(3);
+        className = group(4);
         String superClassName = parseSuper();
         String[] interfaces = parseInterfaces();
         cv.visit(V1_5, acc, className, null, superClassName, interfaces);
@@ -197,15 +198,14 @@ public class Asm {
     // The field declaration "public final String fileName = "foobar" is declared as
     // .field public final  fieldName [[Ljava/lang/String; = "foobar" 
     // .field (modifier)* name type (= constval)?
-    private static String modifierPatternStr = "public|private|protected|static|final|synchronized|volatile|transient|native|abstract|strict| ";
     private static String namePatternStr = "[$\\w]+";
     private static String descPatternStr = "[$\\[\\w/;]+";
     private static Pattern fieldPattern  = 
-        Pattern.compile(".field +(" + modifierPatternStr + ")* +(" + namePatternStr + ") +(" + descPatternStr + ") *(= *(.*))?");
+        Pattern.compile(".field +((" + modifierPatternStr + ")*) +(" + namePatternStr + ") +(" + descPatternStr + ") *(= *(.*))?");
     private void parseField() {
-        String name       = group(2);
-        String desc       = group(3);
-        String valueStr   = group(5);
+        String name       = group(3);
+        String desc       = group(4);
+        String valueStr   = group(6);
         Object value      = valueStr == null ? null : 
                              parseValue(valueStr, 
                                        (desc.equals(D_DOUBLE) || desc.equals(D_LONG)));
@@ -223,13 +223,13 @@ public class Asm {
     //   .method private final static foobar(IJZ)[[Ljava/lang/Object; 
     //   .method <init>(IJZ)
     private static String methodNamePatternStr = "[<>\\w]+"; // 
-    private static Pattern methodPattern = Pattern.compile(".method +("+ modifierPatternStr + ")* ("+ methodNamePatternStr + ") *([(][^\\s]+)");
+    private static Pattern methodPattern = Pattern.compile(".method +(("+ modifierPatternStr + ")*) ("+ methodNamePatternStr + ") *([(][^\\s]+)");
 
     private void parseMethod() {
         eofOK = false;
-        methodName = group(2);
+        methodName = group(3);
         int acc = parseModifiers(group(1));
-        String desc = group(3);
+        String desc = group(4);
         
         String[] exceptions = parseMethodExceptions();
         mv = cv.visitMethod(
@@ -744,7 +744,8 @@ public class Asm {
     }
     
     String group(int i) {
-        return lastMatch.group(i);
+        String ret = lastMatch.group(i);
+        return ret; 
     }
     
     int groupCount() {

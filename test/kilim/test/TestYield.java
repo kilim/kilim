@@ -46,6 +46,13 @@ public class TestYield extends TestCase {
     public void testConstantsInStack() throws Exception {
         runTask(new kilim.test.ex.ExYieldConstants(0));
     }
+    
+    public void testLoop() throws Exception {
+         kilim.test.ex.ExLoop ex = new kilim.test.ex.ExLoop();
+         runTask(ex);
+         assertTrue(ex.verify());
+    }
+
 
     public static void runTask(String taskClassName, int testCase) throws Exception {
         ExYieldBase task;

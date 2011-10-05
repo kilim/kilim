@@ -55,6 +55,13 @@ public class ExYieldStack extends ExYieldBase {
         }
     }
     
+    // Issue 8 on github
+    void testLoop() throws Pausable {
+        // The other tests don't test constant propagation, but not dynamic operands
+        // on stack.
+        
+    }
+    
     static long fact_st(long n, boolean doPause) throws Pausable {
 //        System.out.println("n = " + n + ", doPause = " + doPause);
         if (n == 1) {
