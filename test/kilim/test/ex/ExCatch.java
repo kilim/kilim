@@ -30,6 +30,7 @@ public class ExCatch extends ExYieldBase {
             case 1: pausableCatch(); break;
             case 2: nestedPausableCatch(); break;
             case 3: tryCatchFinally(); break;
+            case 4: pausableBeforeCatch(); break;
             default: throw new IllegalStateException("Unknown test case: " + testCase);
         }
     }
@@ -70,6 +71,32 @@ public class ExCatch extends ExYieldBase {
         verify(sa);
         verify(s);
         verify(l);
+    }
+
+    // Issue#6 on github. A pausable block before the catch block.
+    void pausableBeforeCatch() throws Pausable {
+        int foo = 0;
+        Task.sleep(1);
+        if (foo != 0) throw new RuntimeException("Expected 0");
+        
+        foo = 1;
+        Task.sleep(1);
+        if (foo != 1) throw new RuntimeException("Expected 1");
+        
+        foo = 2;
+        Task.sleep(1);
+        if (foo != 2) throw new RuntimeException("Expected 2");
+        
+        try {
+            foo = 3;
+            throwEx();
+        } catch (Throwable t) {
+            if (foo != 3) throw new RuntimeException("Expected 3");
+        }
+    }
+    private static void throwEx() throws Pausable {
+        Task.sleep(1);
+        throw new RuntimeException();
     }
 
     void tryCatchFinally() throws Pausable {

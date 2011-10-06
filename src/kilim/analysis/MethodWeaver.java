@@ -415,15 +415,17 @@ public class MethodWeaver {
         VMType.loadVar(mv, VMType.TOBJECT, getFiberVar());
         mv.visitMethodInsn(INVOKEVIRTUAL, FIBER_CLASS, "upEx", "()I");
         // fiber.pc is on stack
-        Label[] labels = new Label[cwList.size() + 1];
-        labels[0] = resumeLabel;
+        Label[] labels = new Label[cwList.size()];
+        int[] keys = new int[cwList.size()];
         for (int i = 0; i < cwList.size(); i++) {
-            labels[i + 1] = new Label();
+            labels[i] = new Label();
+            keys[i] = callWeavers.indexOf(cwList.get(i)) + 1;
         }
-        mv.visitTableSwitchInsn(0, cwList.size(), resumeLabel, labels);
-        int i = 1;
+        
+        mv.visitLookupSwitchInsn(resumeLabel, keys, labels);
+        int i = 0;
         for (CallWeaver cw: cwList) {
-            if (i > 1) {
+            if (i > 0) {
                 // This is the jump (to normal exception handling) for the previous
                 // switch case.
                 mv.visitJumpInsn(GOTO, resumeLabel);
