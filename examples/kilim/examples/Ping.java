@@ -98,7 +98,7 @@ public class Ping {
             bb.flip();
             
             // Ping 5 times        
-            for (int i = 0 ; i < 1; i++) {
+            for (int i = 0 ; i < 5; i++) {
                 System.out.print("Ping");
                 writePkt(ch, bb);
                 System.out.println(" .. ");
