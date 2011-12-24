@@ -6,7 +6,7 @@
 
 	<groupId>kilim</groupId>
 	<artifactId>kilim</artifactId>
-	<version>0.7.2</version>
+	<version>0.7.3</version>
 	<packaging>jar</packaging>
 
 	<properties>
@@ -37,6 +37,7 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>build-helper-maven-plugin</artifactId>
+				<version>1.5</version>
 				<executions>
 					<execution>
 						<id>add-source</id>
@@ -76,6 +77,7 @@
 				<goals> <goal>jar</goal> </goals> </execution> </executions> </plugin> -->
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.3.2</version>
 				<configuration>
 					<debug>true</debug>
 					<source>${jdk.version}</source>
@@ -85,6 +87,7 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>exec-maven-plugin</artifactId>
+				<version>1.2.1</version>
 				<executions>
 					<execution>
 						<!-- java -ea kilim.tools.Asm -d ./classes `find . -name "*.j"` -->
