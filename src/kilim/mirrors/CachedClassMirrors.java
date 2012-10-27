@@ -135,7 +135,6 @@ class CachedClassMirror extends ClassMirror implements ClassVisitor {
     
     
     // ClassVisitor implementation
-    @Override
     public void visit(int version, int access, String name, String signature, String superName,
             String[] interfaces) {
         this.name = name;
@@ -144,8 +143,8 @@ class CachedClassMirror extends ClassMirror implements ClassVisitor {
         this.isInterface = (access & Opcodes.ACC_INTERFACE) > 0;
     }
 
-
-    @Override
+    
+    
     public MethodVisitor visitMethod(int access, String name, String desc, String signature,
             String[] exceptions) {
         if (tmpMethodList == null) {

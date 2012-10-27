@@ -282,6 +282,7 @@ public abstract class Task implements EventSubscriber {
           return ret;
         case Fiber.PAUSING__NO_STATE : 
           ArgState as = new ArgState();
+          as.obj = target;
           as.fargs = fargs;
           as.pc = 1;
           as.mthd = mthd;
