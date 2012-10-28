@@ -105,7 +105,8 @@ class CachedClassMirror extends ClassMirror implements ClassVisitor {
 
     @Override
     public MethodMirror[] getDeclaredMethods() {
-        return declaredMethods;
+      return (declaredMethods == null) ? 
+        new MethodMirror[0] : declaredMethods;
     }
 
     @Override

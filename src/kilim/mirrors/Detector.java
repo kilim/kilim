@@ -118,10 +118,14 @@ public class Detector {
         if (cl == null) return null;
         
         for (MethodMirror om : cl.getDeclaredMethods()) {
-            if (om.getName().equals(methodName) && om.getMethodDescriptor().equals(desc)) {
-                if (om.isBridge())
-                    continue;
-                return om;
+            if (om.getName().equals(methodName)) {
+                // when comparing descriptors only compare arguments, not return types
+                String omDesc= om.getMethodDescriptor();
+            
+                if (omDesc.substring(0,omDesc.indexOf(")")).equals(desc.substring(0,desc.indexOf(")")))) {
+                    if (om.isBridge())  continue;
+                    return om;
+                }
             }
         }
 
