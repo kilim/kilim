@@ -194,7 +194,7 @@ public class HttpRequest extends HttpMsg {
         do {
             n = readLine(endpoint); // includes 2 bytes for CRLF
             headerLength += n;
-        } while (n > 2); // until blank line (CRLF)
+        } while (n > 2 || headerLength <= 2); // until blank line (CRLF), but just blank line is not enough.
         // dumpBuffer(buffer);
         HttpRequestParser.initHeader(this, headerLength);
         contentOffset = headerLength; // doesn't mean there's necessarily any content.
