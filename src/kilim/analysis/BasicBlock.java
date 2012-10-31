@@ -948,7 +948,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
                         String desc = min.desc;
                         if (flow.isPausableMethodInsn(min) && frame.numMonitorsActive > 0) {
                             throw new KilimException("Error: Can not call pausable nethods from within a synchronized block\n" +
-                                    "Caller: " + this.flow.name +
+                                    "Caller: " + this.flow.classFlow.name.replace('/', '.') + "." + this.flow.name + this.flow.desc +
                                     "\nCallee: " + ((MethodInsnNode)ain).name); 
                         }
                         canThrowException = true;
