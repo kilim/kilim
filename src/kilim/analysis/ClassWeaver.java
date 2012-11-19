@@ -19,6 +19,7 @@ import static org.objectweb.asm.Opcodes.V1_1;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -41,7 +42,7 @@ import org.objectweb.asm.tree.InnerClassNode;
 public class ClassWeaver {
     public ClassFlow       classFlow;
     List<ClassInfo> classInfoList = new LinkedList<ClassInfo>();
-    static HashSet<String> stateClasses = new HashSet<String>();
+    static HashMap<String, ClassInfo> stateClasses = new HashMap<String, ClassInfo>();
 
     public ClassWeaver(byte[] data) {
         this(data, Detector.DEFAULT);
@@ -197,29 +198,34 @@ public class ClassWeaver {
             numByType[vi.vmt]++;
         }
         String className = makeClassName(numByType);
-        if (stateClasses.contains(className)) {
-            return className;
-        }
-        stateClasses.add(className);
-        ClassWriter cw = new ClassWriter(false);
-        cw.visit(V1_1, ACC_PUBLIC | ACC_FINAL, className, null, "kilim/State", null);
+        ClassInfo classInfo= null;
+        synchronized (stateClasses) {
+            classInfo= stateClasses.get(className);
+            if (classInfo == null) {
+                ClassWriter cw = new ClassWriter(false);
+                cw.visit(V1_1, ACC_PUBLIC | ACC_FINAL, className, null, "kilim/State", null);
 
-        // Create default constructor
-        // <init>() {
-        // super(); // call java/lang/Object.<init>()
-        // }
-        MethodVisitor mw = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-        mw.visitInsn(ALOAD_0);
-        mw.visitMethodInsn(INVOKESPECIAL, STATE_CLASS, "<init>", "()V");
-        mw.visitInsn(RETURN);
-        // this code uses a maximum of one stack element and one local variable
-        mw.visitMaxs(1, 1);
-        mw.visitEnd();
-        // create fields of the appropriate type.
-        for (ValInfo vi : valInfoList) {
-            cw.visitField(ACC_PUBLIC, vi.fieldName, vi.fieldDesc(), null, null);
-        }
-        addClassInfo(new ClassInfo(className, cw.toByteArray()));
+                // Create default constructor
+                // <init>() {
+                // super(); // call java/lang/Object.<init>()
+                // }
+                MethodVisitor mw = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+                mw.visitInsn(ALOAD_0);
+                mw.visitMethodInsn(INVOKESPECIAL, STATE_CLASS, "<init>", "()V");
+                mw.visitInsn(RETURN);
+                // this code uses a maximum of one stack element and one local variable
+                mw.visitMaxs(1, 1);
+                mw.visitEnd();
+                // create fields of the appropriate type.
+                for (ValInfo vi : valInfoList) {
+                    cw.visitField(ACC_PUBLIC, vi.fieldName, vi.fieldDesc(), null, null);
+                }
+                classInfo= new ClassInfo(className, cw.toByteArray());
+                stateClasses.put(className, classInfo);
+            }
+    }
+        if (!classInfoList.contains(classInfo))
+          addClassInfo(classInfo);
         return className;
     }
 
