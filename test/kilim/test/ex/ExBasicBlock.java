@@ -8,7 +8,7 @@ public class ExBasicBlock {
     }
     
     static void pausable() throws Pausable {
-        
+        "afakflkaflakd".getBytes();
     }
     
     static int testFiber(Object testArgs1, Object[] testArgs) throws Pausable {

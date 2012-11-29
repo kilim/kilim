@@ -75,6 +75,7 @@ public class MethodWeaver {
         }
     }
 
+    
     public void accept(ClassVisitor cv) {
         MethodFlow mf = methodFlow;
         String[] exceptions = ClassWeaver.toStringArray(mf.exceptions);
@@ -94,7 +95,7 @@ public class MethodWeaver {
             }
         }
     }
-
+    
     void accept(MethodVisitor mv) {
         visitAttrs(mv);
         visitCode(mv);
@@ -280,6 +281,14 @@ public class MethodWeaver {
         mv.visitFieldInsn(GETFIELD, FIBER_CLASS, "task", Constants.D_TASK);
     }
 
+    private boolean hasGetCurrentTask() {
+        MethodFlow mf = methodFlow;
+        for (BasicBlock bb : mf.getBasicBlocks()) {
+            if (!bb.isPausable() || bb.startFrame==null) continue;
+            if (bb.isGetCurrentTask()) return true;
+        }
+        return false;
+    }
     private void createCallWeavers() {
         MethodFlow mf = methodFlow;
         for (BasicBlock bb : mf.getBasicBlocks()) {
@@ -311,10 +320,14 @@ public class MethodWeaver {
      */
     private void genPrelude(MethodVisitor mv) {
         assert isPausable : "MethodWeaver.genPrelude called for nonPausable method";
+        if (callWeavers.size() == 0 && (!hasGetCurrentTask())) {
+            return; // No pausable methods, no getCurrentTask.  Prelude is not needed at all. 
+        }
+        
         MethodFlow mf = methodFlow;
         // load fiber from last var
         int lastVar = getFiberArgVar();
-
+       
         mv.visitVarInsn(ALOAD, lastVar);
         if (lastVar < fiberVar) {
             if (callWeavers.size() > 0) {
@@ -324,8 +337,8 @@ public class MethodWeaver {
         }
         
         if (callWeavers.size() == 0) {
-          // Can happen if Task.getCurrentTask() is the only pausable method
-          // call. We don't need the rest of the prelude.
+          // No pausable method calls, but Task.getCurrentTask() is present. 
+          // We don't need the rest of the prelude.
           return; 
         }
 
