@@ -87,9 +87,11 @@ public class HttpRequest extends HttpMsg {
     public boolean keepAlive() {
         return isOldHttp() ? "Keep-Alive".equals(getHeader("Connection;")) : !("close".equals(getHeader("Connection")));
     }
-
     public KeyValues getQueryComponents() {
         String q = getQuery();
+        return getQueryComponents(q);
+    }
+    public KeyValues getQueryComponents(String q) {
         int len = q.length();
         if (q == null || len == 0)
             return new KeyValues(0);
