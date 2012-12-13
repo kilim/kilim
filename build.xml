@@ -119,6 +119,7 @@
         <enable/>
       </assertions>
       <arg value="kilim.test.AllWoven" />
+      <jvmarg value="-XX:-UseSplitVerifier" />
     </java>
   </target>
 
