@@ -7,7 +7,7 @@
 % N procs => Num Msgs = n(n+1). (Including extra msg initially
 % to each proc to start.
 
-bench(N) -> bench(10, N).    % Run benchmark 10 times
+bench(N) -> bench(10, N), init:stop().    % Run benchmark 10 times
 
 bench(0, _) -> done;
 bench(M, N) ->
@@ -20,7 +20,7 @@ bench(M, N) ->
     bench(M-1, N).
 
 start(NumProcesses) ->
-    statistics(runtime),
+    statistics(wall_clock),
     Pids = spawnN(NumProcesses, NumProcesses, self(), []),
     lists:foreach(
       fun(Pid) ->
@@ -30,7 +30,7 @@ start(NumProcesses) ->
     wait(NumProcesses, NumProcesses).
 
 wait(0, _) ->  %wait(0, OrigN) ->
-    {_, T} = statistics(runtime),
+    {_, T} = statistics(wall_clock),
 %    if T == 0 ->
 %	    io:format("Elapsed: ~p ms ~n", [T]);
 %       true -> 
@@ -70,7 +70,7 @@ recv(MainPid, OrigN) ->
 	    recv(MainPid, OrigN);
 
 	ping ->
-	    $ wait for n-1 msgs
+	    % wait for n-1 msgs
 	    recv(MainPid, OrigN-1)
     end.
     
