@@ -7,7 +7,7 @@
 % N procs => Num Msgs = n(n+1). (Including extra msg initially
 % to each proc to start.
 
-bench(N) -> bench(10, N).    % Run benchmark 10 times
+bench(N) -> bench(10, N), init:stop().    % Run benchmark 10 times
 
 bench(0, _) -> done;
 bench(M, N) ->
@@ -70,7 +70,7 @@ recv(MainPid, OrigN) ->
 	    recv(MainPid, OrigN);
 
 	ping ->
-	    $ wait for n-1 msgs
+	    % wait for n-1 msgs
 	    recv(MainPid, OrigN-1)
     end.
     

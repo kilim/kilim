@@ -1,3 +1,4 @@
+*.beam
 classes/**/*
 testclasses/**/*
 .DS_Store
