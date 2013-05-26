@@ -81,7 +81,8 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
 
-import org.objectweb.asm.Label;
+import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.TableSwitchInsnNode;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.tree.MethodInsnNode;
 
@@ -144,9 +145,9 @@ public class CallWeaver {
      */
     BasicBlock           bb;
 
-    private Label        resumeLabel;
+    private LabelNode    resumeLabel;
 
-    Label                callLabel;
+    LabelNode            callLabel;
 
     private ValInfoList  valInfoList;
 
@@ -176,7 +177,7 @@ public class CallWeaver {
         varUsage = new BitSet(2 * bb.flow.maxLocals);
         resumeLabel = bb.flow.getLabelAt(bb.startPos + 1);
         if (resumeLabel == null)
-            resumeLabel = new Label();
+            resumeLabel = new LabelNode();
         assignRegisters();
         stateClassName = createStateClass();
         methodWeaver.ensureMaxStack(getNumBottom() + 3); // 
@@ -341,7 +342,7 @@ public class CallWeaver {
             Value v = f.getStack(numBottom);
             if (!methodWeaver.isStatic() && f.getLocal(0) == v) {
                 // "this" is already properly initialized.
-                mv.visitInsn(ALOAD_0);
+                mv.visitVarInsn(ALOAD, 0);
             } else {
                 loadVar(mv, TOBJECT, methodWeaver.getFiberVar());
                 mv.visitMethodInsn(INVOKEVIRTUAL, FIBER_CLASS, "getCallee", "()Ljava/lang/Object;");
@@ -358,7 +359,7 @@ public class CallWeaver {
             mv.visitInsn(VMType.constInsn[vmt]);
         }
 
-        mv.visitJumpInsn(GOTO, callLabel);
+        mv.visitJumpInsn(GOTO, callLabel.getLabel());
     }
 
     /**
@@ -380,7 +381,7 @@ public class CallWeaver {
      */
     static String fiberArg = D_FIBER + ')';
     void genCall(MethodVisitor mv) {
-        mv.visitLabel(callLabel);
+        mv.visitLabel(callLabel.getLabel());
         loadVar(mv, TOBJECT, methodWeaver.getFiberVar());
         mv.visitMethodInsn(INVOKEVIRTUAL, FIBER_CLASS, "down", "()" + D_FIBER);
         MethodInsnNode mi = getMethodInsn();
@@ -426,16 +427,16 @@ public class CallWeaver {
     void genPostCall(MethodVisitor mv) {
         loadVar(mv, TOBJECT, methodWeaver.getFiberVar());
         mv.visitMethodInsn(INVOKEVIRTUAL, FIBER_CLASS, "up", "()I");
-        Label restoreLabel = new Label();
-        Label saveLabel = new Label();
-        Label unwindLabel = new Label();
-        Label[] labels = new Label[] { resumeLabel, restoreLabel, saveLabel,
+        LabelNode restoreLabel = new LabelNode();
+        LabelNode saveLabel = new LabelNode();
+        LabelNode unwindLabel = new LabelNode();
+        LabelNode[] labels = new LabelNode[] { resumeLabel, restoreLabel, saveLabel,
                 unwindLabel };
-        mv.visitTableSwitchInsn(0, 3, resumeLabel, labels);
+        new TableSwitchInsnNode(0, 3, resumeLabel, labels).accept(mv);
         genSave(mv, saveLabel);
         genUnwind(mv, unwindLabel);
         genRestore(mv, restoreLabel);
-        mv.visitLabel(resumeLabel);
+        resumeLabel.accept(mv);
     }
 
     /**
@@ -446,8 +447,8 @@ public class CallWeaver {
      * 
      * @param mv
      */
-    private void genUnwind(MethodVisitor mv, Label unwindLabel) {
-        mv.visitLabel(unwindLabel);
+    private void genUnwind(MethodVisitor mv, LabelNode unwindLabel) {
+        unwindLabel.accept(mv);
         // After the call returns, the stack would be left with numBottom plus
         // return value
 
@@ -492,8 +493,8 @@ public class CallWeaver {
      * 
      * @param mv
      */
-    private void genSave(MethodVisitor mv, Label saveLabel) {
-        mv.visitLabel(saveLabel);
+    private void genSave(MethodVisitor mv, LabelNode saveLabel) {
+        saveLabel.accept(mv);
 
         Frame f = bb.startFrame;
         // pop return value if any.
@@ -522,7 +523,7 @@ public class CallWeaver {
         // state.self = this if the current executing method isn't static
         if (!bb.flow.isStatic()) {
             loadVar(mv, TOBJECT, stateVar);
-            mv.visitInsn(ALOAD_0); // for state.self == this
+            mv.visitVarInsn(ALOAD, 0); // for state.self == this
             mv.visitFieldInsn(PUTFIELD, STATE_CLASS, "self", D_OBJECT);
         }
         int pc = methodWeaver.getPC(this);
@@ -560,7 +561,6 @@ public class CallWeaver {
         }
 
         // Now load up registers into fields
-        int fieldNum = 0;
         for (ValInfo vi : valInfoList) {
             // Ignore values on stack
             if (vi.var == -1)
@@ -570,7 +570,6 @@ public class CallWeaver {
             loadVar(mv, TOBJECT, stateVar);
             loadVar(mv, vi.vmt, vi.var);
             mv.visitFieldInsn(PUTFIELD, stateClassName, vi.fieldName, vi.fieldDesc());
-            fieldNum++;
         }
 
         // Fiber.setState(state);
@@ -619,8 +618,8 @@ public class CallWeaver {
      *          restore return value if any from scratch register
      * </pre>
      */
-    private void genRestore(MethodVisitor mv, Label restoreLabel) {
-        mv.visitLabel(restoreLabel);
+    private void genRestore(MethodVisitor mv, LabelNode restoreLabel) {
+        restoreLabel.accept(mv);
         Frame f = bb.startFrame;
         int numBottom = getNumBottom();
         int retVar = -1;
@@ -685,8 +684,8 @@ public class CallWeaver {
         // Fall through to the resumeLabel in genNY_NS, so no goto required.
     }
 
-    void genRestoreEx(MethodVisitor mv, Label restoreLabel) {
-        mv.visitLabel(restoreLabel);
+    void genRestoreEx(MethodVisitor mv, LabelNode restoreLabel) {
+        restoreLabel.accept(mv);
         int stateVar = -1;
         if (valInfoList.size() > 0) {
             stateVar = allocVar(1);
@@ -1017,21 +1016,23 @@ class VMType {
 
     static void loadVar(MethodVisitor mv, int vmt, int var) {
         assert var >= 0 : "Got var = " + var;
-        if (var < 4) {
-            // short instructions like ALOAD_n exist for n = 0 .. 4
-            mv.visitInsn(ldInsn[vmt] + var);
-        } else {
+        // ASM4.1 doesn't like short-form ALOAD_n instructions. Instead, we use ALOAD n. 
+        
+//        if (var < 4) {
+//            // short instructions like ALOAD_n exist for n = 0 .. 4
+//            mv.visitInsn(ldInsn[vmt] + var);
+//        } else {
             mv.visitVarInsn(loadInsn[vmt], var);
-        }
+//        }
     }
 
     static void storeVar(MethodVisitor mv, int vmt, int var) {
         assert var >= 0;
-        if (var < 4) {
-            // short instructions like ALOAD_n exist for n = 0 .. 4
-            mv.visitInsn(stInsn[vmt] + var);
-        } else {
+//        if (var < 4) {
+//            // short instructions like ALOAD_n exist for n = 0 .. 4
+//            mv.visitInsn(stInsn[vmt] + var);
+//        } else {
             mv.visitVarInsn(storeInsn[vmt], var);
-        }
+//        }
     }
 }

@@ -1,3 +1,4 @@
 classes/**/*
 testclasses/**/*
 .DS_Store
+/classes

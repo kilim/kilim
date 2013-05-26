@@ -1,4 +1,4 @@
-export CLASSPATH=./classes:./testclasses:./libs/asm-all-2.2.3.jar:./libs/junit.jar:$CLASSPATH 
+export CLASSPATH=./classes:./testclasses:./libs/asm-all-4.1.jar:./libs/junit.jar:$CLASSPATH 
 
 echo making dir:  ./classes
 rm -rf ./classes
@@ -7,10 +7,10 @@ mkdir ./classes
 mkdir ./testclasses
 
 echo Compiling java source ===========================================
-javac -g -d ./classes `find . -name "*.java" `
+javac -Xlint:unchecked -g -d ./classes `find . -name "*.java" `
 
 echo Compiling .j files for testing ==================================
-java -ea kilim.tools.Asm -d ./classes `find . -name "*.j"`
+java -ea kilim.tools.Asm -nf -d ./classes `find . -name "*.j"`
 
 echo Weaving =========================================================
 # Weave all files under ./classes, compiling the tests to

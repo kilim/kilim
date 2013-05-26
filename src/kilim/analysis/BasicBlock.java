@@ -38,12 +38,13 @@ import java.util.Stack;
 import kilim.KilimException;
 import kilim.mirrors.Detector;
 
-import org.objectweb.asm.Label;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.IincInsnNode;
+import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.IntInsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
+import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.LookupSwitchInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
@@ -158,7 +159,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
      * didn't exist originally (after a jmp instruction, for example). This
      * allows us a unique indexing scheme.
      */
-    public Label                  startLabel;
+    public LabelNode                  startLabel;
 
     /**
      * Start and end points (both inclusive) in the current method's list of
@@ -214,7 +215,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
      */
     ArrayList<BasicBlock> subBlocks;
     
-    public BasicBlock(MethodFlow aflow, Label aStartLabel) {
+    public BasicBlock(MethodFlow aflow, LabelNode aStartLabel) {
         flow = aflow;
         startLabel = aStartLabel;
         usage = new Usage(aflow.maxLocals);
@@ -296,7 +297,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
                 case IF_ACMPNE:
                 case JSR:
                 case GOTO:
-                    Label l = ((JumpInsnNode) ain).label;
+                    LabelNode l = ((JumpInsnNode) ain).label;
                     bb = flow.getOrCreateBasicBlock(l);
                     if (opcode == JSR) {
                         bb.setFlag(IS_SUBROUTINE);
@@ -323,8 +324,8 @@ public class BasicBlock implements Comparable<BasicBlock> {
 
                 case TABLESWITCH:
                 case LOOKUPSWITCH:
-                    Label defaultLabel;
-                    List<Label> otherLabels;
+                    LabelNode defaultLabel;
+                    List<LabelNode> otherLabels;
                     if (opcode == TABLESWITCH) {
                         defaultLabel = ((TableSwitchInsnNode) ain).dflt;
                         otherLabels = ((TableSwitchInsnNode) ain).labels;
@@ -332,8 +333,8 @@ public class BasicBlock implements Comparable<BasicBlock> {
                         defaultLabel = ((LookupSwitchInsnNode) ain).dflt;
                         otherLabels = ((LookupSwitchInsnNode) ain).labels;
                     }
-                    for (Iterator<Label> it = otherLabels.iterator(); it.hasNext();) {
-                        l = (Label) it.next();
+                    for (Iterator<LabelNode> it = otherLabels.iterator(); it.hasNext();) {
+                        l = it.next();
                         addSuccessor(flow.getOrCreateBasicBlock(l));
                     }
                     addSuccessor(flow.getOrCreateBasicBlock(defaultLabel));
@@ -346,11 +347,11 @@ public class BasicBlock implements Comparable<BasicBlock> {
                 case INVOKEINTERFACE:
                 case INVOKESPECIAL:
                     if (flow.isPausableMethodInsn((MethodInsnNode) ain)) {
+                        LabelNode il = flow.getOrCreateLabelAtPos(pos);
                         if (pos == startPos) {
                             setFlag(PAUSABLE);
                         } else {
-                            l = flow.getOrCreateLabelAtPos(pos);
-                            bb = flow.getOrCreateBasicBlock(l);
+                            bb = flow.getOrCreateBasicBlock(il);
                             bb.setFlag(PAUSABLE);
                             addSuccessor(bb);
                             pos--; // don't consume this instruction
@@ -372,7 +373,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
         endPos = pos;
         if (hasFollower && (pos + 1) < flow.instructions.size()) {
             // add the following basic block as a successor
-            Label l = flow.getOrCreateLabelAtPos(pos + 1);
+            LabelNode l = flow.getOrCreateLabelAtPos(pos + 1);
             bb = flow.getOrCreateBasicBlock(l);
             addFollower(bb);
         }
@@ -495,6 +496,8 @@ public class BasicBlock implements Comparable<BasicBlock> {
                 int opcode = ain.getOpcode();
                 int val, var;
                 switch (opcode) {
+                    case -1: // linenumbernode, framenode, etc.
+                        continue;
                     case NOP:
                         break;
                     case ACONST_NULL:
@@ -1188,9 +1191,9 @@ public class BasicBlock implements Comparable<BasicBlock> {
      */
     ArrayList<BasicBlock> inline() throws KilimException {
         HashMap<BasicBlock, BasicBlock> bbCopyMap = null;
-        HashMap<Label, Label> labelCopyMap = null;
+        HashMap<LabelNode, LabelNode> labelCopyMap = null;
         BasicBlock targetBB = successors.get(0);
-        Label returnToLabel = flow.getOrCreateLabelAtPos(endPos+1);
+        LabelNode returnToLabel = flow.getOrCreateLabelAtPos(endPos+1);
         BasicBlock returnToBB = flow.getOrCreateBasicBlock(returnToLabel);
         boolean isPausableSub = targetBB.hasFlag(PAUSABLE_SUB);
 
@@ -1209,7 +1212,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
             return null;
         }
         bbCopyMap = new HashMap<BasicBlock, BasicBlock>(10);
-        labelCopyMap = new HashMap<Label, Label>(10);
+        labelCopyMap = new HashMap<LabelNode, LabelNode>(10);
         successors.clear();
         // first pass
         targetBB.dupBBAndLabels(isPausableSub, bbCopyMap, labelCopyMap, returnToBB);
@@ -1220,7 +1223,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
 
     void dupBBAndLabels(boolean deepCopy,
             HashMap<BasicBlock, BasicBlock> bbCopyMap,
-            HashMap<Label, Label> labelCopyMap, BasicBlock returnToBB)
+            HashMap<LabelNode, LabelNode> labelCopyMap, BasicBlock returnToBB)
                                                                       throws KilimException {
 
         for (BasicBlock orig : getSubBlocks()) {
@@ -1230,9 +1233,9 @@ public class BasicBlock implements Comparable<BasicBlock> {
                 // copy labels for each instruction. This copy will be used
                 // in dupCopyContents
                 for (int i = orig.startPos; i <= orig.endPos; i++) {
-                    Label origLabel = flow.getLabelAt(i);
+                    LabelNode origLabel = flow.getLabelAt(i);
                     if (origLabel != null) {
-                        Label l = labelCopyMap.put(origLabel, new Label());
+                        LabelNode l = labelCopyMap.put(origLabel, new LabelNode());
                         assert l == null;
                     }
                 }
@@ -1241,11 +1244,10 @@ public class BasicBlock implements Comparable<BasicBlock> {
         }
     }
 
-    @SuppressWarnings("unchecked")
     static ArrayList<BasicBlock> dupCopyContents(boolean deepCopy,
             BasicBlock targetBB, BasicBlock returnToBB,
             HashMap<BasicBlock, BasicBlock> bbCopyMap,
-            HashMap<Label, Label> labelCopyMap) throws KilimException {
+            HashMap<LabelNode, LabelNode> labelCopyMap) throws KilimException {
 
         ArrayList<BasicBlock> newBBs = new ArrayList<BasicBlock>(targetBB.getSubBlocks().size());
         for (BasicBlock orig : targetBB.getSubBlocks()) {
@@ -1276,8 +1278,9 @@ public class BasicBlock implements Comparable<BasicBlock> {
             }
 
             if (deepCopy) {
+                InsnList extraInsns = new InsnList();
                 MethodFlow flow = targetBB.flow;
-                List instructions = flow.instructions;
+                InsnList instructions = flow.instructions;
                 // copy instructions
                 dup.startLabel = labelCopyMap.get(orig.startLabel);
                 dup.startPos = instructions.size();
@@ -1291,57 +1294,15 @@ public class BasicBlock implements Comparable<BasicBlock> {
 
                 // create new labels and instructions
                 for (i = orig.startPos;  i <= end; i++, newPos++) {
-                    Label l = flow.getLabelAt(i);
+                    LabelNode l = flow.getLabelAt(i);
                     if (l != null) {
                         l = labelCopyMap.get(l);
                         assert l != null;
                         flow.setLabel(newPos, l);
                     }
-                    if (i != end) {
-                        // last insn gets special treatment
-                        instructions.add(instructions.get(i));
-                    }
+                    extraInsns.add(instructions.get(i).clone(labelCopyMap));
                 }
                 
-                AbstractInsnNode lastInsn = (AbstractInsnNode) instructions.get(orig.endPos);
-                Label dupLabel;
-                int opcode = lastInsn.getOpcode();
-                if (lastInsn instanceof JumpInsnNode) {
-                    JumpInsnNode jin = (JumpInsnNode) lastInsn;
-                    if (lastInsn.getOpcode() != JSR) {
-                        dupLabel = labelCopyMap.get(jin.label);
-                        assert dupLabel != null;
-                        lastInsn = new JumpInsnNode(lastInsn.getOpcode(), dupLabel);
-                    }
-
-                } else if (opcode == TABLESWITCH) {
-                    TableSwitchInsnNode tsin = (TableSwitchInsnNode) lastInsn;
-                    Label[] labels = new Label[tsin.labels.size()];
-                    for (i = 0; i < labels.length; i++) {
-                        dupLabel = labelCopyMap.get(tsin.labels.get(i));
-                        assert dupLabel != null;
-                        labels[i] = dupLabel;
-                    }
-                    dupLabel = labelCopyMap.get(tsin.dflt);
-                    assert dupLabel != null;
-                    lastInsn = new TableSwitchInsnNode(tsin.min, tsin.max, dupLabel, labels);
-                } else if (opcode == LOOKUPSWITCH) {
-                    LookupSwitchInsnNode lsin = (LookupSwitchInsnNode) lastInsn;
-                    Label[] labels = new Label[lsin.labels.size()];
-                    for (i = 0; i < labels.length; i++) {
-                        dupLabel = labelCopyMap.get(lsin.labels.get(i));
-                        assert dupLabel != null;
-                        labels[i] = dupLabel;
-                    }
-                    dupLabel = labelCopyMap.get(lsin.dflt);
-                    assert dupLabel != null;
-                    int[] keys = new int[lsin.keys.size()];
-                    for (i = 0; i < keys.length; i++) {
-                        keys[i] = (Integer) lsin.keys.get(i);
-                    }
-                    lastInsn = new LookupSwitchInsnNode(dupLabel, keys, labels);
-                } 
-                instructions.add(lastInsn);
                 // new handlers
                 dup.handlers = new ArrayList<Handler>(orig.handlers.size());
                 if (orig.handlers.size() > 0) {
@@ -1352,12 +1313,13 @@ public class BasicBlock implements Comparable<BasicBlock> {
                         dup.handlers.add(h);
                     }
                 }
+                instructions.add(extraInsns);
             }
             newBBs.add(dup);
         }
         return newBBs;
     }
-
+    
     public BasicBlock getJSRTarget() {
         return lastInstruction() == JSR ? successors.get(0) : null;
     }
@@ -1407,7 +1369,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
         // otherwise we'll return the next block anyway. This is used
         // to get the block following a JSR instruction, even though 
         // it is not a follower in the control flow sense.
-        Label l = flow.getLabelAt(endPos+1);
+        LabelNode l = flow.getLabelAt(endPos+1);
         assert l != null : "No block follows this block: " + this;
         return flow.getBasicBlock(l);
     }
@@ -1416,7 +1378,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
     public String toString() {
         StringBuffer sb = new StringBuffer(200);
         sb.append("\n========== BB #").append(id).append("[").append(System.identityHashCode(this)).append("]\n");
-        sb.append("method: ").append(this.flow.name).append("\n");
+        sb.append("method: ").append(this.flow.name).append(this.flow.desc).append("\n");
         sb.append("start = ").append(startPos).append(",end = ").append(endPos).append('\n').append("Successors:");
         if (successors.isEmpty())
             sb.append(" None");
@@ -1489,14 +1451,14 @@ public class BasicBlock implements Comparable<BasicBlock> {
         }
     }
 
-    @SuppressWarnings("unchecked")
     void setInstruction(int pos, AbstractInsnNode insn) {
-        flow.instructions.set(pos, insn);
+        flow.instructions.set(getInstruction(pos), insn);
     }
 
-    void changeLastInsnToGOTO(Label label) {
+    void changeLastInsnToGOTO(LabelNode label) {
         setInstruction(endPos, new JumpInsnNode(GOTO, label));
     }
+
 
     public boolean isGetCurrentTask() {
         AbstractInsnNode ain = getInstruction(startPos);

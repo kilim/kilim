@@ -29,11 +29,13 @@ import kilim.Constants;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Attribute;
 import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.tree.AnnotationNode;
-import org.objectweb.asm.tree.LineNumberNode;
+import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LocalVariableNode;
+import org.objectweb.asm.tree.LookupSwitchInsnNode;
+import org.objectweb.asm.tree.TableSwitchInsnNode;
+import org.objectweb.asm.tree.TryCatchBlockNode;
 
 /**
  * This class takes the basic blocks from a MethodFlow and generates 
@@ -87,6 +89,7 @@ public class MethodWeaver {
                 sig = sig.replace(")", D_FIBER + ')');
         }
         MethodVisitor mv = cv.visitMethod(mf.access, mf.name, desc, sig, exceptions);
+
         if (!mf.isAbstract()) {
             if (mf.isPausable()) {
                 accept(mv);
@@ -154,30 +157,22 @@ public class MethodWeaver {
 
     private void visitCode(MethodVisitor mv) {
         mv.visitCode();
+        methodFlow.resetLabels();
         visitTryCatchBlocks(mv);
         visitInstructions(mv);
-        visitLineNumbers(mv);
         visitLocals(mv);
         mv.visitMaxs(maxStack, maxVars);
     }
   
-    // TODO Fix up locals and line numbers.
     private void visitLocals(MethodVisitor mv) {
         for (Object l: methodFlow.localVariables) {
             ((LocalVariableNode)l).accept(mv);
         }
     }
 
-    private void visitLineNumbers(MethodVisitor mv) {
-        for (Object l: methodFlow.lineNumbers) {
-            ((LineNumberNode)l).accept(mv);
-        }
-    }
-
     private void visitInstructions(MethodVisitor mv) {
-        //TODO gen code for pausable JSRs 
-        genPrelude(mv);
         MethodFlow mf = methodFlow;
+        genPrelude(mv);
         BasicBlock lastBB = null;
         for (BasicBlock bb : mf.getBasicBlocks()) {
             int from = bb.startPos;
@@ -194,18 +189,18 @@ public class MethodWeaver {
             }
             int to = bb.endPos;
             for (int i = from; i <= to; i++) {
-                Label l = mf.getLabelAt(i);
+                LabelNode l = mf.getLabelAt(i);
                 if (l != null) {
-                    mv.visitLabel(l);
+                    l.accept(mv);
                 }
                 bb.getInstruction(i).accept(mv);
             }
             lastBB = bb;
         }
         if (lastBB != null) {
-            Label l = methodFlow.getLabelAt(lastBB.endPos+1);
+            LabelNode l = methodFlow.getLabelAt(lastBB.endPos+1);
             if (l != null) {
-                mv.visitLabel(l);
+                l.accept(mv);
             }
         }
     }
@@ -276,7 +271,7 @@ public class MethodWeaver {
      * @param mv
      */
     void genGetCurrentTask(MethodVisitor mv, BasicBlock bb) {
-        mv.visitLabel(bb.startLabel);
+        bb.startLabel.accept(mv);
         loadVar(mv, TOBJECT, getFiberVar());
         mv.visitFieldInsn(GETFIELD, FIBER_CLASS, "task", Constants.D_TASK);
     }
@@ -321,7 +316,9 @@ public class MethodWeaver {
     private void genPrelude(MethodVisitor mv) {
         assert isPausable : "MethodWeaver.genPrelude called for nonPausable method";
         if (callWeavers.size() == 0 && (!hasGetCurrentTask())) {
-            return; // No pausable methods, no getCurrentTask.  Prelude is not needed at all. 
+            // Method has been marked pausable, but does not call any pausable methods, nor Task.getCurrentTask.  
+            // Prelude is not needed at all.
+            return; 
         }
         
         MethodFlow mf = methodFlow;
@@ -339,7 +336,7 @@ public class MethodWeaver {
         if (callWeavers.size() == 0) {
           // No pausable method calls, but Task.getCurrentTask() is present. 
           // We don't need the rest of the prelude.
-          return; 
+           return; 
         }
 
         mv.visitFieldInsn(GETFIELD, FIBER_CLASS, "pc", D_INT);
@@ -348,28 +345,27 @@ public class MethodWeaver {
         ensureMaxStack(2);
 
         // switch stmt
-        Label startLabel = mf.getOrCreateLabelAtPos(0);
-        Label errLabel = new Label();
+        LabelNode startLabel = mf.getOrCreateLabelAtPos(0);
+        LabelNode errLabel = new LabelNode();
         
-        Label[] labels = new Label[callWeavers.size() + 1];
+        LabelNode[] labels = new LabelNode[callWeavers.size() + 1];
         labels[0] = startLabel;
         for (int i = 0; i < callWeavers.size(); i++) {
-            labels[i + 1] = new Label();
+            labels[i + 1] = new LabelNode();
         }
-//        mv.visitTableSwitchInsn(0, callWeavers.size(), startLabel, labels);
-        mv.visitTableSwitchInsn(0, callWeavers.size(), errLabel, labels);
+        new TableSwitchInsnNode(0, callWeavers.size(), errLabel, labels).accept(mv);
         
-        mv.visitLabel(errLabel);
+        errLabel.accept(mv);
         mv.visitMethodInsn(INVOKESTATIC, FIBER_CLASS, "wrongPC", "()V");
         // Generate pass through down code, one for each pausable method
         // invocation
         int last = callWeavers.size() - 1;
         for (int i = 0; i <= last; i++) {
             CallWeaver cw = callWeavers.get(i);
-            mv.visitLabel(labels[i+1]);
+            labels[i+1].accept(mv);
             cw.genRewind(mv);
         }
-        mv.visitLabel(startLabel);
+        startLabel.accept(mv);
     }
 
     boolean isStatic() {
@@ -423,27 +419,27 @@ public class MethodWeaver {
      * NORMAL_EXCEPTION_HANDLING:
      */
     private void genException(MethodVisitor mv, BasicBlock bb, List<CallWeaver> cwList) {
-        mv.visitLabel(bb.startLabel);
-        Label resumeLabel = new Label();
+        bb.startLabel.accept(mv);
+        LabelNode resumeLabel = new LabelNode();
         VMType.loadVar(mv, VMType.TOBJECT, getFiberVar());
         mv.visitMethodInsn(INVOKEVIRTUAL, FIBER_CLASS, "upEx", "()I");
         // fiber.pc is on stack
-        Label[] labels = new Label[cwList.size()];
+        LabelNode[] labels = new LabelNode[cwList.size()];
         int[] keys = new int[cwList.size()];
         for (int i = 0; i < cwList.size(); i++) {
-            labels[i] = new Label();
+            labels[i] = new LabelNode();
             keys[i] = callWeavers.indexOf(cwList.get(i)) + 1;
         }
         
-        mv.visitLookupSwitchInsn(resumeLabel, keys, labels);
+        new LookupSwitchInsnNode(resumeLabel, keys, labels).accept(mv);
         int i = 0;
         for (CallWeaver cw: cwList) {
             if (i > 0) {
                 // This is the jump (to normal exception handling) for the previous
                 // switch case.
-                mv.visitJumpInsn(GOTO, resumeLabel);
+                mv.visitJumpInsn(GOTO, resumeLabel.getLabel());
             }
-            mv.visitLabel(labels[i]);
+            labels[i].accept(mv);
             cw.genRestoreEx(mv, labels[i]);
             i++;
         }
@@ -451,7 +447,7 @@ public class MethodWeaver {
         // Consume the first instruction because we have already consumed the
         // corresponding label. (The standard visitInstructions code does a 
         // visitLabel before visiting the instruction itself)
-        mv.visitLabel(resumeLabel);
+        resumeLabel.accept(mv);
         bb.getInstruction(bb.startPos).accept(mv);
     }
     
@@ -468,7 +464,7 @@ public class MethodWeaver {
         }
         allHandlers = Handler.consolidate(allHandlers);
         for (Handler h : allHandlers) {
-            mv.visitTryCatchBlock(mf.getLabelAt(h.from), mf.getOrCreateLabelAtPos(h.to+1), h.catchBB.startLabel, h.type);
+            new TryCatchBlockNode(mf.getLabelAt(h.from), mf.getOrCreateLabelAtPos(h.to+1), h.catchBB.startLabel, h.type).accept(mv);
         }
     }
 

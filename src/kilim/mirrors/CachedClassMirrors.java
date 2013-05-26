@@ -18,7 +18,7 @@ import org.objectweb.asm.Opcodes;
  * are not already loaded by the classloader
  **/
 
-public class CachedClassMirrors extends Mirrors {
+public class CachedClassMirrors implements Mirrors {
     final static String[] EMPTY_SET = new String[0];
     
     final RuntimeClassMirrors delegate;
@@ -63,7 +63,7 @@ public class CachedClassMirrors extends Mirrors {
     }
 }
 
-class CachedClassMirror extends ClassMirror implements ClassVisitor {
+class CachedClassMirror extends ClassVisitor implements ClassMirror  {
 
     String name;
     boolean isInterface;
@@ -74,8 +74,9 @@ class CachedClassMirror extends ClassMirror implements ClassVisitor {
     private List<CachedMethodMirror> tmpMethodList; //used only while processing bytecode. 
     
     public CachedClassMirror(byte []bytecode) {
+        super(Opcodes.ASM4);
         ClassReader cr = new ClassReader(bytecode);
-        cr.accept(this, true);
+        cr.accept(this, /*flags*/0);
     }
 
     @Override
@@ -179,7 +180,10 @@ class CachedClassMirror extends ClassMirror implements ClassVisitor {
             Object value) {
         return null;
     }
-    static class DummyAnnotationVisitor implements AnnotationVisitor {
+    static class DummyAnnotationVisitor extends AnnotationVisitor {
+        public DummyAnnotationVisitor() {
+            super(Opcodes.ASM4);
+        }
         static DummyAnnotationVisitor singleton = new DummyAnnotationVisitor();
         public void visit(String name, Object value) {}
         public AnnotationVisitor visitAnnotation(String name, String desc) {return this;}

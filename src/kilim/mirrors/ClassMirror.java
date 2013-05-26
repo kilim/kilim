@@ -1,6 +1,6 @@
 package kilim.mirrors;
 
-public abstract class ClassMirror {
+public interface ClassMirror {
 
 	public abstract MethodMirror[] getDeclaredMethods();
 

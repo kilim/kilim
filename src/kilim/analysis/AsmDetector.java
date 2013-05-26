@@ -25,7 +25,7 @@ public class AsmDetector {
             if (classCache == null) {
                 ClassReader cr = new ClassReader(className);
                 ClassNode cn = new ClassNode();
-                cr.accept(cn, false);
+                cr.accept(cn, /*flags*/ 0);
                 classCache = cache(className, cn);
             }
             int status = classCache.getPausableStatus(methodName, desc);

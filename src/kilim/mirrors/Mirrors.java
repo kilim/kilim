@@ -5,7 +5,7 @@ package kilim.mirrors;
  * (via ClassMirror and MethodMirror). This information is obtained either through 
  * loaded Class objects or parsed bytecode.
  */
-public abstract class Mirrors {
+public interface Mirrors {
 	abstract public ClassMirror classForName(String className)
 		throws ClassMirrorNotFoundException;
 

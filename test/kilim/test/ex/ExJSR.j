@@ -2,7 +2,7 @@
 .super java/lang/Object
 
 .method public <init>()V
-   aload_0
+   aload 0
  
    invokenonvirtual java/lang/Object/<init>()V
    return

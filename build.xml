@@ -22,13 +22,13 @@
   
   <target name="compile">
     <echo message="Compiling src ===================" />
-    <javac debug="on" srcdir="src" destdir="classes" 
+    <javac includeantruntime="false" debug="on" srcdir="src" destdir="classes" 
            classpathref="kilim.classpath"/>
     <echo message="Compiling examples ===================" />
-    <javac debug="on" srcdir="examples" destdir="classes" 
+    <javac includeantruntime="false" debug="on" srcdir="examples" destdir="classes" 
            classpathref="kilim.classpath"/>
     <echo message="Compiling benchmarks ===================" />
-    <javac debug="on" srcdir="bench" destdir="classes" 
+    <javac includeantruntime="false" debug="on" srcdir="bench" destdir="classes" 
            classpathref="kilim.classpath"/>
   </target>
   
@@ -42,14 +42,14 @@
   <target name="asm" depends="compile">
     <echo message="Assembling test .j files ===================" />
     <java classname="kilim.tools.Asm" classpathref="kilim.classpath" fork="yes">
-      <arg line="-d ./classes" />
+      <arg line="-nf -d ./classes" />
       <arg line="${dotjfiles}" />
     </java>
   </target>
   
   <target name="testcompile" depends="asm">
     <echo message="Compiling test ===================" />
-    <javac debug="on" srcdir="test" destdir="classes" 
+    <javac includeantruntime="false" debug="on" srcdir="test" destdir="classes" 
            classpathref="kilim.classpath"/>
   </target>
   

@@ -11,6 +11,7 @@ import static kilim.analysis.Utils.pn;
 import static kilim.analysis.Utils.resetIndentation;
 import static org.objectweb.asm.Opcodes.INVOKESTATIC;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -56,7 +57,20 @@ public class FlowAnalyzer {
             pn("-------------------------------------------------");
             pn("Class: " + className);
             System.out.flush();
-            ArrayList<MethodFlow> flows = new ClassFlow(className, detector).analyze(true);
+            ClassFlow cf = null;
+            if (className.endsWith(".class")) {
+                FileInputStream fis = null;
+                try {
+                    fis = new FileInputStream(className);
+                    cf = new ClassFlow(fis, detector);
+                } finally {
+                    if (fis != null) {fis.close();}
+                }
+            }
+            if (cf == null) {
+                cf = new ClassFlow(className, detector);
+            }
+            ArrayList<MethodFlow> flows = cf.analyze(true);
             for (MethodFlow flow: flows) {
                 reportFlow(flow, className);
             }

@@ -8,6 +8,8 @@ package kilim.analysis;
 
 import static org.objectweb.asm.Opcodes.NOP;
 
+import java.util.Map;
+
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.tree.AbstractInsnNode;
 
@@ -24,4 +26,16 @@ class NopInsn extends AbstractInsnNode {
     public void accept(MethodVisitor mv) {
         // Do nothing
     }
+
+
+    @Override
+    public String toString() {
+        return "NOP";
+    }
+
+    @Override
+    public AbstractInsnNode clone(@SuppressWarnings("rawtypes") Map labels) {
+        return new NopInsn();
+    }
+
 }

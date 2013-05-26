@@ -38,14 +38,12 @@ import org.objectweb.asm.Opcodes;
  * meant to be parseable by Asm.
  * @author sriram
  */
-public class DumpClass implements Opcodes, ClassVisitor {
+public class DumpClass extends ClassVisitor implements Opcodes {
     
     static boolean lineNumbers = true;
     
     public static void main(String[] args) throws IOException {
         String name = args.length == 2 ? args[1] : args[0];
-        //int flags = args.length == 2 ? 0: ClassReader.SKIP_DEBUG;
-        boolean flags = false; // skipdebug
         
         if (name.endsWith(".jar")) {
             try {
@@ -55,23 +53,25 @@ public class DumpClass implements Opcodes, ClassVisitor {
                     String n = en.getName();
                     if (!n.endsWith(".class")) continue;
                     n = n.substring(0, n.length() - 6).replace('/','.');
-                    new DumpClass(n, flags);
+                    new DumpClass(n);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
         } else {
-            new DumpClass(name, flags);
+            new DumpClass(name);
         }
     }
     
 
-    public DumpClass(InputStream is, boolean flags) throws IOException {
+    public DumpClass(InputStream is) throws IOException {
+        super(ASM4);
         ClassReader cr = new ClassReader(is);
-        cr.accept(this, flags);
+        cr.accept(this, /*flags*/ 0);
     }
 
-    public DumpClass(String className, boolean flags) throws IOException {
+    public DumpClass(String className) throws IOException {
+        super(ASM4);
         ClassReader cr;
         if (className.endsWith(".class")) {
             FileInputStream fis = new FileInputStream(className);
@@ -79,7 +79,7 @@ public class DumpClass implements Opcodes, ClassVisitor {
         } else {
             cr = new ClassReader(className);
         }
-        cr.accept(this, flags);
+        cr.accept(this, /*flags*/ClassReader.EXPAND_FRAMES);
     }
 
     public void visit(int version, int access, String name, String signature, 
@@ -158,7 +158,11 @@ public class DumpClass implements Opcodes, ClassVisitor {
     public void visitSource(String source, String debug) {}
 }
 
-class DummyAnnotationVisitor implements AnnotationVisitor {
+class DummyAnnotationVisitor extends AnnotationVisitor {
+    public DummyAnnotationVisitor() {
+        super(Opcodes.ASM4);
+        // TODO Auto-generated constructor stub
+    }
     public void visit(String name, Object value) {
 //        System.out.println("visit: name = " + name + ", value = "  + value);
     }
@@ -181,9 +185,10 @@ class DummyAnnotationVisitor implements AnnotationVisitor {
     }
 }
 
-class DumpMethodVisitor implements Opcodes, MethodVisitor {
+class DumpMethodVisitor extends MethodVisitor implements Opcodes {
 
     public DumpMethodVisitor() {
+        super(Opcodes.ASM4);
     }
 
     static String[] os = {
@@ -234,7 +239,38 @@ class DumpMethodVisitor implements Opcodes, MethodVisitor {
     }
 
     public void visitFrame(int type, int nLocal, Object[] local, int nStack, Object[] stack) {
-        pn("; VISIT FRAME");
+        pn("; Frame " + type);
+        
+        p (";  Locals - ");
+        for(int i = 0; i < nLocal; i++) {
+            Object o = local[i];
+            System.out.print("#" + i + "."  + type(o) + "  ");
+        }
+        System.out.println();
+        p(";  Stack - ");
+        for(int i = 0; i < nStack; i++) {
+            Object o = stack[i];
+            System.out.print("#" + i + "."  + type(o) + "  ");
+        }
+        System.out.println("");
+    }
+
+    private String type(Object o) {
+        if (o == null) {
+            return "null";
+        } else if (o instanceof Integer) {
+            switch (((Integer)o).intValue()) {
+            case 0: return "Top";
+            case 1: return "Integer";
+            case 2: return "Float";
+            case 3: return "Double";
+            case 4: return "Long";
+            case 5: return "Null";
+            case 6: return "Uninitialized_This";            }
+        } else if (o instanceof String) {
+            return (String)o;
+        }
+        return "??UNKNOWN??" + o.getClass() + ":" + o;
     }
 
     public void visitIincInsn(int var, int increment) {
@@ -311,7 +347,7 @@ class DumpMethodVisitor implements Opcodes, MethodVisitor {
         ppn("multinewarray " + desc + " " + dims) ;
     }
 
-    public void visitTableSwitchInsn(int min, int max, Label dflt, Label[] labels) {
+    public void visitTableSwitchInsn(int min, int max, Label dflt, Label... labels) {
         ppn("tableswitch  " + min);
         indent(4);
         for (int i = min; i <= max; i++) {

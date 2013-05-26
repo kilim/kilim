@@ -5,20 +5,19 @@
  */
 
 package kilim.analysis;
-import static kilim.Constants.ALOAD_0;
 import static kilim.Constants.D_FIBER;
 import static kilim.Constants.STATE_CLASS;
 import static kilim.Constants.WOVEN_FIELD;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 import static org.objectweb.asm.Opcodes.ACC_STATIC;
+import static org.objectweb.asm.Opcodes.ALOAD;
 import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.RETURN;
 import static org.objectweb.asm.Opcodes.V1_1;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashSet;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -30,6 +29,7 @@ import org.objectweb.asm.Attribute;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.InnerClassNode;
@@ -63,7 +63,8 @@ public class ClassWeaver {
     public void weave() throws KilimException {
         classFlow.analyze(false);
         if (needsWeaving() && classFlow.isPausable()) {
-            ClassWriter cw = new ClassWriter(false);
+            boolean computeFrames = (classFlow.version & 0x00FF) >= 50;
+            ClassWriter cw = new ClassWriter(computeFrames ? ClassWriter.COMPUTE_FRAMES : 0);
             accept(cw);
             addClassInfo(new ClassInfo(classFlow.getClassName(), cw.toByteArray()));
         }
@@ -123,6 +124,7 @@ public class ClassWeaver {
                 mw.accept(cv);
                 mw.makeNotWovenMethod(cv, m);
             } else {
+                m.restoreNonInstructionNodes();
                 m.accept(cv);
             }
         }
@@ -202,7 +204,7 @@ public class ClassWeaver {
         synchronized (stateClasses) {
             classInfo= stateClasses.get(className);
             if (classInfo == null) {
-                ClassWriter cw = new ClassWriter(false);
+                ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
                 cw.visit(V1_1, ACC_PUBLIC | ACC_FINAL, className, null, "kilim/State", null);
 
                 // Create default constructor
@@ -210,7 +212,7 @@ public class ClassWeaver {
                 // super(); // call java/lang/Object.<init>()
                 // }
                 MethodVisitor mw = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-                mw.visitInsn(ALOAD_0);
+                mw.visitVarInsn(ALOAD, 0);
                 mw.visitMethodInsn(INVOKESPECIAL, STATE_CLASS, "<init>", "()V");
                 mw.visitInsn(RETURN);
                 // this code uses a maximum of one stack element and one local variable

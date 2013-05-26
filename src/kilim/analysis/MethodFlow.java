@@ -26,14 +26,14 @@ import kilim.KilimException;
 import kilim.mirrors.Detector;
 
 import org.objectweb.asm.AnnotationVisitor;
-import org.objectweb.asm.Attribute;
 import org.objectweb.asm.Label;
-import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.AnnotationNode;
+import org.objectweb.asm.tree.FrameNode;
+import org.objectweb.asm.tree.InsnList;
+import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LineNumberNode;
-import org.objectweb.asm.tree.LocalVariableNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TryCatchBlockNode;
@@ -52,23 +52,23 @@ public class MethodFlow extends MethodNode {
     ClassFlow                  classFlow;
     
     /**
-     * Maps instructions[i] to Label or null (if no label). Note that
+     * Maps instructions[i] to LabelNode or null (if no label). Note that
      * LabelInsnNodes are not accounted for here because they themselves are not
      * labelled.
      */
     
-    private ArrayList<Label>           posToLabelMap;
+    private ArrayList<LabelNode>           posToLabelMap;
     
     /**
      * Reverse map of posToLabelMap. Maps Labels to index within
      * method.instructions.
      */
-    private HashMap<Label, Integer>    labelToPosMap;
+    private HashMap<LabelNode, Integer>    labelToPosMap;
     
     /**
      * Maps labels to BasicBlocks
      */
-    private HashMap<Label, BasicBlock> labelToBBMap;
+    private HashMap<LabelNode, BasicBlock> labelToBBMap;
     
     /**
      * The list of basic blocks, in the order in which they occur in the class file.
@@ -85,6 +85,10 @@ public class MethodFlow extends MethodNode {
     private List<MethodInsnNode> pausableMethods = new LinkedList<MethodInsnNode>();
     
 	private final Detector detector;
+
+    private HashMap<Integer, LineNumberNode> lineNumberNodes = new HashMap<Integer, LineNumberNode>();
+
+    private HashMap<Integer, FrameNode> frameNodes = new HashMap<Integer, FrameNode>();
     
     public MethodFlow(
             ClassFlow classFlow,
@@ -97,13 +101,10 @@ public class MethodFlow extends MethodNode {
         super(access, name, desc, signature, exceptions);
         this.classFlow = classFlow;
         this.detector = detector;
-        int numInstructions = instructions.size();
-        posToLabelMap = new ArrayList<Label>(numInstructions);
-        for (int i = numInstructions - 1 ; i >= 0; i--) {
-            posToLabelMap.add(null);
-        }
-        labelToPosMap = new HashMap<Label, Integer>(numInstructions * 2);
-        labelToBBMap = new HashMap<Label, BasicBlock>(numInstructions);
+        posToLabelMap = new ArrayList<LabelNode>();
+        labelToPosMap = new HashMap<LabelNode, Integer>();
+        labelToBBMap = new HashMap<LabelNode, BasicBlock>();
+
         if (exceptions != null && exceptions.length > 0) {
             for (String e: exceptions) { 
                 if (e.equals(PAUSABLE_CLASS)) {
@@ -115,6 +116,33 @@ public class MethodFlow extends MethodNode {
             }
         }
     }
+
+    public void restoreNonInstructionNodes() {
+        InsnList newinsns = new InsnList();
+        for (int i = 0; i < instructions.size(); i++) {
+            LabelNode l = getLabelAt(i);
+            if (l != null) {
+                newinsns.add(l);
+            }
+            LineNumberNode ln = lineNumberNodes.get(instructions.size());
+            if (ln != null) {
+                newinsns.add(ln);
+            }
+            AbstractInsnNode ain = instructions.get(i);
+            newinsns.add(ain);
+        }
+        
+        LabelNode l = getLabelAt(instructions.size());
+        if (l != null) {
+            newinsns.add(l);
+        }
+        LineNumberNode ln = lineNumberNodes.get(instructions.size());
+        if (ln != null) {
+            newinsns.add(ln);
+        }
+        super.instructions = newinsns;
+    }
+
     
     public void analyze() throws KilimException {
         buildBasicBlocks();
@@ -126,7 +154,7 @@ public class MethodFlow extends MethodNode {
         dataFlow();
         this.labelToBBMap = null; // we don't need this mapping anymore
     }
-    
+
     public void verifyPausables() throws KilimException {
         // If we are looking at a woven file, we don't need to verify
         // anything
@@ -175,24 +203,7 @@ public class MethodFlow extends MethodNode {
         return className.replace('/', '.') + '.' + methName + desc;
     }
     
-    @Override
-    public void visitLabel(Label label) {
-//        if (hasPausableAnnotation)
-            setLabel(instructions.size(), label);
-//        else
-//            super.visitLabel(label);
-    }
     
-    /*
-    @Override
-    public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-        AnnotationVisitor av = super.visitAnnotation(desc, visible);
-        if (visible && desc.equals(D_PAUSABLE)) {
-            hasPausableAnnotation = true;
-        }
-        return av;
-    }
-*/
     @Override
     public void visitMethodInsn(int opcode, String owner, String name, String desc) {
         super.visitMethodInsn(opcode, owner, name, desc);
@@ -208,6 +219,23 @@ public class MethodFlow extends MethodNode {
         }
     }
     
+    @Override
+    public void visitLabel(Label label) {
+        setLabel(instructions.size(), super.getLabelNode(label));
+    }
+    
+    @Override
+    public void visitLineNumber(int line, Label start) {
+        LabelNode ln = getLabelNode(start);
+        lineNumberNodes.put(instructions.size(), new LineNumberNode(line, ln));
+    }
+    
+    @Override
+    public void visitFrame(int type, int nLocal, Object[] local, int nStack,
+            Object[] stack) {
+        frameNodes.put(instructions.size(), new FrameNode(type, nLocal, local, nStack, stack));
+    }
+        
     private void inlineSubroutines() throws KilimException {
         markPausableJSRs();
         while (true) {
@@ -261,8 +289,8 @@ public class MethodFlow extends MethodNode {
         return basicBlocks;
     }
     
-    @SuppressWarnings("unchecked")
     private void assignCatchHandlers() {
+        @SuppressWarnings("unchecked")
         ArrayList<TryCatchBlockNode> tcbs = (ArrayList<TryCatchBlockNode>) tryCatchBlocks;
         /// aargh. I'd love to create an array of Handler objects, but generics
         // doesn't care for it.
@@ -288,7 +316,7 @@ public class MethodFlow extends MethodNode {
         basicBlocks = new BBList();
         // Note: i modified within the loop
         for (int i = 0; i < numInstructions; i++) {
-            Label l = getOrCreateLabelAtPos(i);
+            LabelNode l = getOrCreateLabelAtPos(i);
             BasicBlock bb = getOrCreateBasicBlock(l);
             i = bb.initialize(i); // i now points to the last instruction in bb. 
             basicBlocks.add(bb);
@@ -349,7 +377,7 @@ public class MethodFlow extends MethodNode {
             assert bb.isInitialized() : "BB not inited: " + bb;
             assert bb.startPos == prevBBend + 1;
             for (BasicBlock succ: bb.successors) {
-                assert succ.isInitialized() : "Basic block not inited. Succ of " + bb;
+                assert succ.isInitialized() : "Basic block not inited: " + succ +"\nSuccessor of " + bb;
                 assert hs.contains(succ) : 
                     "BB not found:\n" + succ; 
             }
@@ -373,33 +401,32 @@ public class MethodFlow extends MethodNode {
         }
     }
     
-    void setLabel(int pos, Label l) {
+    void setLabel(int pos, LabelNode l) {
         for (int i = pos - posToLabelMap.size() + 1; i >= 0; i--) {
-            //pad with nulls ala perl
+            // pad with nulls ala perl
             posToLabelMap.add(null);
         }
-        assert posToLabelMap.get(pos) == null;
         posToLabelMap.set(pos, l);
         labelToPosMap.put(l, pos);
     }
     
-    Label getOrCreateLabelAtPos(int pos) {
-        Label ret = null;
+    LabelNode getOrCreateLabelAtPos(int pos) {
+        LabelNode ret = null;
         if (pos < posToLabelMap.size()) {
             ret = posToLabelMap.get(pos);
         }
         if (ret == null) {
-            ret = new Label();
+            ret = new LabelNode();
             setLabel(pos, ret);
         }
         return ret;
     }
     
-    int getLabelPosition(Label l) {
+    int getLabelPosition(LabelNode l) {
         return labelToPosMap.get(l);
     }
     
-    BasicBlock getOrCreateBasicBlock(Label l) { 
+    BasicBlock getOrCreateBasicBlock(LabelNode l) {
         BasicBlock ret = labelToBBMap.get(l);
         if (ret == null) {
             ret = new BasicBlock(this, l);
@@ -409,7 +436,7 @@ public class MethodFlow extends MethodNode {
         return ret;
     }
 
-    BasicBlock getBasicBlock(Label l) { 
+    BasicBlock getBasicBlock(LabelNode l) { 
         return labelToBBMap.get(l);
     }
 
@@ -427,104 +454,13 @@ public class MethodFlow extends MethodNode {
         }
     }
 
-    public Label getLabelAt(int pos) {
+    public LabelNode getLabelAt(int pos) {
         return  (pos < posToLabelMap.size()) ? posToLabelMap.get(pos) : null;
     }
 
     void addInlinedBlock(BasicBlock bb) {
         bb.setId(basicBlocks.size());
         basicBlocks.add(bb);
-    }
-
-    @Override
-    /**
-     * Copied verbatim from MethodNode except for the instruction processing.
-     * Unlike MethodNode, we don't keep LabelNodes inline, so we need to 
-     * do visitLabel ourselves.
-     * 
-     * @param mv a method visitor.
-     */
-    public void accept(final MethodVisitor mv) {
-        // visits the method attributes
-        int i, j, n;
-        if (annotationDefault != null) {
-            AnnotationVisitor av = mv.visitAnnotationDefault();
-            acceptAnnotation(av, null, annotationDefault);
-            av.visitEnd();
-        }
-        n = visibleAnnotations == null ? 0 : visibleAnnotations.size();
-        for (i = 0; i < n; ++i) {
-            AnnotationNode an = (AnnotationNode) visibleAnnotations.get(i);
-            an.accept(mv.visitAnnotation(an.desc, true));
-        }
-        n = invisibleAnnotations == null ? 0 : invisibleAnnotations.size();
-        for (i = 0; i < n; ++i) {
-            AnnotationNode an = (AnnotationNode) invisibleAnnotations.get(i);
-            an.accept(mv.visitAnnotation(an.desc, false));
-        }
-        n = visibleParameterAnnotations == null
-                ? 0
-                : visibleParameterAnnotations.length;
-        for (i = 0; i < n; ++i) {
-            List<?> l = visibleParameterAnnotations[i];
-            if (l == null) {
-                continue;
-            }
-            for (j = 0; j < l.size(); ++j) {
-                AnnotationNode an = (AnnotationNode) l.get(j);
-                an.accept(mv.visitParameterAnnotation(i, an.desc, true));
-            }
-        }
-        n = invisibleParameterAnnotations == null
-                ? 0
-                : invisibleParameterAnnotations.length;
-        for (i = 0; i < n; ++i) {
-            List<?> l = invisibleParameterAnnotations[i];
-            if (l == null) {
-                continue;
-            }
-            for (j = 0; j < l.size(); ++j) {
-                AnnotationNode an = (AnnotationNode) l.get(j);
-                an.accept(mv.visitParameterAnnotation(i, an.desc, false));
-            }
-        }
-        n = attrs == null ? 0 : attrs.size();
-        for (i = 0; i < n; ++i) {
-            mv.visitAttribute((Attribute) attrs.get(i));
-        }
-        // visits the method's code
-        if (instructions.size() > 0) {
-            mv.visitCode();
-            // visits try catch blocks
-            for (i = 0; i < tryCatchBlocks.size(); ++i) {
-                ((TryCatchBlockNode) tryCatchBlocks.get(i)).accept(mv);
-            }
-            // visits instructions
-            for (i = 0; i < instructions.size(); ++i) {
-                Label l = getLabelAt(i);
-                if (l != null) {
-                    mv.visitLabel(l);
-                }
-                ((AbstractInsnNode) instructions.get(i)).accept(mv);
-            }
-            Label l = getLabelAt(instructions.size());
-            if (l != null) {
-                mv.visitLabel(l);
-            }
-            // visits local variables
-            n = localVariables == null ? 0 : localVariables.size();
-            for (i = 0; i < n; ++i) {
-                ((LocalVariableNode) localVariables.get(i)).accept(mv);
-            }
-            // visits line numbers
-            n = lineNumbers == null ? 0 : lineNumbers.size();
-            for (i = 0; i < n; ++i) {
-                ((LineNumberNode) lineNumbers.get(i)).accept(mv);
-            }
-            // visits maxs
-            mv.visitMaxs(maxStack, maxLocals);
-        }
-        mv.visitEnd();
     }
 
     public int getNumArgs() {
@@ -575,6 +511,16 @@ public class MethodFlow extends MethodNode {
 	public Detector detector() {
 		return this.classFlow.detector();
 }
+
+    public void resetLabels() {
+        for (int i = 0; i < posToLabelMap.size(); i++) {
+            LabelNode ln = posToLabelMap.get(i);
+            if (ln != null) {
+                ln.resetLabel();
+            }
+        }
+        
+    }
 
 
 }

@@ -32,8 +32,16 @@ import org.objectweb.asm.Type;
  * inserted by jasmin don't show up in java.lang.reflect.Method, even though the
  * annotations are in the class file. It was easier to write this tool than to
  * release a separate fix for jasmin.
+ * <pre>
+ * Usage: java kilim.tools.Asm [options] <.j file(s)>
+ * Options:
+ *      -d <dir> : output directory (default: '.')
+ *      -q       : quiet            (default: verbose)
+ *      -nf      : no stack frames  (default: compute stack frames)
+ * </pre>
+ * If stack frames are requested (default), the version of the class file is V1_6, otherwise
+ * it is V1_5.
  * 
- * Usage: java kilim.tools.Asm <.j file(s)>
  * @author sriram srinivasan (sriram@malhar.net)
  */
 public class Asm {
@@ -55,7 +63,6 @@ public class Asm {
     private Line                    line, bufferedLine;
     private Matcher                 lastMatch= null; // for error context
     private Pattern                 lastPattern = null;
-
 
     private LineNumberReader        reader;
 
@@ -89,7 +96,7 @@ public class Asm {
     public Asm(String afileName) throws IOException {
         fileName = afileName;
         reader = new LineNumberReader(new FileReader(fileName));
-        cv = new ClassWriter(false);
+        cv = new ClassWriter(computeFrames? ClassWriter.COMPUTE_FRAMES : 0);  
         try {
             parseClass();
         } catch (EOF eof) {
@@ -132,7 +139,7 @@ public class Asm {
         className = group(4);
         String superClassName = parseSuper();
         String[] interfaces = parseInterfaces();
-        cv.visit(V1_5, acc, className, null, superClassName, interfaces);
+        cv.visit((computeFrames ? V1_6 : V1_5), acc, className, null, superClassName, interfaces);
         
         parseClassBody();
 
@@ -368,6 +375,8 @@ public class Asm {
             "new", "newarray", "anewarray", "arraylength", "athrow",
             "checkcast", "instanceof", "monitorenter", "monitorexit", "wide",
             "multianewarray", "ifnull", "ifnonnull", "goto_w", "jsr_w" };
+    
+    private static boolean computeFrames = true;
 
     private final static HashMap<String, Integer> opcodeMap      = new HashMap<String, Integer>();
     private final static byte[]                   visitTypes;
@@ -469,7 +478,7 @@ public class Asm {
                     }
                 }
                 Label[] labels = labelList.toArray(new Label[labelList.size()]);
-                int max = labels.length - 1;
+                int max = min + labels.length - 1;
                 mv.visitTableSwitchInsn(min, max, defLabel, labels);
                 break;
             }
@@ -788,6 +797,8 @@ public class Asm {
                 outputDir = args[++i];
             } else if (arg.equals("-q")) {
                 quiet = true;
+            } else if (arg.equals("-nf")) {
+                computeFrames = false;
             } else {
                 ret.add(arg);
             }
