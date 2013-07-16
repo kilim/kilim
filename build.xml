@@ -91,8 +91,10 @@
     </delete>
     <delete dir="./classes" />
     <delete dir="./testclasses" />
+	<delete dir="./dist" />
     <mkdir dir="./classes" />
     <mkdir dir="./testclasses" />
+	<mkdir dir="./dist" />
   </target>
   
   
@@ -123,7 +125,7 @@
 
   <target name="jar" description="generate the distribution" depends="build">
     <copy file="License" todir="classes/kilim" />
-    <jar jarfile="kilim.jar" basedir="classes">
+    <jar jarfile="dist/kilim.jar" basedir="classes">
       <exclude name="kilim/test/**" />
       <exclude name="kilim/examples/**" />
       <exclude name="kilim/bench/**" />
@@ -131,7 +133,7 @@
 	<attribute name="Main-Class" value="kilim.tools.Weaver"/>
       </manifest>	
     </jar>
-    <jar jarfile="kilim-runtime.jar" basedir="classes">
+    <jar jarfile="dist/kilim-runtime.jar" basedir="classes">
       <exclude name="kilim/test/**" />
       <exclude name="kilim/examples/**" />
       <exclude name="kilim/bench/**" />

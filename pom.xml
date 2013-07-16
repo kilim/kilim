@@ -7,12 +7,7 @@
 	<groupId>kilim</groupId>
 	<artifactId>kilim</artifactId>
 	<version>1.0.1</version>
-
-	<properties>
-		<maven.compiler.source>1.7</maven.compiler.source>
-		<maven.compiler.target>1.7</maven.compiler.target>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	</properties>
+	<packaging>pom</packaging>
 
 	<dependencies>
 		<dependency>
@@ -21,19 +16,61 @@
 			<version>4.1</version>
 		</dependency>
 	</dependencies>
-	
-	<issueManagement>
-		<system>GitHub</system>
-		<url>https://github.com/kilim/kilim/issues</url>
-	</issueManagement>
-	<name>Kilim</name>
-	<description>Kilim is a message-passing framework for Java that provides ultra-lightweight threads and facilities for fast, safe, zero-copy messaging between these threads.
 
-    It consists of a bytecode postprocessor (a &quot;weaver&quot;), a run time library with buffered mailboxes (multi-producer, single consumer queues) and a user-level scheduler and a type system that puts certain constraints on pointer aliasing within messages to ensure interference-freedom between threads.</description>
-	<url>http://www.malhar.net/sriram/kilim/</url>
-	<scm>
-		<url>https://github.com/pellcorp/kilim.git</url>
-	</scm>
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>maven-antrun-plugin</artifactId>
+
+				<!-- http://docs.codehaus.org/display/MAVENUSER/Running+ant+tasks+that+use+the+JDK -->
+				<dependencies>
+					<dependency>
+						<groupId>com.sun</groupId>
+						<artifactId>tools</artifactId>
+						<version>1.7.0</version>
+						<scope>system</scope>
+						<systemPath>${java.home}/../lib/tools.jar</systemPath>
+					</dependency>
+				</dependencies>
+				<executions>
+					<execution>
+						<phase>process-resources</phase>
+						<configuration>
+							<tasks>
+								<ant antfile="build.xml" target="all" />
+							</tasks>
+						</configuration>
+						<goals>
+							<goal>run</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<version>1.3</version>
+				<executions>
+					<execution>
+						<id>add-jar</id>
+						<phase>package</phase>
+						<goals>
+							<goal>attach-artifact</goal>
+						</goals>
+						<configuration>
+							<artifacts>
+								<artifact>
+									<file>dist/kilim.jar</file>
+									<type>jar</type>
+								</artifact>
+							</artifacts>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 
 	<distributionManagement>
 		<repository>
