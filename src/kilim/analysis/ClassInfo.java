@@ -26,4 +26,30 @@ public class ClassInfo {
     public String toString() {
         return className;
     }
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + className.hashCode();
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof ClassInfo)) {
+			return false;
+		}
+		ClassInfo other = (ClassInfo) obj;
+		if (!className.equals(other.className)) {
+			return false;
+		}
+		return true;
+	}
 }
