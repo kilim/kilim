@@ -15,9 +15,8 @@
     </fileset>
     <pathelement path="${java.class.path}" />
   </path>
-
-
-  <target name="all" depends="clean,weave" />
+  <target name="all" depends="build,test,jar" />
+  <target name="build" depends="clean,weave" />
   <target name="test" depends="testnotwoven,testwoven" />
   
   <target name="compile">
@@ -92,8 +91,10 @@
     </delete>
     <delete dir="./classes" />
     <delete dir="./testclasses" />
+	<delete dir="./dist" />
     <mkdir dir="./classes" />
     <mkdir dir="./testclasses" />
+	<mkdir dir="./dist" />
   </target>
   
   
@@ -122,12 +123,9 @@
     </java>
   </target>
 
-  <target name="jar" description="generate the distribution">
+  <target name="jar" description="generate the distribution" depends="build">
     <copy file="License" todir="classes/kilim" />
-    <jar jarfile="kilim.jar" basedir="classes">
-      <zipgroupfileset dir="libs" includes="*.jar">
-	<exclude name="junit.jar" />
-      </zipgroupfileset>
+    <jar jarfile="dist/kilim.jar" basedir="classes">
       <exclude name="kilim/test/**" />
       <exclude name="kilim/examples/**" />
       <exclude name="kilim/bench/**" />
@@ -135,7 +133,7 @@
 	<attribute name="Main-Class" value="kilim.tools.Weaver"/>
       </manifest>	
     </jar>
-    <jar jarfile="kilim-runtime.jar" basedir="classes">
+    <jar jarfile="dist/kilim-runtime.jar" basedir="classes">
       <exclude name="kilim/test/**" />
       <exclude name="kilim/examples/**" />
       <exclude name="kilim/bench/**" />

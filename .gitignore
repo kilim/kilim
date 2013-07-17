@@ -2,3 +2,7 @@ classes/**/*
 testclasses/**/*
 .DS_Store
 /classes
+/.settings
+/dist
+/testclasses
+/.project
