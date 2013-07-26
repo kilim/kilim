@@ -1,4 +1,4 @@
-package kilim.analysis;
+package kilim.asm;
 
 public class ClassWriter extends org.objectweb.asm.ClassWriter {
 	private final ClassLoader classLoader;
