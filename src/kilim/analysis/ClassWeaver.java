@@ -79,7 +79,7 @@ public class ClassWeaver {
         classFlow.analyze(false);
         if (needsWeaving() && classFlow.isPausable()) {
             boolean computeFrames = (classFlow.version & 0x00FF) >= 50;
-            ClassWriter cw = new kilim.asm.ClassWriter(computeFrames ? ClassWriter.COMPUTE_FRAMES : 0, classLoader);
+            ClassWriter cw = new kilim.analysis.ClassWriter(computeFrames ? ClassWriter.COMPUTE_FRAMES : 0, classLoader);
             accept(cw);
             addClassInfo(new ClassInfo(classFlow.getClassName(), cw.toByteArray()));
         }
@@ -219,7 +219,7 @@ public class ClassWeaver {
         synchronized (stateClasses) {
             classInfo= stateClasses.get(className);
             if (classInfo == null) {
-                ClassWriter cw = new kilim.asm.ClassWriter(ClassWriter.COMPUTE_FRAMES, classLoader);
+                ClassWriter cw = new kilim.analysis.ClassWriter(ClassWriter.COMPUTE_FRAMES, classLoader);
                 cw.visit(V1_1, ACC_PUBLIC | ACC_FINAL, className, null, "kilim/State", null);
 
                 // Create default constructor
