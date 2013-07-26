@@ -29,7 +29,6 @@ import org.objectweb.asm.Attribute;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.InnerClassNode;
@@ -40,31 +39,47 @@ import org.objectweb.asm.tree.InnerClassNode;
  * CPS transformed file if needed
  */
 public class ClassWeaver {
-    public ClassFlow       classFlow;
+    public ClassFlow classFlow;
     List<ClassInfo> classInfoList = new LinkedList<ClassInfo>();
     static HashMap<String, ClassInfo> stateClasses = new HashMap<String, ClassInfo>();
-
+    private final ClassLoader classLoader;
+    
     public ClassWeaver(byte[] data) {
-        this(data, Detector.DEFAULT);
+        this(data, Detector.DEFAULT, Thread.currentThread().getContextClassLoader());
     }
     
     public ClassWeaver(byte[] data, Detector detector) {
-        classFlow = new ClassFlow(data, detector);
+    	this(data, detector, Thread.currentThread().getContextClassLoader());
     }
     
     public ClassWeaver(InputStream is, Detector detector) throws IOException {
-        classFlow = new ClassFlow(is, detector);
+    	this(is, detector, Thread.currentThread().getContextClassLoader());
     }
     
     public ClassWeaver(String className, Detector detector) throws IOException {
+        this(className, detector, Thread.currentThread().getContextClassLoader());
+    }
+    
+    public ClassWeaver(byte[] data, Detector detector, ClassLoader classLoader) {
+        classFlow = new ClassFlow(data, detector);
+        this.classLoader = classLoader;
+    }
+    
+    public ClassWeaver(InputStream is, Detector detector, ClassLoader classLoader) throws IOException {
+        classFlow = new ClassFlow(is, detector);
+        this.classLoader = classLoader;
+    }
+    
+    public ClassWeaver(String className, Detector detector, ClassLoader classLoader) throws IOException {
         classFlow = new ClassFlow(className, detector);
+        this.classLoader = classLoader;
     }
     
     public void weave() throws KilimException {
         classFlow.analyze(false);
         if (needsWeaving() && classFlow.isPausable()) {
             boolean computeFrames = (classFlow.version & 0x00FF) >= 50;
-            ClassWriter cw = new ClassWriter(computeFrames ? ClassWriter.COMPUTE_FRAMES : 0);
+            ClassWriter cw = new kilim.asm.ClassWriter(computeFrames ? ClassWriter.COMPUTE_FRAMES : 0, classLoader);
             accept(cw);
             addClassInfo(new ClassInfo(classFlow.getClassName(), cw.toByteArray()));
         }
@@ -204,7 +219,7 @@ public class ClassWeaver {
         synchronized (stateClasses) {
             classInfo= stateClasses.get(className);
             if (classInfo == null) {
-                ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+                ClassWriter cw = new kilim.asm.ClassWriter(ClassWriter.COMPUTE_FRAMES, classLoader);
                 cw.visit(V1_1, ACC_PUBLIC | ACC_FINAL, className, null, "kilim/State", null);
 
                 // Create default constructor
