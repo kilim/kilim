@@ -16,7 +16,6 @@
     <pathelement path="${java.class.path}" />
   </path>
 
-
   <target name="all" depends="clean,weave" />
   <target name="test" depends="testnotwoven,testwoven" />
   
@@ -126,21 +125,31 @@
     <copy file="License" todir="classes/kilim" />
     <jar jarfile="kilim.jar" basedir="classes">
       <zipgroupfileset dir="libs" includes="*.jar">
-	<exclude name="junit.jar" />
+		<exclude name="junit.jar" />
       </zipgroupfileset>
       <exclude name="kilim/test/**" />
       <exclude name="kilim/examples/**" />
       <exclude name="kilim/bench/**" />
       <manifest>
-	<attribute name="Main-Class" value="kilim.tools.Weaver"/>
+		<attribute name="Main-Class" value="kilim.tools.Weaver"/>
       </manifest>	
     </jar>
+
     <jar jarfile="kilim-runtime.jar" basedir="classes">
       <exclude name="kilim/test/**" />
       <exclude name="kilim/examples/**" />
       <exclude name="kilim/bench/**" />
       <exclude name="kilim/tools/**" />
       <exclude name="kilim/analysis/**" />
+    </jar>
+  </target>
+
+  <target name="maven" depends="all,test" description="generate the maven jar">
+    <copy file="License" todir="classes/kilim" />
+	<jar jarfile="kilim.jar" basedir="classes">
+      <exclude name="kilim/test/**" />
+      <exclude name="kilim/examples/**" />
+      <exclude name="kilim/bench/**" />
     </jar>
   </target>
 </project>
