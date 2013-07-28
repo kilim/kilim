@@ -1,4 +1,4 @@
-Kilim v0.7
+Kilim v1.0
 Copyright (c) 2006 Sriram Srinivasan.
 (kilim _at_ malhar.net)
 ======================================================================
@@ -9,7 +9,7 @@ License file).
 Please see docs/manual.txt and docs/kilim_ecoop08.pdf for a brief
 introduction.
 
-This software depends on the ASM bytecode library (v 2.2.3). 
+This software depends on the ASM bytecode library (v. 4.x)
 
 To build, you can either run "build.sh" on Unix or ant from the top
 directory. Run "test.sh" or "ant test" to test.

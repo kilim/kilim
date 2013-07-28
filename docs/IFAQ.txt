@@ -1,6 +1,6 @@
-(Copyright 2007 Sriram Srinivasan)
+(Copyright 2006 Sriram Srinivasan)
 
-Kilim IFAQ: Infrequently Asked Questions. Kilim v 0.7
+Kilim IFAQ: Infrequently Asked Questions. Kilim v 1.0
 -- sriram srinivasan (Kilim _at_ malhar.net)
 
 ======================================================================
