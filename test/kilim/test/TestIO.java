@@ -23,15 +23,15 @@ import kilim.nio.NioSelectorScheduler;
 import kilim.nio.SessionTask;
 
 public class TestIO extends TestCase {
-    static final int PORT = 9797;
     static final int ITERS = 10;
     static final int NCLIENTS = 100;
     NioSelectorScheduler nio;
+    int port;
     
     @Override
     protected void setUp() throws Exception {
         nio = new NioSelectorScheduler(); // Starts a single thread that manages the select loop
-        nio.listen(PORT, EchoServer.class, Scheduler.getDefaultScheduler()); //
+        port = nio.listen(0, EchoServer.class, Scheduler.getDefaultScheduler()); //
     }
     
     @Override
@@ -47,7 +47,7 @@ public class TestIO extends TestCase {
     public void testParallelEchoes() throws IOException {
         try {
             for (int i = 0; i < NCLIENTS; i++) {
-                client();
+                client(port);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -59,7 +59,7 @@ public class TestIO extends TestCase {
         SocketChannel sc = SocketChannel.open();
         
         try {
-            sc.socket().connect(new InetSocketAddress("localhost", PORT));
+            sc.socket().connect(new InetSocketAddress("localhost", port));
             String s = "Iteration #0. DONE"; // Only because EchoServer checks for it. 
             byte[] sbytes = s.getBytes();
             ByteArrayOutputStream baos = new ByteArrayOutputStream(100);
@@ -126,11 +126,11 @@ public class TestIO extends TestCase {
     }
     
     
-    static void client() throws IOException {
+    static void client(int port) throws IOException {
         SocketChannel sc = SocketChannel.open();
         try {
             // Client using regular JDK I/O API. 
-            sc.socket().connect(new InetSocketAddress("localhost", PORT));
+            sc.socket().connect(new InetSocketAddress("localhost", port));
             for (int i = 0 ; i < ITERS; i++) {
                 String s = "Iteration #" + i;
                 if (i == ITERS-1) {s += " DONE";}
