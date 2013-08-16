@@ -71,11 +71,12 @@ public class NioSelectorScheduler extends Scheduler {
         t.start();
     }
 
-    public void listen(int port, Class<? extends SessionTask> sockTaskClass, Scheduler sockTaskScheduler)
+    public int listen(int port, Class<? extends SessionTask> sockTaskClass, Scheduler sockTaskScheduler)
             throws IOException {
-        Task t = new ListenTask(port, this, sockTaskClass);
+        ListenTask t = new ListenTask(port, this, sockTaskClass);
         t.setScheduler(this);
         t.start();
+        return t.port(); 
     }
 
     @Override
@@ -201,7 +202,16 @@ public class NioSelectorScheduler extends Scheduler {
             ssc.socket().bind(new InetSocketAddress(port), LISTEN_BACKLOG); //
             ssc.configureBlocking(false);
             setEndPoint(new EndPoint(selScheduler.registrationMbx, ssc));
+        
+            // if port is automatically assigned then retrieve actual value
+            if(port == 0) {
+                this.port = ssc.socket().getLocalPort();
+            };    
         }
+
+        public int port() {
+            return this.port;
+        }    
 
         public String toString() {
             return "ListenTask: " + port;
