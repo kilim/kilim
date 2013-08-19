@@ -27,6 +27,7 @@ import kilim.mirrors.Detector;
 
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.AnnotationNode;
@@ -229,6 +230,13 @@ public class MethodFlow extends MethodNode {
         LabelNode ln = getLabelNode(start);
         lineNumberNodes.put(instructions.size(), new LineNumberNode(line, ln));
     }
+
+    void visitLineNumbers(MethodVisitor mv) {
+        for (LineNumberNode node : lineNumberNodes.values()) {
+            mv.visitLineNumber(node.line, node.start.getLabel());
+        }
+    }
+
     
     @Override
     public void visitFrame(int type, int nLocal, Object[] local, int nStack,
