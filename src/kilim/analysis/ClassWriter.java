@@ -1,45 +1,27 @@
 package kilim.analysis;
 
+import kilim.mirrors.Detector;
+import kilim.mirrors.RuntimeClassMirrors;
+
 public class ClassWriter extends org.objectweb.asm.ClassWriter {
-	private final ClassLoader classLoader;
+	private final Detector detector;
 	
 	public ClassWriter(final int flags, final ClassLoader classLoader) {
 		super(flags);
-		this.classLoader = classLoader;
+		this.detector = new Detector(new RuntimeClassMirrors(classLoader));
+	}
+
+	public ClassWriter(final int flags, final Detector detector) {
+		super(flags);
+		this.detector = detector;
 	}
 
 	protected String getCommonSuperClass(final String type1, final String type2) {
-		Class<?> c, d;
-        try {
-            c = classForName(type1.replace('/', '.'));
-            d = classForName(type2.replace('/', '.'));
-        } catch (Exception e) {
-            throw new RuntimeException(e.toString());
-        }
-        if (c.isAssignableFrom(d)) {
-            return type1;
-        }
-        if (d.isAssignableFrom(c)) {
-            return type2;
-        }
-        if (c.isInterface() || d.isInterface()) {
-            return "java/lang/Object";
-        } else {
-            do {
-                c = c.getSuperclass();
-            } while (!c.isAssignableFrom(d));
-            return c.getName().replace('.', '/');
-        }
+		try {
+			return detector.commonSuperType(type1, type2);
+		} catch (kilim.mirrors.ClassMirrorNotFoundException e) {
+			return "java/lang/Object";
+		}
 	}
 	
-	protected Class<?> classForName(String name) throws ClassNotFoundException {
-        try {
-            if (classLoader != null) {
-                return Class.forName(name, false, classLoader);
-            }
-        } catch (Throwable e) {
-            // ignore
-        }
-        return Class.forName(name, false, getClass().getClassLoader());
-    }
 }

@@ -41,7 +41,17 @@ import org.objectweb.asm.tree.InnerClassNode;
 public class ClassWeaver {
     public ClassFlow classFlow;
     List<ClassInfo> classInfoList = new LinkedList<ClassInfo>();
-    static HashMap<String, ClassInfo> stateClasses = new HashMap<String, ClassInfo>();
+    static ThreadLocal<HashMap<String, ClassInfo>> stateClasses_ = 
+    		new ThreadLocal<HashMap<String, ClassInfo>>() {
+    	protected HashMap<String, ClassInfo> initialValue() {
+    		return new HashMap<String, ClassInfo>();
+    	}
+    };
+    
+    public static void reset() {
+    	stateClasses_.set(new HashMap<String, ClassInfo>() );
+    }
+    
     private final ClassLoader classLoader;
     
     public ClassWeaver(byte[] data) {
@@ -216,8 +226,7 @@ public class ClassWeaver {
         }
         String className = makeClassName(numByType);
         ClassInfo classInfo= null;
-        synchronized (stateClasses) {
-            classInfo= stateClasses.get(className);
+            classInfo= stateClasses_.get().get(className);
             if (classInfo == null) {
                 ClassWriter cw = new kilim.analysis.ClassWriter(ClassWriter.COMPUTE_FRAMES, classLoader);
                 cw.visit(V1_1, ACC_PUBLIC | ACC_FINAL, className, null, "kilim/State", null);
@@ -238,9 +247,8 @@ public class ClassWeaver {
                     cw.visitField(ACC_PUBLIC, vi.fieldName, vi.fieldDesc(), null, null);
                 }
                 classInfo= new ClassInfo(className, cw.toByteArray());
-                stateClasses.put(className, classInfo);
+                stateClasses_.get().put(className, classInfo);
             }
-    }
         if (!classInfoList.contains(classInfo))
           addClassInfo(classInfo);
         return className;

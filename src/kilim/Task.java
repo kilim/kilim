@@ -349,6 +349,7 @@ public abstract class Task implements EventSubscriber {
             f.task.setPauseReason(null);
         }
         f.togglePause();
+        f.task.checkKill();
     }
 
     /**
@@ -365,6 +366,7 @@ public abstract class Task implements EventSubscriber {
             f.task.setPauseReason(null);
         }
         f.togglePause();
+        f.task.checkKill();
     }
 
     /*
@@ -505,5 +507,9 @@ public abstract class Task implements EventSubscriber {
     public int hashCode() {
         return id;
     }
+    
+    public void checkKill() {
+    }
+
 }
 

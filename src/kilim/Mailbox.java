@@ -208,6 +208,175 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
     
     
     /**
+     * Block caller until at least one message is available.
+     * @throws Pausable
+     */
+	public void untilHasMessage() throws Pausable {
+		while (hasMessage(Task.getCurrentTask()) == false) {
+			Task.pause(this);
+		}
+	}
+
+	/**
+	 * Block caller until <code>num</code> messages are available.
+	 * @param num
+	 * @throws Pausable
+	 */
+	public void untilHasMessages(int num) throws Pausable {
+		while (hasMessages(num, Task.getCurrentTask()) == false) {
+			Task.pause(this);
+		}
+	}
+
+
+	/**
+	 * Block caller (with timeout) until a message is available.
+	 * @return non-null message.
+	 * @throws Pausable
+	 */
+	public boolean untilHasMessage(long timeoutMillis) throws Pausable {
+		final Task t = Task.getCurrentTask();
+		boolean has_msg = hasMessage(t);
+		long end = System.currentTimeMillis() + timeoutMillis;
+		while (has_msg == false) {
+			TimerTask tt = new TimerTask() {
+				public void run() {
+                    Mailbox.this.removeMsgAvailableListener(t);
+	                t.onEvent(Mailbox.this, timedOut);
+				}
+			};
+			Task.timer.schedule(tt, timeoutMillis);
+			Task.pause(this);
+			tt.cancel();
+			has_msg = hasMessage(t);
+			timeoutMillis = end - System.currentTimeMillis();
+			if (timeoutMillis <= 0) {
+            	removeMsgAvailableListener(t);
+				break;
+			}
+		}
+		return has_msg;
+	}
+
+	/**
+	 * Block caller (with timeout) until <code>num</code> messages are available.
+	 * 
+	 * @param num
+	 * @param timeoutMillis
+	 * @return Message or <code>null</code> on timeout
+	 * @throws Pausable
+	 */
+	public boolean untilHasMessages(int num, long timeoutMillis)
+			throws Pausable {
+		final Task t = Task.getCurrentTask();
+		final long end = System.currentTimeMillis() + timeoutMillis;
+
+		boolean has_msg = hasMessages(num, t);
+		while (has_msg == false) {
+			TimerTask tt = new TimerTask() {
+				public void run() {
+                    Mailbox.this.removeMsgAvailableListener(t);
+	                t.onEvent(Mailbox.this, timedOut);
+				}
+			};
+			Task.timer.schedule(tt, timeoutMillis);
+			Task.pause(this);
+			if (!tt.cancel()) {
+            	removeMsgAvailableListener(t);
+			}
+
+			has_msg = hasMessages(num, t);
+			timeoutMillis = end - System.currentTimeMillis();
+			if (!has_msg && timeoutMillis <= 0) {
+            	removeMsgAvailableListener(t);
+				break;
+			}
+		}
+		return has_msg;
+	}
+
+	public boolean hasMessage(Task eo) {
+		boolean has_msg;
+		synchronized (this) {
+			int n = numMsgs;
+			if (n > 0) {
+				has_msg = true;
+			} else {
+				has_msg = false;
+				addMsgAvailableListener(eo);
+			}
+		}
+		return has_msg;
+	}
+
+	public boolean hasMessages(int num, Task eo) {
+		boolean has_msg;
+		synchronized (this) {
+			int n = numMsgs;
+			if (n >= num) {
+				has_msg = true;
+			} else {
+				has_msg = false;
+				addMsgAvailableListener(eo);
+			}
+		}
+		return has_msg;
+	}
+
+
+	public T peek(int idx) {
+		assert idx >= 0 : "negative index";
+		T msg;
+		synchronized (this) {
+			int n = numMsgs;
+			if (idx < n) {
+				int ic = icons;
+				msg = msgs[(ic + idx) % msgs.length];
+
+				assert msg != null : "peeked null message!";
+			} else {
+				msg = null;
+			}
+		}
+		return msg;
+	}
+
+	public T remove(final int idx) {
+		assert idx >= 0 : "negative index";
+		T msg;
+		synchronized (this) {
+			int n = numMsgs;
+			assert idx < numMsgs;
+			if (idx < n) {
+				int ic = icons;
+				int mlen = msgs.length;
+				msg = msgs[(ic + idx) % mlen];
+				for (int i = idx; i > 0; i--) {
+					msgs[(ic + i) % mlen] = msgs[(ic + i - 1) % mlen];
+				}
+				msgs[icons] = null;
+				numMsgs -= 1;
+				icons = (icons + 1) % mlen;
+			} else {
+				throw new IllegalStateException();
+			}
+		}
+		return msg;
+	}
+
+	public synchronized Object[] messages() {
+		synchronized (this) {
+			Object[] result = new Object[numMsgs];
+			for (int i = 0; i < numMsgs; i++) {
+				result[i] = msgs[(icons + i) % msgs.length];
+			}
+			return result;
+		}
+
+	}
+
+
+    /**
      * Takes an array of mailboxes and returns the index of the first mailbox
      * that has a message. It is possible that because of race conditions, an
      * earlier mailbox in the list may also have received a message.

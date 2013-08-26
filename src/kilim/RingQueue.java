@@ -22,6 +22,20 @@ public class RingQueue<T> {
         return size;
     }
 
+    public T peek() {
+        T elem;
+        T[] elems;
+        int n = size;
+        if (n > 0) {
+            elems = elements;
+            int ic = icons;
+            elem = elems[ic];
+            return elem;
+        }
+        
+        return null;
+    }
+    
     public T get() {
         T elem;
         T[] elems;

@@ -161,7 +161,12 @@ public class MethodWeaver {
         visitTryCatchBlocks(mv);
         visitInstructions(mv);
         visitLocals(mv);
+        visitLineNumbers(mv);
         mv.visitMaxs(maxStack, maxVars);
+    }
+
+    private void visitLineNumbers(MethodVisitor mv) {
+        methodFlow.visitLineNumbers(mv);
     }
   
     private void visitLocals(MethodVisitor mv) {
