@@ -176,7 +176,7 @@ public class HttpResponse extends HttpMsg {
         for (int i = 0; i < nfields; i++) {
           if (key.equals(keys.get(i))) return values.get(i);
         }
-        return "";
+        return null;
     }
 
     public void writeHeader(OutputStream os) throws IOException {
@@ -191,7 +191,7 @@ public class HttpResponse extends HttpMsg {
 
         dos.write(F_SERVER);
 
-        if (bodyStream != null && getHeaderValue("Content-Length") != "") {
+        if (bodyStream != null && getHeaderValue("Content-Length") == null) {
             setContentLength(bodyStream.size());
         }
 
