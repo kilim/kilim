@@ -171,6 +171,14 @@ public class HttpResponse extends HttpMsg {
         return this;
     }
 
+    public String getHeaderValue(String key) {
+        int nfields = keys.size();
+        for (int i = 0; i < nfields; i++) {
+          if (key.equals(keys.get(i))) return values.get(i);
+        }
+        return null;
+    }
+
     public void writeHeader(OutputStream os) throws IOException {
         DataOutputStream dos = new DataOutputStream(os);
         dos.write(PROTOCOL);
@@ -183,7 +191,7 @@ public class HttpResponse extends HttpMsg {
 
         dos.write(F_SERVER);
 
-        if (bodyStream != null) {
+        if (bodyStream != null && getHeaderValue("Content-Length") == null) {
             setContentLength(bodyStream.size());
         }
 
@@ -229,3 +237,4 @@ public class HttpResponse extends HttpMsg {
         addField("Content-Type", contentType);
     }
 }
+

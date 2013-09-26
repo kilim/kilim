@@ -26,15 +26,16 @@ import kilim.http.HttpSession;
 import kilim.nio.NioSelectorScheduler;
 
 public class TestHTTP extends TestCase {
-    static int PORT = 9797;
     static final int ITERS = 10;
     static final int NCLIENTS = 100;
+
     NioSelectorScheduler nio;
+    int port;
     
     @Override
     protected void setUp() throws Exception {
         nio = new NioSelectorScheduler(); // Starts a single thread that manages the select loop
-        nio.listen(PORT, TestHttpServer.class, Scheduler.getDefaultScheduler()); //
+        port = nio.listen(0, TestHttpServer.class, Scheduler.getDefaultScheduler()); //
         Thread.sleep(50); // Allow the socket to be registered and opened.
     }
     
@@ -42,12 +43,11 @@ public class TestHTTP extends TestCase {
     protected void tearDown() throws Exception {
         nio.shutdown();
         Scheduler.getDefaultScheduler().shutdown();
-        PORT++; // start the next test with a new socket.
     }
     
     public void testReqResp() throws IOException {
         String path = "/hello";
-        URL url = new URL("http://localhost:" + PORT + path);
+        URL url = new URL("http://localhost:" + port + path);
         URLConnection conn = url.openConnection();
         conn.setDefaultUseCaches(false);
         BufferedReader in = new BufferedReader(
@@ -60,7 +60,7 @@ public class TestHTTP extends TestCase {
     
     public void testQuery() throws IOException {
         String path = "/%7ekilim/home.html?info?code=200&desc=Rolls%20Royce";
-        URL url = new URL("http://localhost:" + PORT + path);
+        URL url = new URL("http://localhost:" + port + path);
         HttpURLConnection conn = (HttpURLConnection)url.openConnection();
         conn.setDefaultUseCaches(false);
         BufferedReader in = new BufferedReader(
@@ -75,7 +75,7 @@ public class TestHTTP extends TestCase {
     
     public void testChunking() throws IOException {
         String path = "/%7ekilim/home.html?buy?code=200&desc=Rolls%20Royce";
-        URL url = new URL("http://localhost:" + PORT + path);
+        URL url = new URL("http://localhost:" + port + path);
         HttpURLConnection conn = (HttpURLConnection)url.openConnection();
         conn.setDefaultUseCaches(false);
         conn.setDoOutput(true);

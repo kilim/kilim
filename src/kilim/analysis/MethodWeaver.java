@@ -363,7 +363,8 @@ public class MethodWeaver {
         new TableSwitchInsnNode(0, callWeavers.size(), errLabel, labels).accept(mv);
         
         errLabel.accept(mv);
-        mv.visitMethodInsn(INVOKESTATIC, FIBER_CLASS, "wrongPC", "()V");
+        mv.visitVarInsn(ALOAD, getFiberVar());
+        mv.visitMethodInsn(INVOKEVIRTUAL, FIBER_CLASS, "wrongPC", "()V");
         // Generate pass through down code, one for each pausable method
         // invocation
         int last = callWeavers.size() - 1;
