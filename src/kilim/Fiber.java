@@ -322,8 +322,8 @@ public final class Fiber {
         return sb.toString();
     }
     
-    public static void wrongPC() {
-        throw new IllegalStateException("Wrong pc");
+    public void wrongPC() {
+    	throw new IllegalStateException("Wrong pc: " + pc);
     }
 
     static private void stateToString(StringBuilder sb, State s) {
