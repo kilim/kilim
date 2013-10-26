@@ -1,0 +1,33 @@
+* {
+    line-height: 150%;
+/*    font-size: 12pt;*/
+    border-style:none; 
+    font-family: verdana, helvetica; 
+/*    margin: 1em; */
+}
+
+/* Links */
+a:link {color: red; text-decoration:none}     /* unvisited link */
+a:visited {color: red; text-decoration:none}  /* visited link */
+a:hover {color: blue; background: yellow; text-decoration:none}   /* mouse over link */
+a:active {color: grey}   /* selected link */
+
+p,pre {
+  line-height: 1.5em 
+}
+
+h1 { 
+  background-color: #223322;
+  Color: white;
+  padding: 5px;
+  padding-left: 20px;
+  margin-left: -20px;
+  margin-right: -20px;
+/*  font-size: 15pt;*/
+}
+
+
+pre {font-family: Monaco, Courier New, Courier; font-size:80%}
+code {font-family: Monaco, Courier New, Courier; font-size:80%}
+
+p code {margin: 5px}

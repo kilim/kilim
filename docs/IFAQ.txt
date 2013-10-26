@@ -1,0 +1,297 @@
+(Copyright 2006 Sriram Srinivasan)
+
+Kilim IFAQ: Infrequently Asked Questions. Kilim v 1.0
+-- sriram srinivasan (Kilim _at_ malhar.net)
+
+======================================================================
+Why is multi-threaded programming considered so hard? 
+======================================================================
+It is relatively easy to get thread programming correct (to a first
+approximation) by synchronizing all your shared data structures and
+taking locks in the right order. 
+
+You could have one giant lock and just do things one at a time (like
+the current python interpreter with its Global Interpreter Lock).
+Clearly, this is not efficient.  Increasing concurrent access of a
+data structure (by using finer-grained locks) is what makes it 
+error-prone and hard to debug. 
+
+======================================================================
+Kilim uses kernel threads. Where do tasks and threads meet?
+======================================================================
+
+Kilim's tasks are cooperatively scheduled on a kernel thread pool. 
+
+Tasks are needed when you want to split up your workflow into small
+stages and write code as if it is blocking (instead of writing a
+callback and having to jump to that function when it gets called).
+Tasks should not ideally make thread-blocking calls, although if you
+*have* to call one, it is not the end of the world. That's what other
+threads are for .. they'll take care of the other tasks meanwhile.
+
+A Kilim task is owned and managed by a scheduler, which manages the
+thread pool. When a task needs to pause, it removes itself from the
+thread by popping its call stack, remembering enough about each
+activation frame in order to help rebuild the stack and resume, at a
+later point). The scheduler then reuses that thread for some other
+task.
+
+You can have more than one scheduler (read: thread pool) and assign
+each task to a particular scheduler. See the bench directory for 
+examples.
+
+
+======================================================================
+How lightweight is "lightweight"?
+======================================================================
+The amount of memory occupied by a task is:
+1. The java object that represents the task class
+
+2. If paused, an array of activation frames is stored. The Kilim
+   weaver performs data flow and live variable and constant analysis
+   (intra-procedurally) to ensure that it capture only as
+   much as is needed to resume.
+
+3. The contents of all mailboxes that the task is receiving on.
+
+Clearly, all these depend on your application. 
+
+The depth of the task stack is limited only by the thread's stack; no
+memory is preallocated. Note that when written in the message passing
+style, stacks tend not to be too deep because each task is like a
+stage in a workflow, with its own stack.
+
+======================================================================
+What's the difference between channels in Ada, CSP/Occam, Newsqueak,
+Alef etc. and Kilim's mailboxes?
+======================================================================
+
+Most of these languages use synchronous channels as their basic
+construct, where a sending task can proceed only after the receiver
+has received (or vice-versa). 
+
+1. Synchronous channels are easier to reason about because there is
+   automatic flow control; the sender does not proceed unless the
+   recipient drains the channel. Tony Hoare, Robin Milner, Rob Pike
+   and John Reppy have all written extensively about synchronous
+   programming, so I will take their word for it. However, I still
+   find asynchronous programming (through buffering) a better default
+   choice for practical reasons:
+
+2. Context switching has a cost, however inexpensive Kilim's tasks are
+   to create and context-switch (unlike the Occam/transputer world
+   with its hardware-assisted switching).  Although Kilim's mailboxes
+   can be configured to be synchronous, it is not the default.  There
+   are many cases where you want to send messages to multiple
+   recipients before waiting to collect replies. I find tedious the
+   CSP approach of spawning a task to avoid blocking while sending.
+
+3. I like the same interface for both concurrent and distributed
+   programming (although support for distributed programming is yet to
+   be bundled with Kilim).  Synchronous _distributed_ programming is
+   horribly inefficient .. every put has to be acked when a
+   corresponding _get_ is done.
+
+This is why I have followed Erlang's example to prefer buffered
+channels (called mailboxes) as the default choice.
+
+======================================================================
+Erlang vs. Kilim
+======================================================================
+
+Kilim is an ode to Erlang (www.erlang.org), and strives to bring
+some of its features into the more familiar Java world.
+
+The term "Erlang", like Perl, refers to both the language and the sole
+available implementation. Comparisons have to be made on these two
+axes separately.
+
+The Erlang language is a soft-typed, purely functional language and
+has many of the goodies of a functional setting: higher-order
+functions, beautifully simple syntax and pattern matching on terms, 
+features that I'd love to see in Java.  However, programming in a purely
+functional style is not everyone's cup of tea and there is no reason
+that higher order functions and pattern matching can't be made
+available in an imperative setting (See Scala, JMatch, Tom(from INRIA)
+etc). If you have to have types, it is better to have Ocaml-style 
+types (or even Smalltalk); but compared to Java-style types, I prefer
+the simplicity of Erlang's soft types.
+
+The argument for Java lies not in the language, but in the incredible
+JIT compilers, JDK, enormous open code base and community, excellent
+IDEs, good network, database, GUI and systems support. Why throw away
+all that?
+
+The Erlang *environment* (not the language) offers lightweight
+processes, fast messaging, uniform abstraction for concurrency and
+distribution and many, many systemic features (process monitoring,
+automatic restart), process isolation, failure isolation etc. These can be
+built atop Kilim as well. 
+
+The idea behind Kilim is that one can have all the features of the
+Erlang environment without having to move to the Erlang
+*language*. 
+
+======================================================================
+Kilim vs. Transactional Memory
+======================================================================
+
+Hardware/Software Transactional Memory is currently the new hope and
+an alternative for concurrent programing in the shared memory
+world. It is appropriate in a mostly functional setting where most
+objects are immutable and side-effects are rare or contained. In an
+imperative setting, I have my doubts about TM's scalability; hotspots
+are expensive. Atomic sections can't be too big, otherwise they risk
+getting retried all over again.  And the part of code that retries had
+better not have any side effects that doesn't know about or is not
+controlled by the TM, such as sending messages on the network.
+
+I think the task and mailbox approach is a more understandable model,
+has nice run-to-completion semantics, has convenient graphical
+representations (dataflow diagrams, workflow diagrams, Petri nets). It
+brings the interaction with other processes out in the open. It allows
+batched and efficient communication.
+
+That said, there is absolutely no reason not to use the TM facilities
+internally inside Kilim. I intend to use non-blocking data structures
+when they perform well (currently, Java's data structures aren't
+as fast as I'd like them to be)
+
+======================================================================
+What's the relation between CCS/pi-calculus and Kilim
+======================================================================
+The notion that the Mailbox itself is a first class message datatype
+and can be sent as part of a message is inspired by Prof. Robin
+Milner's pi-calculus. This allows the topology to change with time.
+A can send a mailbox in a message to B, B can forward that message to C 
+and C and D can shared that mailbox.
+
+Beyond that, CCS, like CSP is a modeling and specification language,
+and uses synchronous interaction between processes. At a practical
+level, this is terribly inefficient (esp. in Java).
+
+======================================================================
+RMI vs. Kilim
+======================================================================
+
+We need to distinguish between RMI implementations and the concept. 
+
+RMI implementations block the java thread. That's a no-no for
+scalability.  They themselves are incredibly heavyweight -- I/O
+serialization is always used, even in a concurrent setting, for
+ensuring isolation. The request response paradigm doesn't allow many
+other patterns of communication: fork/join, flow control, rate
+control, timeouts, streaming etc.
+
+Kilim, in a concurrent (local) setting, is at least 100x faster than
+Java RMI on even the simplest benchmarks. In a distributed setting,
+the Kilim approach is better because asynchronous messaging is much
+more scalable. Combine this with automatic stack management and you
+get a far easier programming model
+
+======================================================================
+What are Continuations and what is Continuation Passing Style(CPS)?
+======================================================================
+There is so much doubt and misinformation on the topic that a few
+words are in order.
+
+Simply put, a CPS style of programming is where a "return" keyword is
+not needed.
+
+The notions of procedures calling procedures by building up a stack
+has been burnt into our collective programming consciousness.  If a()
+calls b() calls c(), we think, the stack must be three deep.
+
+Suppose a() has nothing more to do after calling b(). It (that is, a()) really
+doesn't need b() to return to it, so there is no use pushing a return
+address on the stack. In other words, the flow of control _continues_
+from a to b, never to return.  Most respectable code generators
+recognize this special case and prevent the stack from building up
+("tail call optimization"). It is a pity this isn't available under
+the standard JVMs. Even GCC doesn't do it all the time.
+
+Now consider,
+   a() {
+      do stuff
+      b()
+      do more stuff
+   }
+   b() { 
+      ...
+      return
+   }
+
+Now you need a stack and you want b() to return in order to "do more
+stuff". However, this bit of code can be transformed to ensure that b
+doesn't return; instead it continues on to another procedure that
+performs the "do more stuff" bit.
+
+  a() {
+     do stuff
+     b("c") // pass a reference to c()
+  }
+
+  b(nextProc) {
+     ...
+     call nextProc
+  }
+
+  c() {
+    do more stuff
+  }
+
+The "do more stuff" part has now been separated out into c().  Now,
+a() chains on to b, supplying it the name of the next call to
+make. For its part, b _continues_ to the procedure referred to by its
+nextProc parameter, instead of returning.
+
+This transformation ensures that you never need the "return" keyword
+... you always continue onwards to the parameter supplied.
+
+What if "do more stuff" needed to refer to local variables in a()'s
+stack frame? Well, the transformation ensures that a() packages the
+values of those variables along with a reference to the next proc to
+call. Now, instead of "nextProc", we have an _object_ (with state and
+a procedure) called a continuation.
+
+The obvious question is, why bother? The stack worked well, didn't it?
+Why dispense with it? Yes, the stack works incredibly well, which is
+why CPUs and compilers have special support for it. However, the
+continuation passing style allows for other forms of transfer of
+control very simply. C++ and Java provide two forms of "return", one
+normal and another using exceptions. If we had CPS, we wouldn't need
+these special cases.
+
+Instead of a() installing an exception handler, it would pass in two
+continuation objects to b() that know what to do under normal and
+under exceptional conditions. b() simply chains on to the appropriate
+object as its last move.
+
+As another example, you can have tasks that pass control to a
+scheduler that in turn passes control to another task, all without
+having to return to whoever called it. 
+
+In a programming language with explicit support for continuations (ML,
+Lisp, Haskell), one can have the "return" keyword merely as a
+syntactic sugar (like a macro). Internally, the compiler CPS
+transforms the entire code, so no procedure returns to its caller.
+
+Are there any disadvantages of continuations? Oh yes. Machines are
+so well optimized for stack usage and no tail calls that the
+system is biased against continuations, performance-wise. The 
+continuation object has to be allocated from the heap and depends
+on garbage collection. This is one reason why OCaml doesn't use CPS.
+
+That said, the current crop of garbage collectors and the amortized
+cost of garbage collection often matches that of stack-based
+allocation, and continuations are simply too powerful a feature to 
+ignore.
+
+Where does Kilim fit into all this?
+
+Kilim's transformation is similar to CPS, but it needs to live within
+a JVM that does not even support tail calls. It also needs to live
+with the Java verifier that doesn't allow random gotos to be inserted
+in the code willy-nilly. More details in the paper "A Thread of One's
+Own" (included in the docs directory)
+

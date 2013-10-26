@@ -1,0 +1,233 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<link rel="stylesheet" type="text/css" href="style.css">
+<html> <head>
+<title>Kilim Users Guide</title>
+</head>
+
+<body>
+
+<h1>Kilim v1.0</h1>
+<p>Last updated: May 26, 2013
+
+<p>by Sriram Srinivasan
+
+<p>Please send comments, encouragement, money, cakes, code fixes to
+<b>kilim@malhar.net</b>. Thank you.
+<h1>What is Kilim?</h1>
+
+<p>A Java framework for fast, safe, cheap message passing. 
+
+<p>The message passing (MP) paradigm is often seen as a superior
+alternative to the typical mix of idioms in concurrent (shared-memory,
+locks) and distributed programming (CORBA/RMI). MP eliminates worries
+endemic to the shared-memory mindset: lock ordering, failure-coupling,
+low-level data races and memory models. It simplifies synchronization
+between data and control planes (no lost signals or updates), and
+unifies APIs for local and remote process interaction.
+
+<p>Curiously however, there are no efficient _and_ safe frameworks for
+intra-process message-passing, except for Ada and Erlang. The Kilim
+framework is intended to fix this state of affairs. It provides:
+
+<ol>
+<li>Extremely lightweight user-level threads (actors) with automatic
+ stack management, obtained via CPS transformation.</li>
+
+<li> A simple type system that ensures actor isolation by controlling
+ pointer aliasing in messages at compile time, and by ensuring
+ linear ownership of mutable message objects. This permits safe,
+ zero-copy communication.<br>
+ (NOTE: This feature is NOT included in this release because it
+  is undergoing a rewrite. The docs/kilim_ecoop08.pdf paper gives
+  details about what you can expect).</li>
+
+<li> A compact run-time library containing typed mailboxes (with
+ optional flow control), user-definable scheduling and python style
+ generators.</li>
+ <li> The library also contains bindings to the NIO selector, and a rudimentary HTTP server</li>
+</ol>
+<p>
+Kilim is portable; one of our explicit goals was to not require
+changes to the Java language syntax or to the JVM.
+
+<p>
+Kilim scales comfortably to handle hundreds of thousands of actors and
+messages on modest hardware. It is fast as well -- task-switching is
+1000x faster than Java threads and 60x faster than other lightweight
+tasking frameworks, and message-passing is 3x faster than Erlang
+(currently the gold standard for concurrency-oriented programming).
+
+<p>
+The term "Kilim" refers to a class of rugs in a number of
+middle-eastern and central european countries. Kilims are light and
+are flat-woven with thin threads (as opposed to deep-pile carpets).
+
+
+<h1>Getting started. </h1>
+
+<p>The first few pages of the <a href="kilim_ecoop08.pdf">ECOOP'08 paper</a> give an overview
+of the facilities and the programming model. 
+
+<p>Take a look at the examples to get an idea. The only important classes 
+to begin with are kilim.Task and kilim.Mailbox.
+
+<p>Let's start with conventional thread programming. This is how you
+create your own thread in Java.
+
+<pre>
+   class MyThread extends Thread {
+      public void run() {
+      }
+   }
+</pre>
+<p>And spawn a thread thus:
+<pre>
+  new MyThread().start();
+</pre>
+<p>Now, if you replace the words "Thread" with "Task", "run" with
+"execute" and add an exception called <code>Pausable</code> to <code>execute()</code>,  you have a
+Kilim Task. Simple.
+
+<pre>
+   import kilim.*;
+
+   public class MyTask extends Task {
+
+     public void execute() throws Pausable{
+     }
+   }
+</pre>
+and to start it, you say <code>new MyTask().start()</code>
+
+
+<p>The "Pausable" exception is used as an annotation, and is never actually thrown (it replaces
+@pausable from earlier versions). A method with such an annotation is deemed "pausable". Pausing refers to 
+voluntarily yielding control to the scheduler so that another task may run. For example,
+Task.sleep() is a pausable method that pauses a task
+for a give time. Another example is Mailbox.get(), which pauses a task until a mailbox is
+non-empty. 
+
+<p>A pausbale method is similar to blocking calls such as InputStream.read() and
+Thread.wait(), except that it makes its intention clear in its signature with
+the Pausable annotation. This annotation is used by the Kilim weaver to rewrite the bytecode
+of all pausable methods to incorporate the voluntary yielding logic. One important property
+of this scheme is that a pausable method can only be called by another pausable method.
+
+
+<h1>Communication</h1>
+
+<p>Mailboxes are the medium of communication between tasks. They are
+typed buffers that can have at most one consumer task waiting on it at
+any point in time, but multiple producers are allowed. Mailboxes are
+not owned by anyone (unlike Erlang's process mailbox). They can be
+static fields, instance variables, local variables .. it is your
+design choice. They can even be sent as part of messages themselves,
+which can make for an extremely dynamic and mobile topology.
+
+<p>Creating a mailbox:
+<pre>
+   // This mailbox only allows Strings
+   Mailbox &lt;String&gt; mb = new Mailbox&lt;String&gt;(); 
+</pre>
+<p>Sending and receiving messages:
+<pre>
+   mb.put("hello"); 
+   String s = mb.get();
+</pre>
+<p>These two methods pause the task when they are unable to perform the operation.
+
+<p><code>mailbox.getnb()</code> and <code>putnb()</code> are variants that neither pause the task, nor block the thread. They return immediately indicating whether they were able to dequeue (respectively enqueue) an object from the mailbox.
+
+<p><code>mailbox.getb()</code> and putb are the *thread*-blocking versions. Use them if you want to wait for a message but cannot make the calling method
+pausable (like <code>main()</code>, for example). You shouldn't be using these
+inside a task.
+
+<h1>How does it work?</h1>
+
+<p>First, the lightweight thread part. 
+
+<p>This package comes with a bytecode transformation tool called Weaver
+(package: kilim.tools.Weaver) that post-processes .class files
+looking for the "throws Pausable" annotation.
+
+<p>When a task needs to pause, it unwinds its stack, squirrels away all state that
+it'll need later on resumption.  This unwinding and rewinding the
+stack is automatically performed by the code introduced by the Weaver.
+(Debug information is adjusted so that the transformed code can be
+debugged inside eclipse) This is identical to what a programmer would have
+written 
+
+<p>The transformation is a variation of continuation passing style; the
+details are in the paper entitled <a href="thread_of_ones_own.pdf">"A Thread of Ones Own"</a> presented at
+the Workshop on New Horizons in Compilers (2006). A simple introduction to CPS is in the accompanying <a href="IFAQ.txt">IFAQ.txt</a>.
+
+<h1>Building, running the examples</h1>
+
+<p>Build the sources by running ant (or build.sh) at the topmost
+level. 
+
+<p>To manually compile a kilim task (say kilim.examples.SimpleTask), 
+
+<p>Now, compile (into "./classes")
+<pre>
+   javac -d ./classes ./examples/kilim/examples/SimpleTask.java
+</pre>
+<p>Weave the class (and overwrite it).
+<pre>
+  java kilim.tools.Weaver -d ./classes kilim.examples.SimpleTask
+</pre>
+<p>Run it like any regular java program.
+<pre>  java -cp ./classes kilim.examples.SimpleTask</pre>
+
+<p>Create a million tasks just for the heck of it.
+<p>  Try <code>java kilim.bench.LotsOfTasks -ntasks 300000</code>
+
+<p>You can supply a different directory for the weaver's output, but
+remember to include that directory in the classpath before the 
+original, otherwise you will see "class not woven" errors at run time.
+
+<p>NOTE: It is safer (and convenient) to supply the entire directory to 
+weave, like this:
+<pre>
+ java kilim.tools.Weave  -d ./classes  ./classes  
+                                        ^^^^^^^^^^
+</pre>
+That eliminates the chances of mistakenly omitting to weave inner
+and anonymous classes.
+
+<h2>Eclipse notes:</h2>
+
+<p>Loading kilim under eclipse is like any other java project.
+<p>Select <code>File -> New -> Java Project</code>
+<p>"Create project from existing source"
+
+<p>.There is no plugin (yet) to run the weaver automatically; you will have
+to run the weaver separately in the command line. If you are changing
+the kilim examples, you can just run "build.sh" or "ant" from the 
+command line once the project's been created.
+
+<p>Debugging and profiling should work as usual.
+
+
+<h2>Next Steps</h2>
+
+<p> Check the examples and the bench directory for ideas on how to use
+multiple schedulers, nio, http, generators and so on. 
+
+<h1>Release notes</h1>
+
+v.1.0 (May 2013): Added support for stackframes, no change in functionality.
+v.0.7 (April 2010): Added support for reflection, NIO and HTTP, and fixed data races in the scheduler.
+
+<h1>Acknowledgments</h1>
+The Objectweb ASM project.
+Adrian Quark<br>
+Jan Kotek<br>
+Colin Fleming<br>
+Chris Moulang<br>
+Kresten Krab Thorup<br>
+Jan Schäfer<br>
+Andrey Tarantsov<br>
+Jason Pell<br>
+</body> </html>
+
