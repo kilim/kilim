@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.PriorityQueue;
+import java.util.TreeMap;
 
 import kilim.KilimException;
 import kilim.mirrors.Detector;
@@ -87,7 +88,7 @@ public class MethodFlow extends MethodNode {
     
 	private final Detector detector;
 
-    private HashMap<Integer, LineNumberNode> lineNumberNodes = new HashMap<Integer, LineNumberNode>();
+    private TreeMap<Integer, LineNumberNode> lineNumberNodes = new TreeMap<Integer, LineNumberNode>();
 
     private HashMap<Integer, FrameNode> frameNodes = new HashMap<Integer, FrameNode>();
     
@@ -120,12 +121,13 @@ public class MethodFlow extends MethodNode {
 
     public void restoreNonInstructionNodes() {
         InsnList newinsns = new InsnList();
-        for (int i = 0; i < instructions.size(); i++) {
+        int sz = instructions.size();
+        for (int i = 0; i < sz; i++) {
             LabelNode l = getLabelAt(i);
             if (l != null) {
                 newinsns.add(l);
             }
-            LineNumberNode ln = lineNumberNodes.get(instructions.size());
+            LineNumberNode ln = lineNumberNodes.get(i);
             if (ln != null) {
                 newinsns.add(ln);
             }
@@ -133,11 +135,11 @@ public class MethodFlow extends MethodNode {
             newinsns.add(ain);
         }
         
-        LabelNode l = getLabelAt(instructions.size());
+        LabelNode l = getLabelAt(sz);
         if (l != null) {
             newinsns.add(l);
         }
-        LineNumberNode ln = lineNumberNodes.get(instructions.size());
+        LineNumberNode ln = lineNumberNodes.get(sz);
         if (ln != null) {
             newinsns.add(ln);
         }
