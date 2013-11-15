@@ -13,5 +13,9 @@ public class ClassMirrorNotFoundException extends Exception {
 	public ClassMirrorNotFoundException(Throwable cause) {
 		super(cause);
 	}
+	public ClassMirrorNotFoundException(String className,
+			ClassNotFoundException e) {
+		super(className, e);
+	}
 
 }

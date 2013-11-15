@@ -96,6 +96,8 @@ public class MethodWeaver {
             } else {
                 mf.accept(mv);
             }
+        } else {
+        	mv.visitEnd();
         }
     }
     
