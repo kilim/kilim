@@ -170,6 +170,7 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
         T msg = get(t);
         while (msg == null) {
             Task.pause(this);
+            removeMsgAvailableListener(t);
             msg = get(t);
         }
         return msg;
@@ -194,7 +195,7 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
             Task.timer.schedule(tt, timeoutMillis);
             Task.pause(this);
             tt.cancel();
-            
+            removeMsgAvailableListener(t);
             msg = get(t);
             
             timeoutMillis = end - System.currentTimeMillis();
@@ -444,6 +445,7 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
         Task t = Task.getCurrentTask();
         while (!put(msg, t)) {
             Task.pause(this);
+            removeSpaceAvailableListener(t);
         }
     }
 
@@ -464,6 +466,7 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
             };
             Task.timer.schedule(tt, timeoutMillis);
             Task.pause(this);
+            removeSpaceAvailableListener(t);
             if (System.currentTimeMillis() - begin >= timeoutMillis) {
                 return false;
             }
