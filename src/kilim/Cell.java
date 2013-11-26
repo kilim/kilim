@@ -116,7 +116,6 @@ public class Cell<T> implements PauseReason, EventPublisher {
         T msg = get(t);
         while (msg == null) {
             Task.pause(this);
-            if (!hasMessage()) {System.err.println("%%%%%%%%%%%  SPURIOUS WAKEUP");} ////  DELETE
             removeMsgAvailableListener(t);
             msg = get(t);
         }
