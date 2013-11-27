@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
  * optimized for this size)
  */
 
-public class Cell<T> implements PauseReason, EventPublisher {
+public class Cell<T> implements PauseReason, EventPublisher {        
     public static final int SPACE_AVAILABLE = 1;
     public static final int MSG_AVAILABLE = 2;
     public static final int TIMED_OUT = 3;
@@ -28,7 +28,7 @@ public class Cell<T> implements PauseReason, EventPublisher {
     private static final String defaultName_ = "DEFAULT-CELL";    
     
     private String name_;
-    T msg;
+    T message;
     EventSubscriber sink;
     LinkedList<EventSubscriber> srcs = new LinkedList<EventSubscriber>();
 
@@ -39,30 +39,31 @@ public class Cell<T> implements PauseReason, EventPublisher {
      * public int nWastedGets = 0;
      */
     public Cell() {
-    	this(defaultName_);
+        this(defaultName_);
     }
-    
+
     public Cell(String name)
     {
-    	name_ = name;
+        name_ = name;
     }
 
     /**
      * Non-blocking, nonpausing get. 
-     * @param eo. If non-null, registers this observer and calls it with a MessageAvailable event when
-     *  a put() is done.
-     * @return buffered message if there's one, or null 
+     * @param eo. If non-null (and if there is no message), registers this observer. The observer is notified with a 
+     * MessageAvailable event when a put() is done.
+     *  
+     * @return buffered message if there's one, or null
      */
     public T get(EventSubscriber eo) {
         EventSubscriber producer = null;
         T ret;
         synchronized(this) {
-            if (msg == null) {
+            if (message == null) {
                 ret = null;
-                addMsgAvailableListener(eo);
+                addMsgAvailableListener(eo); 
             } else {
-                ret = msg;
-                msg = null;
+                ret = message;
+                message = null;
                 if (srcs.size() > 0) {
                     producer = srcs.poll();
                 }
@@ -87,8 +88,8 @@ public class Cell<T> implements PauseReason, EventPublisher {
             if (amsg == null) {
                 throw new NullPointerException("Null message supplied to put");
             }
-            if (msg == null) { // space available
-                msg = amsg;
+            if (message == null) { // space available
+                message = amsg;
                 subscriber = sink;
                 sink = null;
             } else {
@@ -125,6 +126,7 @@ public class Cell<T> implements PauseReason, EventPublisher {
         T msg = get(t);
         while (msg == null) {
             Task.pause(this);
+            removeMsgAvailableListener(t);
             msg = get(t);
         }
         return msg;
@@ -134,53 +136,30 @@ public class Cell<T> implements PauseReason, EventPublisher {
     /**
      * @return non-null message.
      * @throws Pausable
-     */    
+     */
     public T get(long timeoutMillis) throws Pausable {
         final Task t = Task.getCurrentTask();
         T msg = get(t);
         long begin = System.currentTimeMillis();
         while (msg == null) {
-            Runnable tt = new Runnable() {
-                    public void run() {
-                        Cell.this.removeMsgAvailableListener(t);
-                        t.onEvent(Cell.this, timedOut);
-                    }
-                };
-            ScheduledExecutorService scheduledExecutor = TimerManager.instance().getTimer(name_);
-            ScheduledFuture<?> future = scheduledExecutor.schedule(tt, timeoutMillis, TimeUnit.MILLISECONDS);            
-            Task.pause(this);   
-            future.cancel(true);            
+        	Runnable tt = new Runnable() {
+                public void run() {
+                    Cell.this.removeMsgAvailableListener(t);
+                    t.onEvent(Cell.this, timedOut);
+                }
+            };
+	        ScheduledExecutorService scheduledExecutor = TimerManager.instance().getTimer(name_);
+	        ScheduledFuture<?> future = scheduledExecutor.schedule(tt, timeoutMillis, TimeUnit.MILLISECONDS);            
+	        Task.pause(this);   
+	        future.cancel(true);            
             if (System.currentTimeMillis() - begin > timeoutMillis) {
                 break;
             }
+            removeMsgAvailableListener(t);
             msg = get(t);
         }
         return msg;
     }
-    
-    /*
-    public T get(long timeoutMillis) throws Pausable {
-        final Task t = Task.getCurrentTask();
-        T msg = get(t);
-        long begin = System.currentTimeMillis();
-        while (msg == null) {
-            TimerTask tt = new TimerTask() {
-                    public void run() {
-                        Cell.this.removeMsgAvailableListener(t);
-                        t.onEvent(Cell.this, timedOut);
-                    }
-                };
-            Task.timer.schedule(tt, timeoutMillis);            
-            Task.pause(this);
-            tt.cancel();
-            if (System.currentTimeMillis() - begin > timeoutMillis) {
-                break;
-            }
-            msg = get(t);
-        }
-        return msg;
-    }
-    */
     
     public synchronized void addSpaceAvailableListener(EventSubscriber spcSub) {
             srcs.add(spcSub);
@@ -214,9 +193,10 @@ public class Cell<T> implements PauseReason, EventPublisher {
         Task t = Task.getCurrentTask();
         while (!put(msg, t)) {
             Task.pause(this);
+            removeSpaceAvailableListener(t);
         }
     }
-    
+
     public boolean put(T msg, int timeoutMillis) throws Pausable {
         final Task t = Task.getCurrentTask();
         long begin = System.currentTimeMillis();
@@ -229,6 +209,7 @@ public class Cell<T> implements PauseReason, EventPublisher {
                 };
             Task.timer.schedule(tt, timeoutMillis);
             Task.pause(this);
+            removeSpaceAvailableListener(t);
             if (System.currentTimeMillis() - begin >= timeoutMillis) {
                 return false;
             }
@@ -275,11 +256,11 @@ public class Cell<T> implements PauseReason, EventPublisher {
     }
 
     public synchronized boolean hasMessage() {
-            return msg != null;
+            return message != null;
         }
 
     public synchronized boolean hasSpace() {
-            return msg == null;
+            return message == null;
         }
 
     /**
@@ -317,7 +298,7 @@ public class Cell<T> implements PauseReason, EventPublisher {
     }
 
     public synchronized String toString() {
-            return "id:" + System.identityHashCode(this) + " " + msg;
+            return "id:" + System.identityHashCode(this) + " " + message;
         }
 
     // Implementation of PauseReason

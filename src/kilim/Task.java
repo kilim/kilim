@@ -481,6 +481,9 @@ public abstract class Task implements EventSubscriber {
             // resisted calls to resume(). If the pauseReason is not valid any
             // more, we'll resume. 
             if (!pr.isValid(this)) {
+                // NOTE: At this point, another event could trigger resumption before the following resume() can kick in. Additionally,
+                // it is possible that the task could process all pending events, so the following call to resume() may be spurious.
+                // Cell/Mailbox's  get/put watch out for spurious resumptions.
                 resume();
             }
         }
