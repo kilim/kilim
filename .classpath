@@ -6,6 +6,6 @@
 	<classpathentry kind="src" path="test"/>
 	<classpathentry kind="lib" path="libs/junit.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
-	<classpathentry kind="lib" path="libs/asm-all-4.1.jar"/>
+	<classpathentry kind="lib" path="libs/asm-all-4.1.jar" sourcepath="/Users/s/sw/asm-4.1/src"/>
 	<classpathentry kind="output" path="classes"/>
 </classpath>

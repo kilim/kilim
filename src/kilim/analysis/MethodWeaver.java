@@ -502,42 +502,47 @@ public class MethodWeaver {
     }
     
     void makeNotWovenMethod(ClassVisitor cv, MethodFlow mf) {
-        if (classWeaver.isInterface()) return;
-        // Turn of abstract modifier
-        int access = mf.access;
-        access &= ~Constants.ACC_ABSTRACT;
-        MethodVisitor mv = cv.visitMethod(access, mf.name, mf.desc, 
-                mf.signature, ClassWeaver.toStringArray(mf.exceptions));
-        mv.visitCode();
-        visitAttrs(mv);
-        mv.visitMethodInsn(INVOKESTATIC, TASK_CLASS, "errNotWoven", "()V");
-        
-        String rdesc = TypeDesc.getReturnTypeDesc(mf.desc);
-        // stack size depends on return type, because we want to load
-        // a constant of the appropriate size on the stack for 
-        // the corresponding xreturn instruction.
-        int stacksize = 0;
-        if (rdesc != D_VOID) {
-            // ICONST_0; IRETURN or ACONST_NULL; ARETURN etc.
-            stacksize = TypeDesc.isDoubleWord(rdesc) ? 2 : 1;
-            int vmt = VMType.toVmType(rdesc);
-            mv.visitInsn(VMType.constInsn[vmt]);
-            mv.visitInsn(VMType.retInsn[vmt]);
+        if (classWeaver.isInterface()) {
+             MethodVisitor mv = cv.visitMethod(mf.access, mf.name, mf.desc, 
+                    mf.signature, ClassWeaver.toStringArray(mf.exceptions));
+             mv.visitEnd();
         } else {
-            mv.visitInsn(RETURN);
+            // Turn of abstract modifier
+            int access = mf.access;
+            access &= ~Constants.ACC_ABSTRACT;
+            MethodVisitor mv = cv.visitMethod(access, mf.name, mf.desc, 
+                    mf.signature, ClassWeaver.toStringArray(mf.exceptions));
+            mv.visitCode();
+            visitAttrs(mv);
+            mv.visitMethodInsn(INVOKESTATIC, TASK_CLASS, "errNotWoven", "()V");
+            
+            String rdesc = TypeDesc.getReturnTypeDesc(mf.desc);
+            // stack size depends on return type, because we want to load
+            // a constant of the appropriate size on the stack for 
+            // the corresponding xreturn instruction.
+            int stacksize = 0;
+            if (rdesc != D_VOID) {
+                // ICONST_0; IRETURN or ACONST_NULL; ARETURN etc.
+                stacksize = TypeDesc.isDoubleWord(rdesc) ? 2 : 1;
+                int vmt = VMType.toVmType(rdesc);
+                mv.visitInsn(VMType.constInsn[vmt]);
+                mv.visitInsn(VMType.retInsn[vmt]);
+            } else {
+                mv.visitInsn(RETURN);
+            }
+            
+            int numlocals;
+            if ((mf.access & Constants.ACC_ABSTRACT) != 0) {
+                // The abstract method doesn't contain the number of locals required to hold the
+                // args, so we need to calculate it.
+                numlocals = getNumWordsInSig() + 1 /* fiber */;
+                if (!mf.isStatic()) numlocals++;
+            } else {
+                numlocals = mf.maxLocals + 1;
+            }
+            mv.visitMaxs(stacksize, numlocals);
+            mv.visitEnd();
         }
-        
-        int numlocals;
-        if ((mf.access & Constants.ACC_ABSTRACT) != 0) {
-            // The abstract method doesn't contain the number of locals required to hold the
-            // args, so we need to calculate it.
-            numlocals = getNumWordsInSig() + 1 /* fiber */;
-            if (!mf.isStatic()) numlocals++;
-        } else {
-            numlocals = mf.maxLocals + 1;
-        }
-        mv.visitMaxs(stacksize, numlocals);
-        mv.visitEnd();
     }
 }
 
