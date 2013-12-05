@@ -19,8 +19,6 @@ public class AllWoven extends TestSuite {
         ret.addTestSuite(TestMailbox.class);
         ret.addTestSuite(TestLock.class);
         ret.addTestSuite(TestGenerics.class);
-        ret.addTestSuite(TestIO.class);
-        ret.addTestSuite(TestHTTP.class);
         return ret;
     }
 }
