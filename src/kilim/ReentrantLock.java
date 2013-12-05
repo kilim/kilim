@@ -21,9 +21,11 @@ public class ReentrantLock extends java.util.concurrent.locks.ReentrantLock {
         super.lock();
         Thread t = Thread.currentThread();
         locker = t;
-        if (t instanceof WorkerThread) {
-            Task tsk =  ((WorkerThread)t).getCurrentTask();
-            if (t != null) {tsk.pinToThread();};
+
+        if (t != null) {
+        	Task tsk = Scheduler.getCurrentTask();        	
+            if (tsk != null)
+            	tsk.pinToThread();
         }
     }
     
@@ -32,10 +34,11 @@ public class ReentrantLock extends java.util.concurrent.locks.ReentrantLock {
         // TODO Auto-generated method stub
         boolean ret = super.tryLock();
         Thread t = Thread.currentThread();
-        if (ret && (t instanceof WorkerThread)) {
+        if (ret && (t != null)) {
             locker = t;
-            Task tsk =  ((WorkerThread)t).getCurrentTask();
-            if (t != null) {tsk.pinToThread();};
+            Task tsk = Scheduler.getCurrentTask();        	
+            if (tsk != null)
+            	tsk.pinToThread();
         }
         return ret;
     }
@@ -45,10 +48,11 @@ public class ReentrantLock extends java.util.concurrent.locks.ReentrantLock {
             throws InterruptedException {
         boolean ret = super.tryLock(timeout, unit);
         Thread t = Thread.currentThread();
-        if (ret && (t instanceof WorkerThread)) {
+        if (ret && (t != null)) {
             locker = t;
-            Task tsk =  ((WorkerThread)t).getCurrentTask();
-            if (t != null) {tsk.pinToThread();};    
+            Task tsk = Scheduler.getCurrentTask();        	
+            if (tsk != null)
+            	tsk.pinToThread();
         }
         return ret;
     }
@@ -63,9 +67,10 @@ public class ReentrantLock extends java.util.concurrent.locks.ReentrantLock {
             System.exit(1);
         }
         Thread t = Thread.currentThread();
-        if (t instanceof WorkerThread) {
-            Task tsk =  ((WorkerThread)t).getCurrentTask();
-            if (t != null) {tsk.unpinFromThread();};
+        if (t != null) {
+        	Task tsk = Scheduler.getCurrentTask();        	
+            if (tsk != null)
+            	tsk.pinToThread();
         }
     }
 }

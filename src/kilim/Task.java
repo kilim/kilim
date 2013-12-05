@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  */
 public abstract class Task implements EventSubscriber {
-    public volatile Thread currentThread = null;
+    public volatile int currentThread;
 
     static PauseReason         yieldReason = new YieldReason();
     /**
@@ -59,7 +59,7 @@ public abstract class Task implements EventSubscriber {
      * to be pinned to a thread.
      * @see kilim.ReentrantLock
      */
-    volatile WorkerThread    preferredResumeThread;
+    volatile int preferredResumeThread;
 
     /**
      * @see Task#preferredResumeThread
@@ -425,12 +425,12 @@ public abstract class Task implements EventSubscriber {
      * execute processing (in addition to calling the execute(fiber) method
      * of the task.
      */
-    public void _runExecute(WorkerThread thread) throws NotPausable {
+    public void _runExecute(int tid) throws NotPausable {
         Fiber f = fiber;
         boolean isDone = false; 
         try {
-            currentThread = Thread.currentThread();
-            assert (preferredResumeThread == null || preferredResumeThread == thread) : "Resumed " + id + " in incorrect thread. ";
+            currentThread = AffineThreadPool.getCurrentThreadId();
+            assert (preferredResumeThread == 0 || preferredResumeThread == tid) : "Resumed " + id + " in incorrect thread. ";
             // start execute. fiber is wound to the beginning.
             execute(f.begin());
         
@@ -459,21 +459,21 @@ public abstract class Task implements EventSubscriber {
                     exitMB.putnb(msg);
                 }
             }
-            preferredResumeThread = null;
+            preferredResumeThread = 0;
         } else {
-            if (thread != null) { // it is null for generators
+            if (tid > 0) { // it is null for generators
                 if (numActivePins > 0) {
-                    preferredResumeThread = thread;
+                    preferredResumeThread = tid;
                 } else {
                     assert numActivePins == 0: "numActivePins == " + numActivePins;
-                    preferredResumeThread = null;
+                    preferredResumeThread = 0;
                 }
             }
             
             PauseReason pr = this.pauseReason;
             synchronized (this) {
                 running = false;
-                currentThread = null;
+                currentThread = 0;
             }
 
             // The task has been in "running" mode until now, and may have missed

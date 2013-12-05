@@ -44,7 +44,7 @@ public class Ping {
             parsePort(args[1]);
         System.out.println("kilim.examples.Ping " + (server ? "-server " : "-client ") + port);
         if (server) {
-            Server.run();
+            Server.srun();
         } else {
             Client.run();
         }
@@ -56,7 +56,7 @@ public class Ping {
      * and Kilim's scheduling. 
      */
     public static class Server extends SessionTask {
-        public static void run() throws IOException {
+        public static void srun() throws IOException {
             Scheduler sessionScheduler = Scheduler.getDefaultScheduler(); // The scheduler/thread pool on which all tasks will be run
             NioSelectorScheduler nio = new NioSelectorScheduler(); // Starts a single thread that manages the select loop
             nio.listen(port, Server.class, sessionScheduler); // 
