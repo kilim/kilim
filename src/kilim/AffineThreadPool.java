@@ -43,7 +43,7 @@ public class AffineThreadPool
 	
 	public AffineThreadPool(int nThreads, int queueSize, String name, ExceptionHandler exHandler, Scheduler scheduler)
 	{	
-		nThreads_ = nThreads;		
+		nThreads_ = nThreads;
 		queueSize = queueSize / nThreads;
 		for (int i = 0; i < nThreads; ++i)
 		{
