@@ -11,8 +11,8 @@ class KilimEvent
 			return new KilimEvent();
 		}
 	};
-		
-	private int tid_;
+	
+	private int tid_;	
 	private Task task_;
 	
 	public int getTid()
