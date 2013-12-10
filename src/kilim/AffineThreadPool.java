@@ -38,7 +38,6 @@ public class AffineThreadPool
 		SequenceBarrier nBarrier = rBuffer_.newBarrier();
 		executorService_ = Executors.newFixedThreadPool(nThreads, new ThreadFactoryImpl(name));
 		EventProcessor[] evtProcessors = new EventProcessor[nThreads];
-		
 		for (int i = 0; i < nThreads; ++i)
 		{
 			evtProcessors[i] = new BatchEventProcessor<KilimEvent>(rBuffer_, nBarrier, new KilimEventHandler(i));
