@@ -75,7 +75,7 @@ public class Scheduler
 	{
 		name_ = name;
 		nameGenerator_.putIfAbsent(name_, new AtomicInteger());
-		affinePool_ = new AffineThreadPool(numThreads, queueSize, name, null, this);
+		affinePool_ = new AffineThreadPool(numThreads, queueSize, name, null);
 	}
 
 	protected String getName()
