@@ -189,7 +189,7 @@ public abstract class Task implements EventSubscriber
             running = doSchedule = true;
         }
 		if (doSchedule)
-		{
+		{			
 			if (preferredResumeThread == 0)
 				scheduler.schedule(this);
 			else
@@ -532,7 +532,7 @@ public abstract class Task implements EventSubscriber
 		boolean isDone = false;
 		try
 		{
-			currentThread = AffineThreadPool.getCurrentThreadId();
+			currentThread = AffineThreadPool.getCurrentThreadId();			
 			assert (preferredResumeThread == 0 || preferredResumeThread == tid) : "Resumed "
 			+ id + " in incorrect thread. ";
 			// start execute. fiber is wound to the beginning.

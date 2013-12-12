@@ -48,7 +48,7 @@ public class AffineThreadPool
 	public int publish(Task task)
 	{
 		currentIndex_.compareAndSet(Integer.MAX_VALUE, 0);
-		int index = currentIndex_.getAndIncrement() % nThreads_;		
+		int index = currentIndex_.incrementAndGet() % nThreads_;		
 		return publish(index, task);
 	}
 	
