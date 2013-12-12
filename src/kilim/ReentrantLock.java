@@ -67,10 +67,10 @@ public class ReentrantLock extends java.util.concurrent.locks.ReentrantLock {
             System.exit(1);
         }
         Thread t = Thread.currentThread();
-        if (t != null) {
-        	Task tsk = Scheduler.getCurrentTask();        	
-            if (tsk != null)
-            	tsk.pinToThread();
+        if (t != null) {        	
+        	Task tsk = Scheduler.getCurrentTask();        	        	
+        	if (tsk != null)
+            	tsk.unpinFromThread();
         }
     }
 }
