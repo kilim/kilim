@@ -190,7 +190,10 @@ public abstract class Task implements EventSubscriber
         }
 		if (doSchedule)
 		{
-			scheduler.schedule(this);
+			if (preferredResumeThread == 0)
+				scheduler.schedule(this);
+			else
+				scheduler.schedule(preferredResumeThread, this);
 		}
 		return doSchedule;
 	}
