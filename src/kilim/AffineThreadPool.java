@@ -22,6 +22,7 @@ public class AffineThreadPool
 	}
 		
 	private int nThreads_;	
+	private int queueSize_;
 	private AtomicInteger currentIndex_ = new AtomicInteger(0);	
 	private RingBuffer<KilimEvent> rBuffer_;
 	private ExecutorService executorService_;
@@ -34,6 +35,7 @@ public class AffineThreadPool
 	public AffineThreadPool(int nThreads, int queueSize, String name, ExceptionHandler exHandler)
 	{	
 		nThreads_ = nThreads;		
+		queueSize_ = queueSize;
 		rBuffer_ = RingBuffer.createMultiProducer(KilimEvent.factory_, queueSize);
 		SequenceBarrier nBarrier = rBuffer_.newBarrier();
 		executorService_ = Executors.newFixedThreadPool(nThreads, new ThreadFactoryImpl(name));
@@ -43,6 +45,11 @@ public class AffineThreadPool
 			evtProcessors[i] = new BatchEventProcessor<KilimEvent>(rBuffer_, nBarrier, new KilimEventHandler(i));
 			executorService_.execute(evtProcessors[i]);
 		}						
+	}
+	
+	public long getTaskCount()
+	{
+		return queueSize_ - rBuffer_.remainingCapacity();
 	}
 	
 	public int publish(Task task)

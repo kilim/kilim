@@ -77,6 +77,11 @@ public class Scheduler
 		nameGenerator_.putIfAbsent(name_, new AtomicInteger());
 		affinePool_ = new AffineThreadPool(numThreads, queueSize, name, null);
 	}
+	
+	public long getTaskCount()
+	{
+		return affinePool_.getTaskCount();
+	}
 
 	protected String getName()
 	{
