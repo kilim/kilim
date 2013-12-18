@@ -11,7 +11,6 @@ import java.lang.reflect.Method;
 import java.util.LinkedList;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -192,8 +191,8 @@ public abstract class Task implements EventSubscriber
 		{			
 			if (preferredResumeThread == 0)
 				scheduler.schedule(this);
-			else
-				scheduler.schedule(preferredResumeThread, this);
+			else						
+				scheduler.schedule(preferredResumeThread, this);			
 		}
 		return doSchedule;
 	}
@@ -579,7 +578,7 @@ public abstract class Task implements EventSubscriber
 			if (tid > 0)
 			{ // it is null for generators
 				if (numActivePins > 0)
-				{
+				{					
 					preferredResumeThread = tid;
 				}
 				else

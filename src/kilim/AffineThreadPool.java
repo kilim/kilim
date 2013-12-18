@@ -42,7 +42,7 @@ public class AffineThreadPool
 		EventProcessor[] evtProcessors = new EventProcessor[nThreads];
 		for (int i = 0; i < nThreads; ++i)
 		{
-			evtProcessors[i] = new BatchEventProcessor<KilimEvent>(rBuffer_, nBarrier, new KilimEventHandler(i));
+			evtProcessors[i] = new BatchEventProcessor<KilimEvent>(rBuffer_, nBarrier, new KilimEventHandler(i + 1));
 			executorService_.execute(evtProcessors[i]);
 		}						
 	}
