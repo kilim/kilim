@@ -52,10 +52,18 @@ public class AffineThreadPool
 		return queueSize_ - rBuffer_.remainingCapacity();
 	}
 	
-	public int publish(Task task)
+	private int getNextIndex()
 	{
 		currentIndex_.compareAndSet(Integer.MAX_VALUE, 0);
-		int index = currentIndex_.incrementAndGet() % nThreads_;		
+		int index = 1;
+		if (nThreads_ > 1)
+			index = Math.max(currentIndex_.incrementAndGet() % nThreads_, 1);				
+		return index;
+	}
+	
+	public int publish(Task task)
+	{		
+		int index = getNextIndex();		
 		return publish(index, task);
 	}
 	
@@ -76,10 +84,11 @@ public class AffineThreadPool
 	
 	public static void main(String[] args) throws Throwable
 	{
-		AffineThreadPool aPool = new AffineThreadPool(8, 65536, "Avinash", null);
-		for (int i = 0; i < 1000000; ++i)
+		AffineThreadPool aPool = new AffineThreadPool(16, 65536, "Avinash", null);
+		for (int i = 0; i < 10000000; ++i)
 		{
-			aPool.publish(null);			
+			System.out.println(aPool.getNextIndex());			
 		}
+		System.out.println("************** Done *****************");
 	}
 }
