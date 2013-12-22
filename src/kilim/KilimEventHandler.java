@@ -37,13 +37,15 @@ class KilimEventHandler implements EventHandler<KilimEvent>
 	public void handleEvent(KilimEvent kEvent) throws Exception
 	{
 		Task task = kEvent.getTask();		
-		int tid = kEvent.getTid();		
-		if (tid == tid_)
+		int tid = kEvent.getTid();	
+		if (tid == tid_)			
 		{		
 			if (task != null)
 			{
 				Scheduler.setCurrentTask(task);
 				task._runExecute(kEvent.getTid());
+				if (task.isDone())				
+					kEvent.free();									
 			}
 		}		
 	}
