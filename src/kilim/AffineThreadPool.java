@@ -11,7 +11,7 @@ import com.lmax.disruptor.SequenceBarrier;
 
 public class AffineThreadPool
 {
-	private static final int MAX_QUEUE_SIZE = 4096;
+	private static final int MAX_QUEUE_SIZE = 512;
 	private static final String colon_ = ":";
 
 	protected static int getCurrentThreadId()
