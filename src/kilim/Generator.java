@@ -43,7 +43,7 @@ public class Generator<T> extends Task implements Iterator<T>, Iterable<T> {
         if (nextVal == null) {
             if (isDone())
                 return false;
-            _runExecute(0);
+            run();
             return nextVal != null;
         } else {
             return true;
@@ -60,7 +60,7 @@ public class Generator<T> extends Task implements Iterator<T>, Iterable<T> {
         if (isDone()) {
             throw new NoSuchElementException();
         }
-        _runExecute(0);
+        run();
         ret = nextVal;
         nextVal = null;
         return ret;

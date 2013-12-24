@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Scheduler
 {
 	private static final String defaultName_ = "KilimWorker";
-	private static final int defaultQueueSize_ = 4096;
+	private static final int defaultQueueSize_ = 65536;
 	public static volatile Scheduler defaultScheduler = null;
 	public static int defaultNumberThreads;
 	private static final String dash_ = "-";
@@ -75,7 +75,7 @@ public class Scheduler
 	{
 		name_ = name;
 		nameGenerator_.putIfAbsent(name_, new AtomicInteger());
-		affinePool_ = new AffineThreadPool(numThreads, queueSize, name, null);
+		affinePool_ = new AffineThreadPool(numThreads, queueSize, name);
 	}
 	
 	public long getTaskCount()

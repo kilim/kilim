@@ -1,17 +1,17 @@
 package kilim;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import com.lmax.disruptor.BatchEventProcessor;
-import com.lmax.disruptor.EventProcessor;
-import com.lmax.disruptor.ExceptionHandler;
-import com.lmax.disruptor.RingBuffer;
-import com.lmax.disruptor.SequenceBarrier;
 
 public class AffineThreadPool
 {
-	private static final int MAX_QUEUE_SIZE = 512;
+	private static final int MAX_QUEUE_SIZE = 4096;
 	private static final String colon_ = ":";
 
 	protected static int getCurrentThreadId()
@@ -21,70 +21,72 @@ public class AffineThreadPool
 		return Integer.parseInt(name.substring(sIndex + 1, name.length()));
 	}
 		
-	private int nThreads_;	
-	private int queueSize_;
+	private int nThreads_;		
 	private AtomicInteger currentIndex_ = new AtomicInteger(0);	
-	private RingBuffer<KilimEvent> rBuffer_;
-	private ExecutorService executorService_;
+	private List<BlockingQueue<Runnable>> queues_ = new ArrayList<BlockingQueue<Runnable>>();
+	private List<ExecutorService> executorService_ = new ArrayList<ExecutorService>();
 	
-	public AffineThreadPool(int nThreads, String name, ExceptionHandler exHandler)
+	public AffineThreadPool(int nThreads, String name)
 	{
-		this(nThreads, MAX_QUEUE_SIZE, name, exHandler);
+		this(nThreads, MAX_QUEUE_SIZE, name);
 	}
 	
-	public AffineThreadPool(int nThreads, int queueSize, String name, ExceptionHandler exHandler)
+	public AffineThreadPool(int nThreads, int queueSize, String name)
 	{	
-		nThreads_ = nThreads;		
-		queueSize_ = queueSize;
-		rBuffer_ = RingBuffer.createMultiProducer(KilimEvent.factory_, queueSize);
-		SequenceBarrier nBarrier = rBuffer_.newBarrier();
-		executorService_ = Executors.newFixedThreadPool(nThreads, new ThreadFactoryImpl(name));
-		EventProcessor[] evtProcessors = new EventProcessor[nThreads];
+		nThreads_ = nThreads;				
 		for (int i = 0; i < nThreads; ++i)
-		{
-			evtProcessors[i] = new BatchEventProcessor<KilimEvent>(rBuffer_, nBarrier, new KilimEventHandler(i + 1));
-			executorService_.execute(evtProcessors[i]);
-		}						
+		{			
+			String threadName = name + colon_ + i;
+			BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(queueSize);
+			queues_.add(queue);
+			
+			ExecutorService executorService = new ThreadPoolExecutor(1, 1, Integer.MAX_VALUE, TimeUnit.MILLISECONDS, queue, new ThreadFactoryImpl(threadName));			
+			executorService_.add(executorService);						
+		}							
 	}
 	
 	public long getTaskCount()
 	{
-		return queueSize_ - rBuffer_.remainingCapacity();
+		long totalRemainingCapacity = 0L;
+		for (BlockingQueue<Runnable> queue : queues_)
+		{
+			totalRemainingCapacity += queue.size();
+		}
+		return totalRemainingCapacity;
 	}
 	
 	private int getNextIndex()
 	{
 		currentIndex_.compareAndSet(Integer.MAX_VALUE, 0);
-		int index = 1;
-		if (nThreads_ > 1)
-			index = Math.max(currentIndex_.incrementAndGet() % nThreads_, 1);				
+		int index = currentIndex_.getAndIncrement() % nThreads_;					
 		return index;
 	}
 	
 	public int publish(Task task)
 	{		
-		int index = getNextIndex();		
+		int index = getNextIndex();
+		task.setTid(index);			
 		return publish(index, task);
 	}
 	
 	public int publish(int index, Task task)
-	{		
-		long sequence = rBuffer_.next();
-		KilimEvent kEvent = rBuffer_.get(sequence);
-		kEvent.putTid(index);
-		kEvent.putTask(task);
-		rBuffer_.publish(sequence);		
+	{				
+		ExecutorService executorService = executorService_.get(index);
+		executorService.submit(task);
 		return index;
 	}
 	
 	public void shutdown()
 	{
-		executorService_.shutdown();
+		for (ExecutorService executorService : executorService_)
+		{
+			executorService.shutdown();
+		}
 	}
 	
 	public static void main(String[] args) throws Throwable
 	{
-		AffineThreadPool aPool = new AffineThreadPool(16, 65536, "Avinash", null);
+		AffineThreadPool aPool = new AffineThreadPool(1, 16, "Avinash");
 		for (int i = 0; i < 10000000; ++i)
 		{
 			System.out.println(aPool.getNextIndex());			

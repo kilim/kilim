@@ -1,13 +1,11 @@
 package kilim;
 
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
 
 class ThreadFactoryImpl implements ThreadFactory
 {
     protected String id_;
-    protected ThreadGroup threadGroup_;
-    protected final AtomicInteger threadNbr_ = new AtomicInteger(1);
+    protected ThreadGroup threadGroup_;    
     
     public ThreadFactoryImpl(String id)
     {
@@ -17,9 +15,8 @@ class ThreadFactoryImpl implements ThreadFactory
     }    
     
     public Thread newThread(Runnable runnable)
-    {        
-        String name = id_ + ":" + threadNbr_.getAndIncrement();       
-        Thread thread = new Thread(threadGroup_, runnable, name);        
+    {                      
+        Thread thread = new Thread(threadGroup_, runnable, id_);        
         return thread;
     }
 }
