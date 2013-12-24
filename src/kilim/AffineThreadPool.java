@@ -83,14 +83,4 @@ public class AffineThreadPool
 			executorService.shutdown();
 		}
 	}
-	
-	public static void main(String[] args) throws Throwable
-	{
-		AffineThreadPool aPool = new AffineThreadPool(1, 16, "Avinash");
-		for (int i = 0; i < 10000000; ++i)
-		{
-			System.out.println(aPool.getNextIndex());			
-		}
-		System.out.println("************** Done *****************");
-	}
 }
