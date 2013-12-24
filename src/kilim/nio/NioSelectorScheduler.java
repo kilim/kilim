@@ -167,7 +167,7 @@ public class NioSelectorScheduler extends Scheduler {
                 // }
                 while (runnables.size() > 0) {
                     Task t = runnables.get();
-                    t._runExecute(0); // FIXME.srl - port from hedvig, what should tid be ???
+                    t.run();
                     // If task calls Task.yield, it would have added itself to scheduler already.
                     // If task's pauseReason is YieldToSelector, then nothing more to do.
                     // Task should be registered for the appropriate Selector op.

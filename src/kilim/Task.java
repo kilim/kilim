@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * pausable execute method.
  * 
  */
-public abstract class Task implements EventSubscriber
+public abstract class Task implements Runnable, EventSubscriber
 {
 	public volatile int currentThread;
 
@@ -60,8 +60,9 @@ public abstract class Task implements EventSubscriber
 	 * 
 	 * @see kilim.ReentrantLock
 	 */
-	volatile int preferredResumeThread;
+	volatile int preferredResumeThread = -1;
 
+	private int tid;
 	/**
 	 * @see Task#preferredResumeThread
 	 */
@@ -188,10 +189,10 @@ public abstract class Task implements EventSubscriber
             running = doSchedule = true;
         }
 		if (doSchedule)
-		{			
-			if (preferredResumeThread == 0)
+		{					
+			if (preferredResumeThread == -1)
 				scheduler.schedule(this);
-			else						
+			else			
 				scheduler.schedule(preferredResumeThread, this);			
 		}
 		return doSchedule;
@@ -520,19 +521,25 @@ public abstract class Task implements EventSubscriber
 		return done;
 	}
 	
+	protected void setTid(int tid)
+	{
+		this.tid = tid;
+	}
+	
 	/**
 	 * Called by WorkerThread, it is the wrapper that performs pre and post
 	 * execute processing (in addition to calling the execute(fiber) method of
 	 * the task.
 	 */
-	public void _runExecute(int tid) throws NotPausable
+	public void run() throws NotPausable
 	{
+		Scheduler.setCurrentTask(this);
 		Fiber f = fiber;
 		boolean isDone = false;
 		try
 		{
-			currentThread = AffineThreadPool.getCurrentThreadId();			
-			assert (preferredResumeThread == 0 || preferredResumeThread == tid) : "Resumed "
+			currentThread = AffineThreadPool.getCurrentThreadId();				
+			assert (preferredResumeThread == -1 || preferredResumeThread == tid) : "Resumed "
 			+ id + " in incorrect thread. ";
 			// start execute. fiber is wound to the beginning.
 			execute(f.begin());
@@ -571,22 +578,22 @@ public abstract class Task implements EventSubscriber
 					exitMB.putnb(msg);
 				}
 			}
-			preferredResumeThread = 0;
+			preferredResumeThread = -1;
 		}
 		else
 		{
-			if (tid > 0)
+			if (tid >= 0)
 			{ // it is null for generators
 				if (numActivePins > 0)
-				{					
+				{											
 					preferredResumeThread = tid;
 				}
 				else
 				{
 					assert numActivePins == 0 : "numActivePins == "
 							+ numActivePins;
-					preferredResumeThread = 0;
-				}
+					preferredResumeThread = -1;
+				}				
 			}
 
 			PauseReason pr = this.pauseReason;

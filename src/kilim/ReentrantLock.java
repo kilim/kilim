@@ -24,8 +24,8 @@ public class ReentrantLock extends java.util.concurrent.locks.ReentrantLock {
 
         if (t != null) {
         	Task tsk = Scheduler.getCurrentTask();        	
-            if (tsk != null)
-            	tsk.pinToThread();
+            if (tsk != null)            
+            	tsk.pinToThread();            	            
         }
     }
     
@@ -62,7 +62,7 @@ public class ReentrantLock extends java.util.concurrent.locks.ReentrantLock {
         try {
         super.unlock();
         } catch (IllegalMonitorStateException ims) {
-            System.err.println("Locking thread: " + locker + ", unlocking thread: " + Thread.currentThread());
+            System.err.println("Locking thread: " + locker.getName() + ", unlocking thread: " + Thread.currentThread().getName());
             ims.printStackTrace();
             System.exit(1);
         }
