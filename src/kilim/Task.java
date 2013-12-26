@@ -149,7 +149,7 @@ public abstract class Task implements Runnable, EventSubscriber
 		for (int i = 0; i < len; i++)
 		{
 			StackTraceElement ste = stes[i];
-			if (ste.getMethodName().equals("_runExecute"))
+			if (ste.getMethodName().equals("run") && ste.getClassName().equals("kilim.Task"))
 			{
 				// discounting WorkerThread.run, Task._runExecute, and
 				// Scheduler.getStackDepth
