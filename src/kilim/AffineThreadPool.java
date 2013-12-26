@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -40,7 +41,7 @@ public class AffineThreadPool
 			BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(queueSize);
 			queues_.add(queue);
 			
-			ExecutorService executorService = new ThreadPoolExecutor(1, 1, Integer.MAX_VALUE, TimeUnit.MILLISECONDS, queue, new ThreadFactoryImpl(threadName));			
+			ExecutorService executorService = new KilimThreadPoolExecutor(1, queue, new ThreadFactoryImpl(threadName));			
 			executorService_.add(executorService);						
 		}							
 	}
@@ -82,5 +83,18 @@ public class AffineThreadPool
 		{
 			executorService.shutdown();
 		}
+	}
+}
+
+class KilimThreadPoolExecutor extends ThreadPoolExecutor
+{
+	KilimThreadPoolExecutor(int nThreads, BlockingQueue<Runnable> queue, ThreadFactory tFactory)
+	{
+		super(nThreads, nThreads, Integer.MAX_VALUE, TimeUnit.MILLISECONDS, queue, tFactory);
+	}
+	
+	protected void afterExecute(Runnable r, Throwable th)
+	{
+		super.afterExecute(r, th);		
 	}
 }
