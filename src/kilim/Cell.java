@@ -6,11 +6,13 @@
 
 package kilim;
 
-import java.util.LinkedList;
+import java.util.Deque;
 import java.util.TimerTask;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * A cell is a single-space buffer that supports multiple producers and a single
@@ -28,9 +30,9 @@ public class Cell<T> implements PauseReason, EventPublisher {
     private static final String defaultName_ = "DEFAULT-CELL";    
     
     private String name_;
-    T message;
-    EventSubscriber sink;
-    LinkedList<EventSubscriber> srcs = new LinkedList<EventSubscriber>();
+    AtomicReference<T> message = new AtomicReference<T>();
+    AtomicReference<EventSubscriber> sink = new AtomicReference<EventSubscriber>();
+    Deque<EventSubscriber> srcs = new ConcurrentLinkedDeque<EventSubscriber>();
 
     // DEBUG stuff
     // To do: move into monitorable stat object
@@ -57,18 +59,18 @@ public class Cell<T> implements PauseReason, EventPublisher {
     public T get(EventSubscriber eo) {
         EventSubscriber producer = null;
         T ret;
-        synchronized(this) {
-            if (message == null) {
-                ret = null;
-                addMsgAvailableListener(eo); 
-            } else {
-                ret = message;
-                message = null;
-                if (srcs.size() > 0) {
-                    producer = srcs.poll();
-                }
+        if (message.get() == null) 
+        {
+            ret = null;
+            addMsgAvailableListener(eo); 
+        } 
+        else 
+        {
+            ret = message.getAndSet(null);            
+            if (srcs.size() > 0) {
+                producer = srcs.poll();
             }
-        }
+        }        
         if (producer != null)  {
             producer.onEvent(this, spaceAvailble);
         }
@@ -84,23 +86,22 @@ public class Cell<T> implements PauseReason, EventPublisher {
     public boolean put(T amsg, EventSubscriber eo) {
         boolean ret = true; // assume we'll be able to enqueue
         EventSubscriber subscriber;
-        synchronized(this) {
-            if (amsg == null) {
-                throw new NullPointerException("Null message supplied to put");
-            }
-            if (message == null) { // space available
-                message = amsg;
-                subscriber = sink;
-                sink = null;
-            } else {
-                ret = false;
-                // unable to enqueue. Cell is full
-                subscriber = null;
-                if (eo != null) {
-                    srcs.add(eo);
-                }
-            }
+        if (amsg == null)
+            throw new NullPointerException("Null message supplied to put");
+        
+        if (message.compareAndSet(null, amsg))
+        {
+        	subscriber = sink.get();
+        	sink = null;
         }
+        else
+        {
+        	ret = false;
+        	subscriber = null;
+        	if (eo != null) {
+                srcs.add(eo);
+            }
+        }        
         // notify get's subscriber that something is available
         if (subscriber != null) {
             subscriber.onEvent(this, messageAvailable);
@@ -161,28 +162,26 @@ public class Cell<T> implements PauseReason, EventPublisher {
         return msg;
     }
     
-    public synchronized void addSpaceAvailableListener(EventSubscriber spcSub) {
+    public void addSpaceAvailableListener(EventSubscriber spcSub) {
             srcs.add(spcSub);
         }
 
-    public synchronized void removeSpaceAvailableListener(EventSubscriber spcSub) {
+    public void removeSpaceAvailableListener(EventSubscriber spcSub) {
             srcs.remove(spcSub);
         }
 
 
-    public synchronized void addMsgAvailableListener(EventSubscriber msgSub) {
-            if (sink != null && sink != msgSub) {
+    public void addMsgAvailableListener(EventSubscriber msgSub) {
+            if (sink.get() != null && sink.get() != msgSub) {
                 throw new AssertionError(
                   "Error: A mailbox can not be shared by two consumers.  New = "
                   + msgSub + ", Old = " + sink);
             }
-            sink = msgSub;
+            sink.compareAndSet(null, msgSub);            
         }
 
-    public synchronized void removeMsgAvailableListener(EventSubscriber msgSub) {
-            if (sink == msgSub) {
-                sink = null;
-            }
+    public void removeMsgAvailableListener(EventSubscriber msgSub) {
+    		sink.compareAndSet(msgSub, null);            
         }
 
     public boolean putnb(T msg) {
@@ -255,12 +254,12 @@ public class Cell<T> implements PauseReason, EventPublisher {
         }
     }
 
-    public synchronized boolean hasMessage() {
-            return message != null;
+    public boolean hasMessage() {
+            return message.get() != null;
         }
 
-    public synchronized boolean hasSpace() {
-            return message == null;
+    public boolean hasSpace() {
+    		return message.get() == null;            
         }
 
     /**
@@ -297,15 +296,13 @@ public class Cell<T> implements PauseReason, EventPublisher {
         return msg;
     }
 
-    public synchronized String toString() {
+    public String toString() {
             return "id:" + System.identityHashCode(this) + " " + message;
         }
 
     // Implementation of PauseReason
     public boolean isValid(Task t) {
-        synchronized(this) {
-            return (t == sink) || srcs.contains(t);
-        } 
+    	return (t == sink.get()) || srcs.contains(t);
     }
 }
 
