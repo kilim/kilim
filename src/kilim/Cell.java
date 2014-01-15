@@ -91,7 +91,7 @@ public class Cell<T> implements PauseReason, EventPublisher {
         if (message.compareAndSet(null, amsg))
         {
         	subscriber = sink.get();
-        	sink = null;
+        	sink.set(null);
         }
         else
         {
@@ -142,7 +142,7 @@ public class Cell<T> implements PauseReason, EventPublisher {
         T msg = get(t);
         long begin = System.currentTimeMillis();
         while (msg == null) {
-        	KilimRunnable tt = new KilimRunnable() {
+        	Runnable tt = new KilimRunnable() {
                 public void doWork() {
                     Cell.this.removeMsgAvailableListener(t);
                     t.onEvent(Cell.this, timedOut);
