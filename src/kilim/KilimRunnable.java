@@ -1,7 +1,11 @@
 package kilim;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public abstract class KilimRunnable implements Runnable
 {
+	private static final Logger logger_ = LoggerFactory.getLogger(KilimRunnable.class);
 	private long creationTime_;
 	private long timeInQ_;
 	private long executionStartTime_;	
@@ -30,7 +34,9 @@ public abstract class KilimRunnable implements Runnable
 	private void afterExecute()
 	{
 		long currentTime = System.currentTimeMillis();		
-        processingTime_ = timeInQ_ + ( currentTime - executionStartTime_ );                                                
+        processingTime_ = timeInQ_ + ( currentTime - executionStartTime_ ); 
+        logger_.debug("timeinQ : " + timeInQ_);
+        logger_.debug("processingtime : " + processingTime_);
 	}
 	
 	protected long getTimeInQ()
