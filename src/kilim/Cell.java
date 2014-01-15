@@ -7,7 +7,6 @@
 package kilim;
 
 import java.util.Deque;
-import java.util.TimerTask;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -143,8 +142,8 @@ public class Cell<T> implements PauseReason, EventPublisher {
         T msg = get(t);
         long begin = System.currentTimeMillis();
         while (msg == null) {
-        	Runnable tt = new Runnable() {
-                public void run() {
+        	Runnable tt = new KilimRunnable() {
+                public void doWork() {
                     Cell.this.removeMsgAvailableListener(t);
                     t.onEvent(Cell.this, timedOut);
                 }
@@ -199,14 +198,16 @@ public class Cell<T> implements PauseReason, EventPublisher {
     public boolean put(T msg, int timeoutMillis) throws Pausable {
         final Task t = Task.getCurrentTask();
         long begin = System.currentTimeMillis();
+      
         while (!put(msg, t)) {
-            TimerTask tt = new TimerTask() {
-                    public void run() {
-                        Cell.this.removeSpaceAvailableListener(t);
-                        t.onEvent(Cell.this, timedOut);
-                    }
-                };
-            Task.timer.schedule(tt, timeoutMillis);
+        	Runnable tt = new KilimRunnable() {
+                public void doWork() {
+                    Cell.this.removeMsgAvailableListener(t);
+                    t.onEvent(Cell.this, timedOut);
+                }
+            };
+	        ScheduledExecutorService scheduledExecutor = TimerManager.instance().getTimer(name_);
+	        scheduledExecutor.schedule(tt, timeoutMillis, TimeUnit.MILLISECONDS);
             Task.pause(this);
             removeSpaceAvailableListener(t);
             if (System.currentTimeMillis() - begin >= timeoutMillis) {
