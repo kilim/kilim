@@ -142,7 +142,7 @@ public class Cell<T> implements PauseReason, EventPublisher {
         T msg = get(t);
         long begin = System.currentTimeMillis();
         while (msg == null) {
-        	Runnable tt = new KilimRunnable() {
+        	KilimRunnable tt = new KilimRunnable() {
                 public void doWork() {
                     Cell.this.removeMsgAvailableListener(t);
                     t.onEvent(Cell.this, timedOut);
