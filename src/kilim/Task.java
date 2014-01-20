@@ -11,6 +11,7 @@ import java.lang.reflect.Method;
 import java.util.LinkedList;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -50,7 +51,7 @@ public abstract class Task implements Runnable, EventSubscriber
 	 * true until the end of runExecute (where it is reset), at which point a
 	 * fresh decision is made whether the task needs to continue running.
 	 */
-	protected boolean running = false;
+	protected AtomicBoolean running = new AtomicBoolean(false);
 	protected boolean done = false;
 
 	/**
@@ -182,12 +183,11 @@ public abstract class Task implements Runnable, EventSubscriber
 		// We don't check pauseReason while resuming (to verify whether
 		// it is worth returning to a pause state. The code at the top of stack
 		// will be doing that anyway.
-		synchronized(this) 
-		{
-            if (done || running) 
-            	return false;
-            running = doSchedule = true;
-        }
+		if (done || running.get()) 
+        	return false;
+		doSchedule = true;
+		running.set(true);
+				
 		if (doSchedule)
 		{					
 			if (preferredResumeThread == -1)
@@ -597,12 +597,8 @@ public abstract class Task implements Runnable, EventSubscriber
 			}
 
 			PauseReason pr = this.pauseReason;
-			synchronized (this) 
-			{
-                running = false;
-                currentThread = 0;
-            }
-
+			running.set(false);
+			currentThread  = 0;			
 			// The task has been in "running" mode until now, and may have
 			// missed
 			// notifications to the pauseReason object (that is, it would have
