@@ -104,10 +104,7 @@ class DirIterator extends FileContainer {
         }
         @Override
         public String getFileName() {
-            try {
-                return file.getCanonicalPath();
-            } catch (IOException ignore) {}
-            return null;
+            return file.getPath();
         }
 
         @Override
