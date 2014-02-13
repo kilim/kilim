@@ -18,8 +18,8 @@ public abstract class KilimRunnable implements Runnable
 		
 	private void beforeExecute()
 	{
-		long currentTime = System.currentTimeMillis();		
-		timeInQ_ = (currentTime - creationTime_);		     
+	    executionStartTime_ = System.currentTimeMillis();
+	    timeInQ_ = (executionStartTime_ - creationTime_);
 	}
 
 	public abstract void doWork();
