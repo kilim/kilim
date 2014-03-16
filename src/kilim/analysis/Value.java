@@ -84,7 +84,7 @@ public class Value {
             newType = D_UNDEFINED;
         }
         Object newConst = (constVal.equals(other.constVal)) ? constVal : NO_VAL;
-        if (newNumSites != numSites || newType != typeDesc) {
+        if (newNumSites != numSites || newType != typeDesc || newConst != constVal) {
             return new Value(newNumSites, newSites, newType, newConst);
         } else {
             return this; // no change
