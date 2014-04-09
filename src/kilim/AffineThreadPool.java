@@ -23,9 +23,11 @@ public class AffineThreadPool
 	}
 		
 	private int nThreads_;		
+	private String poolName_;
 	private AtomicInteger currentIndex_ = new AtomicInteger(0);	
 	private List<BlockingQueue<Runnable>> queues_ = new ArrayList<BlockingQueue<Runnable>>();
-	private List<ExecutorService> executorService_ = new ArrayList<ExecutorService>();
+	private List<KilimStats> queueStats_ = new ArrayList<KilimStats>();
+	private List<KilimThreadPoolExecutor> executorService_ = new ArrayList<KilimThreadPoolExecutor>();
 	
 	public AffineThreadPool(int nThreads, String name)
 	{
@@ -34,15 +36,18 @@ public class AffineThreadPool
 	
 	public AffineThreadPool(int nThreads, int queueSize, String name)
 	{	
-		nThreads_ = nThreads;				
+		nThreads_ = nThreads;
+		poolName_ = name;
 		for (int i = 0; i < nThreads; ++i)
 		{			
 			String threadName = name + colon_ + i;
 			BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(queueSize);
 			queues_.add(queue);
 			
-			ExecutorService executorService = new KilimThreadPoolExecutor(1, queue, new ThreadFactoryImpl(threadName));			
-			executorService_.add(executorService);						
+			KilimThreadPoolExecutor executorService = new KilimThreadPoolExecutor(1, queue, new ThreadFactoryImpl(threadName));			
+			executorService_.add(executorService);		
+			
+			queueStats_.add(new KilimStats(12, "num"));
 		}							
 	}
 	
@@ -72,12 +77,21 @@ public class AffineThreadPool
 	
 	public int publish(int index, Task task)
 	{				
-		ExecutorService executorService = executorService_.get(index);
+	    KilimThreadPoolExecutor executorService = executorService_.get(index);
 		executorService.submit(task);
+		queueStats_.get(index).record(executorService.getQueueSize());
 		return index;
 	}
-	
-	public void shutdown()
+	public String getQueueStats()
+	{
+	    String statsStr = "";
+	    for (int i = 0; i < queueStats_.size(); ++i)
+	    {
+	        statsStr += queueStats_.get(i).dumpStatistics(poolName_ + ":QUEUE-SZ-" + i);
+	    }
+	    return statsStr;
+	}
+    public void shutdown()
 	{
 		for (ExecutorService executorService : executorService_)
 		{
@@ -96,5 +110,9 @@ class KilimThreadPoolExecutor extends ThreadPoolExecutor
 	protected void afterExecute(Runnable r, Throwable th)
 	{
 		super.afterExecute(r, th);		
+	}
+	protected int getQueueSize()
+	{
+	    return super.getQueue().size();
 	}
 }

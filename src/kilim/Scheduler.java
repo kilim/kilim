@@ -122,6 +122,11 @@ public class Scheduler
 	{
 		return shutdown.get();
 	}
+	
+	public String getSchedulerStats()
+	{
+	    return affinePool_.getQueueStats();
+	}
 
 	public synchronized static Scheduler getDefaultScheduler()
 	{
