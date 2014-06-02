@@ -58,7 +58,7 @@ public class NioSelectorScheduler extends Scheduler {
      */
     public Mailbox<SockEvent> registrationMbx = new Mailbox<SockEvent>(1000);
     
-
+    public RingQueue<Task> runnableTasks = new RingQueue<Task>(100);
     /**
      * @throws IOException
      */
@@ -74,7 +74,7 @@ public class NioSelectorScheduler extends Scheduler {
     public int listen(int port, Class<? extends SessionTask> sockTaskClass, Scheduler sockTaskScheduler)
             throws IOException {
         ListenTask t = new ListenTask(port, this, sockTaskClass);
-        t.setScheduler(this);
+        t.setScheduler(sockTaskScheduler);
         t.start();
         return t.port(); 
     }
@@ -107,7 +107,7 @@ public class NioSelectorScheduler extends Scheduler {
         NioSelectorScheduler _scheduler;
 
         public SelectorThread(NioSelectorScheduler scheduler) {
-            super("KilimSelector");
+            super("KilimSelector:123");
             _scheduler = scheduler;
         }
 
@@ -167,7 +167,7 @@ public class NioSelectorScheduler extends Scheduler {
                 // }
                 while (runnables.size() > 0) {
                     Task t = runnables.get();
-                    t._runExecute(null);
+                    t.run();
                     // If task calls Task.yield, it would have added itself to scheduler already.
                     // If task's pauseReason is YieldToSelector, then nothing more to do.
                     // Task should be registered for the appropriate Selector op.
