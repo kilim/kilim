@@ -13,14 +13,13 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
-import java.util.LinkedList;
+
 
 import kilim.Mailbox;
 import kilim.Pausable;
 import kilim.RingQueue;
 import kilim.Scheduler;
 import kilim.Task;
-import kilim.http.IntList;
 
 /**
  * This class wraps a selector and runs it in a separate thread.
@@ -107,7 +106,7 @@ public class NioSelectorScheduler extends Scheduler {
         NioSelectorScheduler _scheduler;
 
         public SelectorThread(NioSelectorScheduler scheduler) {
-            super("KilimSelector:123");
+            super("KilimSelector"+":"+Thread.currentThread().getId());
             _scheduler = scheduler;
         }
 
