@@ -1,4 +1,6 @@
-classes/**/*
-testclasses/**/*
-.DS_Store
-/classes
+
+*.class
+
+*.jar
+
+classes/kilim/License

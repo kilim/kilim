@@ -1,6 +1,12 @@
 <?xml version="1.0"?>
 <project name="kilim" default="all">
+  <property name="common.lib" value="../Hedvig-Common/lib"/>
+  <property name="cass.lib" value="../Cassandra/lib"/>
+  <property name="hpod.lib" value="../QuexaPod/lib"/>
+  <property name="qbd.lib" value="../QuexaBlockDevice/server/lib"/>
+  <property name="hedvig.lib" value="../hedviglibs"/>
   <path id="kilim.classpath">
+
     <pathelement location="classes/" />
     <fileset dir="./libs">
       <include name="**/*.jar"/>
@@ -142,6 +148,16 @@
       <exclude name="kilim/tools/**" />
       <exclude name="kilim/analysis/**" />
     </jar>
+    <copy file="kilim.jar" tofile="${common.lib}/kilim.jar"/>
+    <copy file="kilim.jar" tofile="${qbd.lib}/kilim.jar"/>
+    <copy file="kilim.jar" tofile="${cass.lib}/kilim.jar"/>
+    <copy file="kilim.jar" tofile="${hpod.lib}/kilim.jar"/>
+    <copy file="kilim.jar" tofile="${hedvig.lib}/kilim.jar"/>
+    <copy file="kilim-runtime.jar" tofile="${common.lib}/kilim-runtime.jar"/>
+    <copy file="kilim-runtime.jar" tofile="${qbd.lib}/kilim-runtime.jar"/>
+    <copy file="kilim-runtime.jar" tofile="${cass.lib}/kilim-runtime.jar"/>
+    <copy file="kilim-runtime.jar" tofile="${hpod.lib}/kilim-runtime.jar"/>
+    <copy file="kilim-runtime.jar" tofile="${hedvig.lib}/kilim-runtime.jar"/>
   </target>
 
   <target name="maven" depends="all,test" description="generate the maven jar">

@@ -157,6 +157,7 @@ public class ExCatch extends ExYieldBase {
 
 
     private void pausable(double d) throws ExException, Pausable {
+      System.out.println("testCase = "  + testCase + " doPause = " + doPause);
         if (doPause) {
             Task.sleep(50);
         }

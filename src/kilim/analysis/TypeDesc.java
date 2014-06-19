@@ -244,13 +244,9 @@ public class TypeDesc {
             if (oa.equals(ob))
                 return oa;
 
-            String lub = Detector.getDetector()
-            		.commonSuperType(getInternalName(oa), 
-            						 getInternalName(ob));
+            String lub = Detector.getDetector().commonSuperType(oa, ob);
 
-            if (lub.equals("java/lang/Object"))
-            	return D_OBJECT;
-            return "L" + lub + ";";
+            return lub;
 
         } catch (ClassMirrorNotFoundException cnfe) {
             throw new InternalError(cnfe.getMessage());
