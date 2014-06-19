@@ -20,8 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * pausable execute method.
  * 
  */
-public abstract class Task implements Runnable, EventSubscriber
-{
+public abstract class Task implements Runnable, EventSubscriber {
 	public volatile int currentThread;
 
 	static PauseReason yieldReason = new YieldReason();
@@ -85,19 +84,16 @@ public abstract class Task implements Runnable, EventSubscriber
 	// TODO: move into a separate timer service or into the schduler.
 	public final static Timer timer = new Timer(true);
 
-	public Task()
-	{
+	public Task() {
 		id = idSource.incrementAndGet();
 		fiber = new Fiber(this);
 	}
 
-	public int id()
-	{
+	public int id() {
 		return id;
 	}
 
-	public synchronized Task setScheduler(Scheduler s)
-	{
+	public synchronized Task setScheduler(Scheduler s) {
 		// if (running) {
 		// throw new
 		// AssertionError("Attempt to change task's scheduler while it is running");
@@ -106,14 +102,13 @@ public abstract class Task implements Runnable, EventSubscriber
 		return this;
 	}
 
-	public synchronized Scheduler getScheduler()
-	{
+	public synchronized Scheduler getScheduler() {
 		return scheduler;
 	}
 
-	public void resumeOnScheduler(Scheduler s) throws Pausable
-	{
-		if (scheduler == s) return;
+	public void resumeOnScheduler(Scheduler s) throws Pausable {
+		if (scheduler == s)
+			return;
 		scheduler = s;
 		Task.yield();
 	}
@@ -125,10 +120,8 @@ public abstract class Task implements Runnable, EventSubscriber
 	 * 
 	 * @return
 	 */
-	public Task start()
-	{
-		if (scheduler == null)
-		{
+	public Task start() {
+		if (scheduler == null) {
 			setScheduler(Scheduler.getDefaultScheduler());
 		}
 		resume();
@@ -142,16 +135,14 @@ public abstract class Task implements Runnable, EventSubscriber
 	 * @return the number of stack frames above _runExecute(), not including
 	 *         this method
 	 */
-	public int getStackDepth()
-	{
+	public int getStackDepth() {
 		StackTraceElement[] stes;
 		stes = new Exception().getStackTrace();
 		int len = stes.length;
-		for (int i = 0; i < len; i++)
-		{
+		for (int i = 0; i < len; i++) {
 			StackTraceElement ste = stes[i];
-			if (ste.getMethodName().equals("run") && ste.getClassName().equals("kilim.Task"))
-			{
+			if (ste.getMethodName().equals("run")
+					&& ste.getClassName().equals("kilim.Task")) {
 				// discounting WorkerThread.run, Task._runExecute, and
 				// Scheduler.getStackDepth
 				return i - 1;
@@ -160,13 +151,11 @@ public abstract class Task implements Runnable, EventSubscriber
 		throw new AssertionError("Expected task to be run by WorkerThread");
 	}
 
-	public void onEvent(EventPublisher ep, Event e)
-	{
+	public void onEvent(EventPublisher ep, Event e) {
 		resume();
 	}
-	
-	public Thread getExecutionThread()
-	{
+
+	public Thread getExecutionThread() {
 		return Thread.currentThread();
 	}
 
@@ -175,39 +164,35 @@ public abstract class Task implements Runnable, EventSubscriber
 	 * 
 	 * @return True if it scheduled itself.
 	 */
-	public boolean resume()
-	{
-		if (scheduler == null) return false;
+	public boolean resume() {
+		if (scheduler == null)
+			return false;
 
 		boolean doSchedule = false;
 		// We don't check pauseReason while resuming (to verify whether
 		// it is worth returning to a pause state. The code at the top of stack
 		// will be doing that anyway.
-		if (done || running.get()) 
-        	return false;
-		doSchedule = true;
-		running.compareAndSet(false, true);
-				
-		if (doSchedule)
-		{					
+
+		doSchedule = !done
+				&& running.compareAndSet(/* expected */false, /* update */true);
+
+		if (doSchedule) {
 			if (preferredResumeThread == -1)
 				scheduler.schedule(this);
-			else			
-				scheduler.schedule(preferredResumeThread, this);			
+			else
+				scheduler.schedule(preferredResumeThread, this);
 		}
 		return doSchedule;
 	}
 
-	public void informOnExit(Mailbox<ExitMsg> exit)
-	{
-		if (isDone())
-		{
+	public void informOnExit(Mailbox<ExitMsg> exit) {
+		if (isDone()) {
 			exit.putnb(new ExitMsg(this, exitResult));
 			return;
 		}
-		synchronized (this)
-		{
-			if (exitMBs == null) exitMBs = new LinkedList<Mailbox<ExitMsg>>();
+		synchronized (this) {
+			if (exitMBs == null)
+				exitMBs = new LinkedList<Mailbox<ExitMsg>>();
 			exitMBs.add(exit);
 		}
 	}
@@ -217,8 +202,7 @@ public abstract class Task implements Runnable, EventSubscriber
 	 * call in the bytecode from invokestateic Task.getCurrentTask to load fiber
 	 * getfield task
 	 */
-	public static Task getCurrentTask() throws Pausable
-	{
+	public static Task getCurrentTask() throws Pausable {
 		return null;
 	}
 
@@ -226,12 +210,10 @@ public abstract class Task implements Runnable, EventSubscriber
 	 * Analogous to System.exit, except an Object can be used as the exit value
 	 */
 
-	public static void exit(Object aExitValue) throws Pausable
-	{
+	public static void exit(Object aExitValue) throws Pausable {
 	}
 
-	public static void exit(Object aExitValue, Fiber f)
-	{
+	public static void exit(Object aExitValue, Fiber f) {
 		assert f.pc == 0 : "f.pc != 0";
 		f.task.setPauseReason(new TaskDoneReason(aExitValue));
 		f.togglePause();
@@ -242,43 +224,38 @@ public abstract class Task implements Runnable, EventSubscriber
 	 * is conveyed through the exit mailslot (see informOnExit). All exceptions
 	 * trapped by the task scheduler also set the error result.
 	 */
-	public static void errorExit(Throwable ex) throws Pausable
-	{
+	public static void errorExit(Throwable ex) throws Pausable {
 	}
 
-	public static void errorExit(Throwable ex, Fiber f)
-	{
+	public static void errorExit(Throwable ex, Fiber f) {
 		assert f.pc == 0 : "fc.pc != 0";
 		f.task.setPauseReason(new TaskDoneReason(ex));
 		f.togglePause();
 	}
 
-	public static void errNotWoven()
-	{
+	public static void errNotWoven() {
 		System.err
-		.println("############################################################");
+				.println("############################################################");
 		System.err
-		.println("Task has either not been woven or the classpath is incorrect");
+				.println("Task has either not been woven or the classpath is incorrect");
 		System.err
-		.println("############################################################");
+				.println("############################################################");
 		Thread.dumpStack();
 		System.exit(0);
 	}
 
-	public static void errNotWoven(Task t)
-	{
+	public static void errNotWoven(Task t) {
 		System.err
-		.println("############################################################");
+				.println("############################################################");
 		System.err.println("Task " + t.getClass()
 				+ " has either not been woven or the classpath is incorrect");
 		System.err
-		.println("############################################################");
+				.println("############################################################");
 		Thread.dumpStack();
 		System.exit(0);
 	}
 
-	static class ArgState extends kilim.State
-	{
+	static class ArgState extends kilim.State {
 		Object mthd;
 		Object obj;
 		Object[] fargs;
@@ -303,27 +280,20 @@ public abstract class Task implements Runnable, EventSubscriber
 	 */
 	public static Object invoke(Method mthd, Object target, Object... args)
 			throws Pausable, IllegalAccessException, IllegalArgumentException,
-			InvocationTargetException
-			{
+			InvocationTargetException {
 		Fiber f = getCurrentTask().fiber;
 		Object[] fargs;
-		if (f.pc == 0)
-		{
+		if (f.pc == 0) {
 			mthd = getWovenMethod(mthd);
 			// Normal invocation.
-			if (args == null)
-			{
+			if (args == null) {
 				fargs = new Object[1];
-			}
-			else
-			{
+			} else {
 				fargs = new Object[args.length + 1]; // for fiber
 				System.arraycopy(args, 0, fargs, 0, args.length);
 			}
 			fargs[fargs.length - 1] = f;
-		}
-		else
-		{
+		} else {
 			// Resuming from a previous yield
 			ArgState as = (ArgState) f.getState();
 			mthd = (Method) as.mthd;
@@ -332,57 +302,52 @@ public abstract class Task implements Runnable, EventSubscriber
 		}
 		f.down();
 		Object ret = mthd.invoke(target, fargs);
-		switch (f.up())
-		{
-			case Fiber.NOT_PAUSING__NO_STATE:
-			case Fiber.NOT_PAUSING__HAS_STATE:
-				return ret;
-			case Fiber.PAUSING__NO_STATE:
-				ArgState as = new ArgState();
-				as.obj = target;
-				as.fargs = fargs;
-				as.pc = 1;
-				as.mthd = mthd;
-				f.setState(as);
-				return null;
-			case Fiber.PAUSING__HAS_STATE:
-				return null;
+		switch (f.up()) {
+		case Fiber.NOT_PAUSING__NO_STATE:
+		case Fiber.NOT_PAUSING__HAS_STATE:
+			return ret;
+		case Fiber.PAUSING__NO_STATE:
+			ArgState as = new ArgState();
+			as.obj = target;
+			as.fargs = fargs;
+			as.pc = 1;
+			as.mthd = mthd;
+			f.setState(as);
+			return null;
+		case Fiber.PAUSING__HAS_STATE:
+			return null;
 		}
 		throw new IllegalAccessException("Internal Error");
-			}
+	}
 
 	// Given a method corresp. to "f(int)", return the equivalent woven method
 	// for "f(int, kilim.Fiber)"
-	private static Method getWovenMethod(Method m)
-	{
+	private static Method getWovenMethod(Method m) {
 		Class<?>[] ptypes = m.getParameterTypes();
 		if (!(ptypes.length > 0 && ptypes[ptypes.length - 1].getName().equals(
-				"kilim.Fiber")))
-		{
+				"kilim.Fiber"))) {
 			// The last param is not "Fiber", so m is not woven.
 			// Get the woven method corresponding to m(..., Fiber)
 			boolean found = false;
-			LOOP: for (Method wm : m.getDeclaringClass().getDeclaredMethods())
-			{
-				if (wm != m && wm.getName().equals(m.getName()))
-				{
+			LOOP: for (Method wm : m.getDeclaringClass().getDeclaredMethods()) {
+				if (wm != m && wm.getName().equals(m.getName())) {
 					// names match. Check if the wm has the exact parameter
 					// types as m, plus a fiber.
 					Class<?>[] wptypes = wm.getParameterTypes();
 					if (wptypes.length != ptypes.length + 1
 							|| !(wptypes[wptypes.length - 1].getName()
-									.equals("kilim.Fiber"))) continue LOOP;
-					for (int i = 0; i < ptypes.length; i++)
-					{
-						if (ptypes[i] != wptypes[i]) continue LOOP;
+									.equals("kilim.Fiber")))
+						continue LOOP;
+					for (int i = 0; i < ptypes.length; i++) {
+						if (ptypes[i] != wptypes[i])
+							continue LOOP;
 					}
 					m = wm;
 					found = true;
 					break;
 				}
 			}
-			if (!found)
-			{
+			if (!found) {
 				throw new IllegalArgumentException(
 						"Found no pausable method corresponding to supplied method: "
 								+ m);
@@ -396,8 +361,7 @@ public abstract class Task implements Runnable, EventSubscriber
 	 *            to sleep. Like thread.sleep, except it doesn't throw an
 	 *            interrupt, and it doesn't hog the java thread.
 	 */
-	public static void sleep(final long millis) throws Pausable
-	{
+	public static void sleep(final long millis) throws Pausable {
 		// create a temp mailbox, and wait on it.
 		final Mailbox<Integer> sleepmb = new Mailbox<Integer>(1); // TODO: will
 		// need a
@@ -406,10 +370,8 @@ public abstract class Task implements Runnable, EventSubscriber
 		// for
 		// monitoring
 		// later on.
-		timer.schedule(new TimerTask()
-		{
-			public void run()
-			{
+		timer.schedule(new TimerTask() {
+			public void run() {
 				sleepmb.putnb(0);
 			}
 		}, millis);
@@ -419,19 +381,14 @@ public abstract class Task implements Runnable, EventSubscriber
 	/**
 	 * Yield cooperatively to the next task waiting to use the thread.
 	 */
-	public static void yield() throws Pausable
-	{
+	public static void yield() throws Pausable {
 		errNotWoven();
 	}
 
-	public static void yield(Fiber f)
-	{
-		if (f.pc == 0)
-		{
+	public static void yield(Fiber f) {
+		if (f.pc == 0) {
 			f.task.setPauseReason(yieldReason);
-		}
-		else
-		{
+		} else {
 			f.task.setPauseReason(null);
 		}
 		f.togglePause();
@@ -446,19 +403,14 @@ public abstract class Task implements Runnable, EventSubscriber
 	 * @param pauseReason
 	 *            the reason
 	 */
-	public static void pause(PauseReason pauseReason) throws Pausable
-	{
+	public static void pause(PauseReason pauseReason) throws Pausable {
 		errNotWoven();
 	}
 
-	public static void pause(PauseReason pauseReason, Fiber f)
-	{
-		if (f.pc == 0)
-		{
+	public static void pause(PauseReason pauseReason, Fiber f) {
+		if (f.pc == 0) {
 			f.task.setPauseReason(pauseReason);
-		}
-		else
-		{
+		} else {
 			f.task.setPauseReason(null);
 		}
 		f.togglePause();
@@ -472,140 +424,113 @@ public abstract class Task implements Runnable, EventSubscriber
 	 * If the subclass has not been woven, it won't have an execute method of
 	 * the following form, and this method will be called instead.
 	 */
-	public void execute() throws Pausable, Exception
-	{
+	public void execute() throws Pausable, Exception {
 		errNotWoven(this);
 	}
 
-	public void execute(Fiber f) throws Exception
-	{
+	public void execute(Fiber f) throws Exception {
 		errNotWoven(this);
 	}
 
-	public String toString()
-	{
+	public String toString() {
 		return "" + id + "(running=" + running + ",pr=" + pauseReason + ")";
 	}
 
-	public String dump()
-	{
-		synchronized (this)
-		{
+	public String dump() {
+		synchronized (this) {
 			return "" + id + "(running=" + running + ", pr=" + pauseReason
 					+ ")";
 		}
 	}
 
-	public void pinToThread()
-	{
+	public void pinToThread() {
 		numActivePins++;
 	}
 
-	public void unpinFromThread()
-	{
+	public void unpinFromThread() {
 		numActivePins--;
 	}
 
-	final protected void setPauseReason(PauseReason pr)
-	{
+	final protected void setPauseReason(PauseReason pr) {
 		pauseReason = pr;
 	}
 
-	public final PauseReason getPauseReason()
-	{
+	public final PauseReason getPauseReason() {
 		return pauseReason;
 	}
 
-	public boolean isDone()
-	{
+	public boolean isDone() {
 		return done;
 	}
-	
-	protected void setTid(int tid)
-	{
+
+	protected void setTid(int tid) {
 		this.tid = tid;
 	}
-	
+
 	/**
 	 * Called by WorkerThread, it is the wrapper that performs pre and post
 	 * execute processing (in addition to calling the execute(fiber) method of
 	 * the task.
 	 */
-	public void run() throws NotPausable
-	{
+	public void run() throws NotPausable {
 		Scheduler.setCurrentTask(this);
 		Fiber f = fiber;
 		boolean isDone = false;
-		try
-		{
-			currentThread = AffineThreadPool.getCurrentThreadId();				
+		try {
+			currentThread = AffineThreadPool.getCurrentThreadId();
 			assert (preferredResumeThread == -1 || preferredResumeThread == tid) : "Resumed "
-			+ id + " in incorrect thread. ";
+					+ id + " in incorrect thread. ";
 			// start execute. fiber is wound to the beginning.
 			execute(f.begin());
 
 			// execute() done. Check fiber if it is pausing and reset it.
 			isDone = f.end() || (pauseReason instanceof TaskDoneReason);
 			assert (pauseReason == null && isDone)
-			|| (pauseReason != null && !isDone) : "pauseReason:"
-			+ pauseReason + ",isDone =" + isDone;
-		}
-		catch (Throwable th)
-		{
+					|| (pauseReason != null && !isDone) : "pauseReason:"
+					+ pauseReason + ",isDone =" + isDone;
+		} catch (Throwable th) {
 			th.printStackTrace();
 			// Definitely done
 			setPauseReason(new TaskDoneReason(th));
 			isDone = true;
 		}
 
-		if (isDone)
-		{
+		if (isDone) {
 			done = true;
 			// inform on exit
-			if (numActivePins > 0)
-			{
+			if (numActivePins > 0) {
 				throw new AssertionError("Task ended but has active locks");
 			}
-			if (exitMBs != null)
-			{
-				if (pauseReason instanceof TaskDoneReason)
-				{
+			if (exitMBs != null) {
+				if (pauseReason instanceof TaskDoneReason) {
 					exitResult = ((TaskDoneReason) pauseReason).exitObj;
 				}
 				ExitMsg msg = new ExitMsg(this, exitResult);
-				for (Mailbox<ExitMsg> exitMB : exitMBs)
-				{
+				for (Mailbox<ExitMsg> exitMB : exitMBs) {
 					exitMB.putnb(msg);
 				}
 			}
 			preferredResumeThread = -1;
-		}
-		else
-		{
-			if (tid >= 0)
-			{ // it is null for generators
-				if (numActivePins > 0)
-				{											
+		} else {
+			if (tid >= 0) { // it is null for generators
+				if (numActivePins > 0) {
 					preferredResumeThread = tid;
-				}
-				else
-				{
+				} else {
 					assert numActivePins == 0 : "numActivePins == "
 							+ numActivePins;
 					preferredResumeThread = -1;
-				}				
+				}
 			}
 
 			PauseReason pr = this.pauseReason;
 			running.set(false);
-			currentThread  = 0;			
+			currentThread = 0;
 			// The task has been in "running" mode until now, and may have
 			// missed
 			// notifications to the pauseReason object (that is, it would have
 			// resisted calls to resume(). If the pauseReason is not valid any
 			// more, we'll resume.
-			if (!pr.isValid(this))
-			{
+			if (!pr.isValid(this)) {
 				// NOTE: At this point, another event could trigger resumption
 				// before the following resume() can kick in. Additionally,
 				// it is possible that the task could process all pending
@@ -616,34 +541,29 @@ public abstract class Task implements Runnable, EventSubscriber
 		}
 	}
 
-	public ExitMsg joinb()
-	{
+	public ExitMsg joinb() {
 		Mailbox<ExitMsg> mb = new Mailbox<ExitMsg>();
 		informOnExit(mb);
 		return mb.getb();
 	}
 
-	public ExitMsg join() throws Pausable
-	{
+	public ExitMsg join() throws Pausable {
 		Mailbox<ExitMsg> mb = new Mailbox<ExitMsg>();
 		informOnExit(mb);
 		return mb.get();
 	}
 
 	@Override
-	public boolean equals(Object obj)
-	{
+	public boolean equals(Object obj) {
 		return obj == this;
 	}
 
 	@Override
-	public int hashCode()
-	{
+	public int hashCode() {
 		return id;
 	}
 
-	public void checkKill()
-	{
+	public void checkKill() {
 	}
 
 }
