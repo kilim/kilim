@@ -10,10 +10,10 @@ import java.util.TimerTask;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- * This is a typed buffer that supports multiple producers and a single
- * consumer. It is the basic construct used for tasks to interact and
- * synchronize with each other (as opposed to direct java calls or static member
- * variables). put() and get() are the two essential functions.
+ * This is a typed buffer that supports single producers and a single consumer.
+ * It is the basic construct used for tasks to interact and synchronize with
+ * each other (as opposed to direct java calls or static member variables).
+ * put() and get() are the two essential functions.
  * 
  * We use the term "block" to mean thread block, and "pause" to mean fiber
  * pausing. The suffix "nb" on some methods (such as getnb()) stands for
@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * the form of putb(), putnb
  */
 
-public class Mailbox1p1c<T> implements PauseReason, EventPublisher {
+public class MailboxSPSC<T> implements PauseReason, EventPublisher {
     // TODO. Give mbox a config name and id and make monitorable
     T[] msgs;
 
@@ -32,8 +32,7 @@ public class Mailbox1p1c<T> implements PauseReason, EventPublisher {
     public final VolatileLongCell head = new VolatileLongCell(0L);
 
     public static class PaddedLong {
-        public long p0, p1, p2, p3, p4, p5, p6, value = 0, p10, p11, p12, p13,
-                p14, p15, p16;
+        public long value = 0;
     }
 
     private final PaddedLong tailCache = new PaddedLong();
@@ -56,12 +55,12 @@ public class Mailbox1p1c<T> implements PauseReason, EventPublisher {
      * public int nPut = 0; public int nGet = 0; public int nWastedPuts = 0;
      * public int nWastedGets = 0;
      */
-    public Mailbox1p1c() {
+    public MailboxSPSC() {
         this(10);
     }
 
     @SuppressWarnings("unchecked")
-    public Mailbox1p1c(int initialSize) {
+    public MailboxSPSC(int initialSize) {
         if (initialSize < 1)
             throw new IllegalArgumentException("initialSize: " + initialSize
                     + " cannot be less then 1");
@@ -121,7 +120,6 @@ public class Mailbox1p1c<T> implements PauseReason, EventPublisher {
             }
         }
         return e;
-
     }
 
     /**
@@ -165,13 +163,14 @@ public class Mailbox1p1c<T> implements PauseReason, EventPublisher {
                 }
                 return false;
             }
-            synchronized (this) {
-                subscriber = sink.get();
-                sink.set(null);
-            }
-            if (subscriber != null) {
-                subscriber.onEvent(this, messageAvailable);
-            }
+
+        }
+
+        subscriber = sink.get();
+
+        if (subscriber != null) {
+            removeMsgAvailableListener(subscriber);
+            subscriber.onEvent(this, messageAvailable);
         }
         return b;
     }
@@ -211,8 +210,8 @@ public class Mailbox1p1c<T> implements PauseReason, EventPublisher {
         while (msg == null) {
             TimerTask tt = new TimerTask() {
                 public void run() {
-                    Mailbox1p1c.this.removeMsgAvailableListener(t);
-                    t.onEvent(Mailbox1p1c.this, timedOut);
+                    MailboxSPSC.this.removeMsgAvailableListener(t);
+                    t.onEvent(MailboxSPSC.this, timedOut);
                 }
             };
             Task.timer.schedule(tt, timeoutMillis);
@@ -266,8 +265,8 @@ public class Mailbox1p1c<T> implements PauseReason, EventPublisher {
         while (has_msg == false) {
             TimerTask tt = new TimerTask() {
                 public void run() {
-                    Mailbox1p1c.this.removeMsgAvailableListener(t);
-                    t.onEvent(Mailbox1p1c.this, timedOut);
+                    MailboxSPSC.this.removeMsgAvailableListener(t);
+                    t.onEvent(MailboxSPSC.this, timedOut);
                 }
             };
             Task.timer.schedule(tt, timeoutMillis);
@@ -301,8 +300,8 @@ public class Mailbox1p1c<T> implements PauseReason, EventPublisher {
         while (has_msg == false) {
             TimerTask tt = new TimerTask() {
                 public void run() {
-                    Mailbox1p1c.this.removeMsgAvailableListener(t);
-                    t.onEvent(Mailbox1p1c.this, timedOut);
+                    MailboxSPSC.this.removeMsgAvailableListener(t);
+                    t.onEvent(MailboxSPSC.this, timedOut);
                 }
             };
             Task.timer.schedule(tt, timeoutMillis);
@@ -355,7 +354,7 @@ public class Mailbox1p1c<T> implements PauseReason, EventPublisher {
      * earlier mailbox in the list may also have received a message.
      */
     // TODO: need timeout variant
-    public static int select(Mailbox1p1c... mboxes) throws Pausable {
+    public static int select(MailboxSPSC... mboxes) throws Pausable {
         while (true) {
             for (int i = 0; i < mboxes.length; i++) {
                 if (mboxes[i].hasMessage()) {
@@ -363,7 +362,7 @@ public class Mailbox1p1c<T> implements PauseReason, EventPublisher {
                 }
             }
             Task t = Task.getCurrentTask();
-            EmptySet_MsgAvListener1p1c pauseReason = new EmptySet_MsgAvListener1p1c(
+            EmptySet_MsgAvListenerSpSc pauseReason = new EmptySet_MsgAvListenerSpSc(
                     t, mboxes);
             for (int i = 0; i < mboxes.length; i++) {
                 mboxes[i].addMsgAvailableListener(pauseReason);
@@ -431,8 +430,8 @@ public class Mailbox1p1c<T> implements PauseReason, EventPublisher {
         while (!put(msg, t, true)) {
             TimerTask tt = new TimerTask() {
                 public void run() {
-                    Mailbox1p1c.this.removeSpaceAvailableListener(t);
-                    t.onEvent(Mailbox1p1c.this, timedOut);
+                    MailboxSPSC.this.removeSpaceAvailableListener(t);
+                    t.onEvent(MailboxSPSC.this, timedOut);
                 }
             };
             Task.timer.schedule(tt, timeoutMillis);
@@ -453,9 +452,9 @@ public class Mailbox1p1c<T> implements PauseReason, EventPublisher {
         public volatile boolean eventRcvd = false;
 
         public void onEvent(EventPublisher ep, Event e) {
-            synchronized (Mailbox1p1c.this) {
+            synchronized (MailboxSPSC.this) {
                 eventRcvd = true;
-                Mailbox1p1c.this.notify();
+                MailboxSPSC.this.notify();
             }
         }
 
@@ -463,10 +462,10 @@ public class Mailbox1p1c<T> implements PauseReason, EventPublisher {
             long start = System.currentTimeMillis();
             long remaining = timeoutMillis;
             boolean infiniteWait = timeoutMillis == 0;
-            synchronized (Mailbox1p1c.this) {
+            synchronized (MailboxSPSC.this) {
                 while (!eventRcvd && (infiniteWait || remaining > 0)) {
                     try {
-                        Mailbox1p1c.this.wait(infiniteWait ? 0 : remaining);
+                        MailboxSPSC.this.wait(infiniteWait ? 0 : remaining);
                     } catch (InterruptedException ie) {
                     }
                     long elapsed = System.currentTimeMillis() - start;
@@ -559,11 +558,11 @@ public class Mailbox1p1c<T> implements PauseReason, EventPublisher {
 
 }
 
-class EmptySet_MsgAvListener1p1c implements PauseReason, EventSubscriber {
+class EmptySet_MsgAvListenerSpSc implements PauseReason, EventSubscriber {
     final Task task;
-    final Mailbox1p1c<?>[] mbxs;
+    final MailboxSPSC<?>[] mbxs;
 
-    EmptySet_MsgAvListener1p1c(Task t, Mailbox1p1c<?>[] mbs) {
+    EmptySet_MsgAvListenerSpSc(Task t, MailboxSPSC<?>[] mbs) {
         task = t;
         mbxs = mbs;
     }
@@ -571,7 +570,7 @@ class EmptySet_MsgAvListener1p1c implements PauseReason, EventSubscriber {
     public boolean isValid(Task t) {
         // The pauseReason is true (there is valid reason to continue
         // pausing) if none of the mboxes have any elements
-        for (Mailbox1p1c<?> mb : mbxs) {
+        for (MailboxSPSC<?> mb : mbxs) {
             if (mb.hasMessage())
                 return false;
         }
@@ -579,16 +578,16 @@ class EmptySet_MsgAvListener1p1c implements PauseReason, EventSubscriber {
     }
 
     public void onEvent(EventPublisher ep, Event e) {
-        for (Mailbox1p1c<?> m : mbxs) {
+        for (MailboxSPSC<?> m : mbxs) {
             if (m != ep) {
-                ((Mailbox1p1c<?>) ep).removeMsgAvailableListener(this);
+                ((MailboxSPSC<?>) ep).removeMsgAvailableListener(this);
             }
         }
         task.resume();
     }
 
     public void cancel() {
-        for (Mailbox1p1c<?> mb : mbxs) {
+        for (MailboxSPSC<?> mb : mbxs) {
             mb.removeMsgAvailableListener(this);
         }
     }
