@@ -57,15 +57,14 @@ public class Cell<T> implements PauseReason, EventPublisher {
      */
     public T get(EventSubscriber eo) {
         EventSubscriber producer = null;
-        T ret;
-        if (message.get() == null) 
+        T ret = message.get();
+        if (ret==null) 
         {
-            ret = null;
             addMsgAvailableListener(eo); 
         } 
         else 
         {
-            ret = message.getAndSet(null);            
+            message.set(null);
             if (srcs.size() > 0) {
                 producer = srcs.poll();
             }
@@ -303,7 +302,13 @@ public class Cell<T> implements PauseReason, EventPublisher {
 
     // Implementation of PauseReason
     public boolean isValid(Task t) {
-    	return (t == sink.get()) || srcs.contains(t);
+        if (t == sink.get()) {
+            return !hasMessage();
+        } else if (srcs.contains(t)) {
+            return !hasSpace();
+        } else {
+            return false;
+        }
     }
 }
 
