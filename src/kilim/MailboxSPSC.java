@@ -6,8 +6,9 @@
 
 package kilim;
 
+import java.util.Deque;
 import java.util.TimerTask;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 /**
  * This is a typed buffer that supports single producers and a single consumer.
@@ -26,7 +27,7 @@ public class MailboxSPSC<T> implements PauseReason, EventPublisher {
     T[] msgs;
 
     PaddedEventSubscriber sink = new PaddedEventSubscriber();
-    ConcurrentLinkedQueue<EventSubscriber> srcs = new ConcurrentLinkedQueue<EventSubscriber>();
+    Deque<EventSubscriber> srcs = new ConcurrentLinkedDeque<EventSubscriber>();
 
     public final VolatileLongCell tail = new VolatileLongCell(0L);
     public final VolatileLongCell head = new VolatileLongCell(0L);
@@ -38,6 +39,7 @@ public class MailboxSPSC<T> implements PauseReason, EventPublisher {
     private final PaddedLong tailCache = new PaddedLong();
     private final PaddedLong headCache = new PaddedLong();
     private final int mask;
+
     // FIX: I don't like this event design. The only good thing is that
     // we don't create new event objects every time we signal a client
     // (subscriber) that's blocked on this mailbox.
@@ -69,7 +71,6 @@ public class MailboxSPSC<T> implements PauseReason, EventPublisher {
                                                                // to power of 2
         msgs = (T[]) new Object[initialSize];
         mask = initialSize - 1;
-
     }
 
     public static int findNextPositivePowerOfTwo(final int value) {
@@ -77,13 +78,54 @@ public class MailboxSPSC<T> implements PauseReason, EventPublisher {
     }
 
     /**
-     * Non-blocking, nonpausing get.
+     * Non-blocking, nonpausing fill.
      * 
      * @param eo
      *            . If non-null, registers this observer and calls it with a
      *            MessageAvailable event when a put() is done.
-     * @return buffered message if there's one, or null
+     * @return buffered true if there's one, or up to burst size messages else
+     *         false
      */
+    public boolean fill(EventSubscriber eo, T[] msg) {
+        int n = msg.length;
+        long currentHead = head.get();
+        if ((currentHead + n) > tailCache.value) {
+            tailCache.value = tail.get();
+        }
+        n = (int) Math.min(tailCache.value - currentHead, n);
+        if (n == 0) {
+            addMsgAvailableListener(eo);
+            return false;
+        }
+        int i = 0;
+        EventSubscriber producer = null;
+        do {
+            final int index = (int) (currentHead++) & mask;
+            msg[i++] = msgs[index];
+            msgs[index] = null;
+        } while (0 != --n);
+        head.lazySet(currentHead);
+        while (srcs.size() > 0) {
+            producer = srcs.poll();
+            producer.onEvent(this, spaceAvailble);
+        }
+        return true;
+    }
+
+    /**
+     * Pausable fill Pause the caller until at least one message is available.
+     * 
+     * @throws Pausable
+     */
+    public void fill(T[] msg) throws Pausable {
+        Task t = Task.getCurrentTask();
+        boolean b = fill(t, msg);
+        while (!b) {
+            Task.pause(this);
+            removeMsgAvailableListener(t);
+            b = fill(t, msg);
+        }
+    }
 
     public T getMsg() {
         T msg;
@@ -103,6 +145,14 @@ public class MailboxSPSC<T> implements PauseReason, EventPublisher {
         return msg;
     }
 
+    /**
+     * Non-blocking, nonpausing get.
+     * 
+     * @param eo
+     *            . If non-null, registers this observer and calls it with a
+     *            MessageAvailable event when a put() is done.
+     * @return buffered message if there's one, or null
+     */
     public T get(EventSubscriber eo, boolean blocking) {
         EventSubscriber producer = null;
         T e = getMsg();
@@ -148,6 +198,56 @@ public class MailboxSPSC<T> implements PauseReason, EventPublisher {
         msgs[(int) currentTail & mask] = msg;
         tail.lazySet(currentTail + 1);
         return true;
+    }
+
+    /**
+     * put a non-null messages from buffer in the mailbox, and pause the calling
+     * task until all the messages put in the mailbox
+     */
+    public void put(T[] buf) throws Pausable {
+        long currentTail = tail.get();
+        int n = buf.length;
+        for(int i=0;i<n;i++){
+            if (buf[i] == null) {
+                throw new NullPointerException("Null is not a valid element");
+            }
+        }
+        int count = 0;
+        Task t = Task.getCurrentTask();
+        boolean available = false;
+        EventSubscriber subscriber;
+        while (n != count) {
+            long wrapPoint = currentTail - msgs.length;
+            while (headCache.value <= wrapPoint) {
+                headCache.value = head.get();
+                if (headCache.value <= wrapPoint) {
+                    if (available) {
+                        // we have put atleast one new message so we should wake
+                        // up if someone is waiting for message
+                        tail.lazySet(currentTail);
+                        subscriber = sink.get();
+                        if (subscriber != null) {
+                            removeMsgAvailableListener(subscriber);
+                            subscriber.onEvent(this, messageAvailable);
+                        }
+                    }
+                    srcs.offer(t);
+                    Task.pause(this);
+                    removeSpaceAvailableListener(t);
+                    available = false;
+
+                }
+            }
+            msgs[(int) (currentTail++) & mask] = buf[count++];
+            available = true;
+        }
+        // wake up if anybody is waiting for message
+        tail.lazySet(currentTail);
+        subscriber = sink.get();
+        if (subscriber != null) {
+            removeMsgAvailableListener(subscriber);
+            subscriber.onEvent(this, messageAvailable);
+        }
     }
 
     public boolean put(T msg, EventSubscriber eo, boolean blocking) {
@@ -543,6 +643,13 @@ public class MailboxSPSC<T> implements PauseReason, EventPublisher {
         // "numWastedPuts:" + nWastedPuts + " " +
         // "nWastedGets:" + nWastedGets + " " +
                 "numMsgs:" + (tail.get() - head.get());
+    }
+
+    public void clear() {
+        Object value;
+        do {
+            value = getnb();
+        } while (null != value);
     }
 
     // Implementation of PauseReason
