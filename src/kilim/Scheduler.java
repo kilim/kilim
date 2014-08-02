@@ -11,6 +11,9 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import kilim.queuehelper.TaskQueue;
+import kilim.timerhelper.Timer;
+
 /**
  * This is a basic FIFO Executor. It maintains a list of runnable tasks and
  * hands them out to WorkerThreads. Note that we don't maintain a list of all
@@ -32,7 +35,7 @@ public class Scheduler
 	private String name_;
 	private AffineThreadPool affinePool_;
 	protected AtomicBoolean shutdown = new AtomicBoolean(false);
-
+    public final kilim.queuehelper.TaskQueue taskQueue = new kilim.queuehelper.TaskQueue(); 
 	static
 	{
 		String s = System.getProperty("kilim.Scheduler.numThreads");
@@ -75,7 +78,7 @@ public class Scheduler
 	{
 		name_ = name;
 		nameGenerator_.putIfAbsent(name_, new AtomicInteger());
-		affinePool_ = new AffineThreadPool(numThreads, queueSize, name);
+		affinePool_ = new AffineThreadPool(numThreads, queueSize, name,taskQueue);
 	}
 	
 	public long getTaskCount()

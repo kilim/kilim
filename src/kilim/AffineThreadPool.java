@@ -10,6 +10,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import kilim.queuehelper.TaskQueue;
+import kilim.timerhelper.Timer;
+
 public class AffineThreadPool
 {
 	private static final int MAX_QUEUE_SIZE = 4096;
@@ -29,12 +32,12 @@ public class AffineThreadPool
 	private List<KilimStats> queueStats_ = new ArrayList<KilimStats>();
 	private List<KilimThreadPoolExecutor> executorService_ = new ArrayList<KilimThreadPoolExecutor>();
 	
-	public AffineThreadPool(int nThreads, String name)
+	public AffineThreadPool(int nThreads, String name, TaskQueue taskQueue)
 	{
-		this(nThreads, MAX_QUEUE_SIZE, name);
+		this(nThreads, MAX_QUEUE_SIZE, name,taskQueue);
 	}
 	
-	public AffineThreadPool(int nThreads, int queueSize, String name)
+	public AffineThreadPool(int nThreads, int queueSize, String name, TaskQueue taskQueue)
 	{	
 		nThreads_ = nThreads;
 		poolName_ = name;
@@ -44,7 +47,7 @@ public class AffineThreadPool
 			BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(queueSize);
 			queues_.add(queue);
 			
-			KilimThreadPoolExecutor executorService = new KilimThreadPoolExecutor(1, queue, new ThreadFactoryImpl(threadName));			
+			KilimThreadPoolExecutor executorService = new KilimThreadPoolExecutor(1, queue, new ThreadFactoryImpl(threadName), taskQueue);			
 			executorService_.add(executorService);		
 			
 			queueStats_.add(new KilimStats(12, "num"));
@@ -102,14 +105,41 @@ public class AffineThreadPool
 
 class KilimThreadPoolExecutor extends ThreadPoolExecutor
 {
-	KilimThreadPoolExecutor(int nThreads, BlockingQueue<Runnable> queue, ThreadFactory tFactory)
+    TaskQueue taskQueue;
+    
+	KilimThreadPoolExecutor(int nThreads, BlockingQueue<Runnable> queue, ThreadFactory tFactory, TaskQueue taskQueue)
 	{
 		super(nThreads, nThreads, Integer.MAX_VALUE, TimeUnit.MILLISECONDS, queue, tFactory);
 	}
 	
 	protected void afterExecute(Runnable r, Throwable th)
 	{
-		super.afterExecute(r, th);		
+		super.afterExecute(r, th);	
+		boolean taskFired = false;
+        Timer t = null;
+        do {
+            taskFired = false;
+            synchronized (taskQueue) {
+
+                if (!taskQueue.isEmpty()) {
+                    t = taskQueue.peek();
+
+                    if (t.state == Timer.CANCELLED) {
+                        taskQueue.poll();
+                        continue; // No action required, poll queue again
+                    }
+                    long currentTime = System.currentTimeMillis();
+                    long executionTime = t.nextExecutionTime;
+                    if (taskFired = (executionTime <= currentTime)) {
+                        taskQueue.poll();
+                        t.state = Timer.EXECUTED;
+                    }
+                }
+            }
+            if (taskFired) {
+                t.es.onEvent(t.o, Cell.timedOut);
+            }
+        } while (taskFired);
 	}
 	protected int getQueueSize()
 	{

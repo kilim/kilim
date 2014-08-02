@@ -84,6 +84,9 @@ public abstract class Task implements Runnable, EventSubscriber {
 	// TODO: move into a separate timer service or into the schduler.
 	public final static Timer timer = new Timer(true);
 
+	// new timer service
+    public kilim.timerhelper.Timer timer_new = new kilim.timerhelper.Timer(this);
+    
 	public Task() {
 		id = idSource.incrementAndGet();
 		fiber = new Fiber(this);
@@ -566,4 +569,10 @@ public abstract class Task implements Runnable, EventSubscriber {
 	public void checkKill() {
 	}
 
+    public boolean cancle() {
+        boolean result = false;
+        result = (timer_new.state == kilim.timerhelper.Timer.SCHEDULED);
+        timer_new.state = kilim.timerhelper.Timer.CANCELLED;
+        return result;
+    }
 }
