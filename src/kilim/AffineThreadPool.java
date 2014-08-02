@@ -110,6 +110,7 @@ class KilimThreadPoolExecutor extends ThreadPoolExecutor
 	KilimThreadPoolExecutor(int nThreads, BlockingQueue<Runnable> queue, ThreadFactory tFactory, TaskQueue taskQueue)
 	{
 		super(nThreads, nThreads, Integer.MAX_VALUE, TimeUnit.MILLISECONDS, queue, tFactory);
+		this.taskQueue = taskQueue;
 	}
 	
 	protected void afterExecute(Runnable r, Throwable th)
