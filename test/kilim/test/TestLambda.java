@@ -7,9 +7,12 @@ import kilim.Task;
 
 public class TestLambda extends TestCase {
     public void testLambda() throws Exception {
-        ExitMsg e = new LamTask("testLambda", 100, 200).start().joinb();
-        if (!(e.result.equals("testLambda300"))) {
-            fail("Expected add300");
+        // loop to ensure that multiple invocations of the invokedynamic instruction work as expected
+        for (int i = 1; i < 10; i++) {
+            ExitMsg e = new LamTask("testLambda", i, i * 2).start().joinb();
+            if (!(e.result.equals("testLambda" + ( i + i*2)))) {
+                fail("Expected testLambda<a+b>");
+            }
         }
     }
     /**
@@ -17,8 +20,6 @@ public class TestLambda extends TestCase {
      * and explicit arguments. 
      */
     static class LamTask extends kilim.Task {
-        
-        
         private String s;
         private int a;
         private int b;
@@ -43,7 +44,7 @@ public class TestLambda extends TestCase {
                 Task.yield();
                 return input + c;
             };
-            String output = lam.process("testLambda"); // should be testLambda<a+b>
+            String output = lam.process(this.s); // should be testLambda<a+b>
             Task.exit(output);
         }
     }
