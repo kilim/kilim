@@ -29,6 +29,7 @@ import org.objectweb.asm.Attribute;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -341,6 +342,17 @@ class DumpMethodVisitor extends MethodVisitor implements Opcodes {
         } else {
             ppn(str);
         }
+    }
+    
+    public void visitInvokeDynamicInsn(String name, String desc, Handle bsm,
+            Object... bsmArgs) {
+        ppn("invokedynamic " + name + desc);
+        indent(4);
+        pn("; bootstrap = " + bsm.getOwner() + "." + bsm.getName() + bsm.getDesc());
+        for (int i = 0; i < bsmArgs.length; i++) {
+            pn("; arg[" + i + "] = " + bsmArgs[0]);
+        }
+        dedent(4);
     }
 
     public void visitMultiANewArrayInsn(String desc, int dims) {

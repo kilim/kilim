@@ -11,7 +11,7 @@ public interface ClassMirror {
 	public abstract String[] getInterfaces() throws ClassMirrorNotFoundException;
 
 	public abstract boolean isInterface();
-
+	
 	public abstract String getName();
-
+	
 }

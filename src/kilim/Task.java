@@ -436,7 +436,6 @@ public abstract class Task implements EventSubscriber {
         
             // execute() done. Check fiber if it is pausing and reset it.
             isDone = f.end() || (pauseReason instanceof TaskDoneReason);
-            assert (pauseReason == null && isDone) || (pauseReason != null && !isDone) : "pauseReason:" + pauseReason + ",isDone =" + isDone;
         } catch (Throwable th) {
             th.printStackTrace();
             // Definitely done

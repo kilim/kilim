@@ -49,8 +49,7 @@ public class Weaver {
      * @see #weave(List) for run-time weaving.
      */
     public static void main(String[] args) throws IOException {
-        // System.out.println(System.getProperty("java.class.path"));
-
+        
         Detector detector = Detector.DEFAULT;
 
         String currentName = null;

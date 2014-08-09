@@ -14,6 +14,7 @@ public class AllWoven extends TestSuite {
         TestSuite ret = new AllWoven();
         ret.addTestSuite(TestYield.class);
         ret.addTestSuite(TestInterface.class);
+        ret.addTestSuite(TestLambda.class);
         ret.addTestSuite(TestYieldExceptions.class);
         ret.addTestSuite(TestYieldJSR.class);
         ret.addTestSuite(TestMailbox.class);

@@ -43,6 +43,7 @@ import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.IincInsnNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.IntInsnNode;
+import org.objectweb.asm.tree.InvokeDynamicInsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LdcInsnNode;
@@ -346,6 +347,9 @@ public class BasicBlock implements Comparable<BasicBlock> {
                 case INVOKESTATIC:
                 case INVOKEINTERFACE:
                 case INVOKESPECIAL:
+                    // Note that the case of INVOKEDYNAMIC does not need to be handled
+                    // because it is merely a placeholder for an adaptor that converts captured/dynamic
+                    // arguments to a functional interface. This is never going to be pausable.
                     if (flow.isPausableMethodInsn((MethodInsnNode) ain)) {
                         LabelNode il = flow.getOrCreateLabelAtPos(pos);
                         if (pos == startPos) {
@@ -945,7 +949,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
                     case INVOKEVIRTUAL:
                     case INVOKESPECIAL:
                     case INVOKESTATIC:
-                    case INVOKEINTERFACE:
+                    case INVOKEINTERFACE: {
                         // pop args, push return value
                         MethodInsnNode min = ((MethodInsnNode) ain);
                         String desc = min.desc;
@@ -965,6 +969,16 @@ public class BasicBlock implements Comparable<BasicBlock> {
                             frame.push(Value.make(i, desc));
                         }
                         break;
+                    }
+                    case INVOKEDYNAMIC: {
+                        InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode)ain;
+                        String desc = indy.desc;
+                        frame.popn(TypeDesc.getNumArgumentTypes(desc));
+                        desc = TypeDesc.getReturnTypeDesc(desc);
+                        assert (desc != D_VOID) : "InvokeDynamic return value should be a functional interface";
+                        frame.push(Value.make(i, desc));
+                        break;
+                    }
                         
                     case NEW:
                         canThrowException = true;

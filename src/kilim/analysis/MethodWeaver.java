@@ -5,7 +5,7 @@
  */
 
 package kilim.analysis;
-import static kilim.Constants.D_FIBER;
+import static kilim.Constants.D_FIBER_LAST_ARG;
 import static kilim.Constants.D_INT;
 import static kilim.Constants.D_VOID;
 import static kilim.Constants.FIBER_CLASS;
@@ -25,12 +25,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 import kilim.Constants;
+import kilim.mirrors.Detector;
 
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Attribute;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Handle;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.AnnotationNode;
+import org.objectweb.asm.tree.InvokeDynamicInsnNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LocalVariableNode;
 import org.objectweb.asm.tree.LookupSwitchInsnNode;
@@ -65,7 +70,10 @@ public class MethodWeaver {
     private int                   numWordsInSig;
     private ArrayList<CallWeaver> callWeavers = new ArrayList<CallWeaver>(5);
 
-    MethodWeaver(ClassWeaver cw, MethodFlow mf) {
+    private Detector detector;
+
+    MethodWeaver(ClassWeaver cw, Detector detector, MethodFlow mf) {
+        this.detector = detector;
         this.classWeaver = cw;
         this.methodFlow = mf;
         isPausable = mf.isPausable();
@@ -84,9 +92,9 @@ public class MethodWeaver {
         String desc = mf.desc;
         String sig = mf.signature;
         if (mf.isPausable()) {
-            desc = desc.replace(")", D_FIBER + ')');
+            desc = desc.replace(")", D_FIBER_LAST_ARG);
             if (sig != null)
-                sig = sig.replace(")", D_FIBER + ')');
+                sig = sig.replace(")", D_FIBER_LAST_ARG);
         }
         MethodVisitor mv = cv.visitMethod(mf.access, mf.name, desc, sig, exceptions);
 
@@ -200,7 +208,12 @@ public class MethodWeaver {
                 if (l != null) {
                     l.accept(mv);
                 }
-                bb.getInstruction(i).accept(mv);
+                AbstractInsnNode ain = bb.getInstruction(i);
+                if (ain.getOpcode() == Constants.INVOKEDYNAMIC) {
+                    transformIndyBootstrap(mv, ain);
+                } else {
+                    ain.accept(mv);
+                }
             }
             lastBB = bb;
         }
@@ -211,6 +224,33 @@ public class MethodWeaver {
             }
         }
     }
+
+    private void transformIndyBootstrap(MethodVisitor mv, AbstractInsnNode ain) {
+        InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode)ain;
+        Object[]bsmArgs = indy.bsmArgs;
+        // Is it a lambda conversion
+        if (indy.bsm.getOwner().equals("java/lang/invoke/LambdaMetafactory")) {
+            Handle lambdaBody = (Handle)bsmArgs[1];
+            Detector detector = this.methodFlow.detector();
+            String desc = lambdaBody.getDesc();
+            if (detector.isPausable(lambdaBody.getOwner(), lambdaBody.getName(), desc)) {
+                bsmArgs[0] = addFiberType((Type)bsmArgs[0]);
+                bsmArgs[1] = new Handle(lambdaBody.getTag(), 
+                                        lambdaBody.getOwner(), 
+                                        lambdaBody.getName(), 
+                                        desc.replace(")", D_FIBER_LAST_ARG));
+                bsmArgs[2] = addFiberType((Type)bsmArgs[2]);
+            }
+        }
+        ain.accept(mv);
+    }
+
+    private static Type addFiberType(Type type) {
+        String typeDesc = type.toString().replace(")", D_FIBER_LAST_ARG);
+        return Type.getType(typeDesc);
+    }
+
+
 
     private List<CallWeaver> getCallsUnderCatchBlock(BasicBlock catchBB) {
         List<CallWeaver> cwList = null; // create it lazily
@@ -297,7 +337,7 @@ public class MethodWeaver {
             if (!bb.isPausable() || bb.startFrame==null) continue;
             // No prelude needed for Task.getCurrentTask(). 
             if (bb.isGetCurrentTask()) continue; 
-            CallWeaver cw = new CallWeaver(this, bb);
+            CallWeaver cw = new CallWeaver(this, detector, bb);
             callWeavers.add(cw);
         }
     }
@@ -543,6 +583,11 @@ public class MethodWeaver {
             mv.visitMaxs(stacksize, numlocals);
             mv.visitEnd();
         }
+    }
+
+
+    ClassWeaver getClassWeaver() {
+        return this.classWeaver;
     }
 }
 

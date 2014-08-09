@@ -42,6 +42,7 @@ public interface Constants extends Opcodes {
     String D_STATE          = "Lkilim/State;";
     String D_TASK           = "Lkilim/Task;";
     String D_PAUSABLE       = "Lkilim/Pausable;";
+    String D_FIBER_LAST_ARG   = D_FIBER + ')'; // Last argument in a method descriptor
 
     String THROWABLE_CLASS  = "java/lang/Throwable";
     String FIBER_CLASS      = "kilim/Fiber";

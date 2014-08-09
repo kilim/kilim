@@ -27,6 +27,7 @@ import kilim.KilimException;
 import kilim.mirrors.Detector;
 
 import org.objectweb.asm.AnnotationVisitor;
+import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -100,7 +101,7 @@ public class MethodFlow extends MethodNode {
             final String signature,
             final String[] exceptions,
             final Detector detector) {
-        super(access, name, desc, signature, exceptions);
+        super(Opcodes.ASM4, access, name, desc, signature, exceptions);
         this.classFlow = classFlow;
         this.detector = detector;
         posToLabelMap = new ArrayList<LabelNode>();
@@ -221,6 +222,11 @@ public class MethodFlow extends MethodNode {
             }
         }
     }
+    
+//    @Override
+//    public void visitInvokeDynamicInsn(String name, String desc, Handle bsm, Object[] bsmArgs) {
+//        
+//    }
     
     @Override
     public void visitLabel(Label label) {
@@ -518,9 +524,9 @@ public class MethodFlow extends MethodNode {
         return ((this.access & ACC_VOLATILE) != 0);
     }
 
-	public Detector detector() {
-		return this.classFlow.detector();
-}
+    public Detector detector() {
+        return this.classFlow.detector();
+    }
 
     public void resetLabels() {
         for (int i = 0; i < posToLabelMap.size(); i++) {
