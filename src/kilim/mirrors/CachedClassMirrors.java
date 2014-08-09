@@ -198,20 +198,22 @@ class CachedMethodMirror implements MethodMirror {
     private String[] exceptions;
     private String desc;
     private String name;
+    private int    modifiers;
     private boolean isBridge;
     
-    public CachedMethodMirror(int access, String name, String desc, String[] exceptions) {
+    public CachedMethodMirror(int modifiers, String name, String desc, String[] exceptions) {
+        this.modifiers = modifiers;
         this.name = name;
         this.desc = desc;
         this.exceptions = (exceptions == null) ? CachedClassMirrors.EMPTY_SET : exceptions;
-        isBridge = (access & Opcodes.ACC_BRIDGE) > 0;
+        isBridge = (modifiers & Opcodes.ACC_BRIDGE) > 0;
     }
 
     public String getName() {
         return name;
     }
     
-    public String[] getExceptionTypes() throws ClassMirrorNotFoundException {
+    public String[] getExceptionTypes() {
         return exceptions;
     }
 
@@ -221,6 +223,10 @@ class CachedMethodMirror implements MethodMirror {
 
     public boolean isBridge() {
         return isBridge;
+    }
+
+    public int getModifiers() {
+        return modifiers;
     }
 }
 

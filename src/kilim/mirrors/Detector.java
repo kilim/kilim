@@ -8,10 +8,7 @@ package kilim.mirrors;
 import static kilim.Constants.D_OBJECT;
 
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
 
-import kilim.Constants;
 import kilim.NotPausable;
 import kilim.Pausable;
 import kilim.analysis.AsmDetector;
@@ -146,8 +143,6 @@ public class Detector {
         }
         return null;
     }
-
-    public static String D_FIBER_ = Constants.D_FIBER + ")";
 
     @SuppressWarnings("unused")
     private static String statusToStr(int st) {

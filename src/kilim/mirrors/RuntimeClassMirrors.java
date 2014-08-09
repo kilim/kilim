@@ -102,6 +102,10 @@ class RuntimeMethodMirror implements MethodMirror {
     public String getName() {
         return method.getName();
     }
+    
+    public int getModifiers() {
+        return method.getModifiers();
+    }
 
     public String[] getExceptionTypes() {
         String[] ret = new String[method.getExceptionTypes().length];

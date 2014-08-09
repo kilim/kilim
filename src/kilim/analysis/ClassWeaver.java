@@ -5,7 +5,6 @@
  */
 
 package kilim.analysis;
-import static kilim.Constants.D_FIBER;
 import static kilim.Constants.STATE_CLASS;
 import static kilim.Constants.WOVEN_FIELD;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
@@ -18,10 +17,12 @@ import static org.objectweb.asm.Opcodes.V1_1;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
+import kilim.Constants;
 import kilim.KilimException;
 import kilim.mirrors.Detector;
 
@@ -53,6 +54,7 @@ public class ClassWeaver {
     }
     
     private final ClassLoader classLoader;
+    private Detector detector;
     
     public ClassWeaver(byte[] data) {
         this(data, Detector.DEFAULT, Thread.currentThread().getContextClassLoader());
@@ -72,12 +74,14 @@ public class ClassWeaver {
     
     public ClassWeaver(byte[] data, Detector detector, ClassLoader classLoader) {
         classFlow = new ClassFlow(data, detector);
+        this.detector = detector;
         this.classLoader = classLoader;
     }
     
     public ClassWeaver(InputStream is, Detector detector, ClassLoader classLoader) throws IOException {
-        classFlow = new ClassFlow(is, detector);
+        this.detector = detector;
         this.classLoader = classLoader;
+        classFlow = new ClassFlow(is, detector);
     }
     
     public ClassWeaver(String className, Detector detector, ClassLoader classLoader) throws IOException {
@@ -145,7 +149,7 @@ public class ClassWeaver {
         for (i = 0; i < cf.methods.size(); ++i) {
             MethodFlow m = (MethodFlow) cf.methods.get(i);
             if (needsWeaving(m)) {
-                MethodWeaver mw = new MethodWeaver(this, m);
+                MethodWeaver mw = new MethodWeaver(this, detector, m);
                 mw.accept(cv);
                 mw.makeNotWovenMethod(cv, m);
             } else {
@@ -153,6 +157,12 @@ public class ClassWeaver {
                 m.accept(cv);
             }
         }
+
+        // create shim methods (if any) to wrap SAM interface methods
+        for (SAMweaver sw: samWeavers) {
+            sw.accept(cv);
+        }
+        
         // visits end
         cv.visitEnd();
     }
@@ -179,11 +189,10 @@ public class ClassWeaver {
      * one, then this method doesn't need weaving. Examples are
      * kilim.Task.yield and kilim.Task.sleep
      */
-    static String FIBER_SUFFIX = D_FIBER + ')';
     boolean needsWeaving(MethodFlow mf) {
-        if (!mf.isPausable() || mf.desc.endsWith(FIBER_SUFFIX)) 
+        if (!mf.isPausable() || mf.desc.endsWith(Constants.D_FIBER_LAST_ARG)) 
             return false;
-        String fdesc = mf.desc.replace(")", FIBER_SUFFIX);
+        String fdesc = mf.desc.replace(")", Constants.D_FIBER_LAST_ARG);
         for (MethodFlow omf: classFlow.getMethodFlows()) {
             if (omf == mf) continue;
             if (mf.name.equals(omf.name) && fdesc.equals(omf.desc)) {
@@ -272,6 +281,26 @@ public class ClassWeaver {
     boolean isInterface() {
         return classFlow.isInterface();
     }
+    
+    ArrayList<SAMweaver> samWeavers = new ArrayList<SAMweaver>();
+    SAMweaver getSAMWeaver(String owner, String methodName, String desc, boolean itf) {
+        SAMweaver sw = new SAMweaver(owner, methodName, desc, itf);
+        // intern
+        for (SAMweaver s: samWeavers) {
+            if (s.equals(sw)) {
+                return s; 
+            }
+        }
+        samWeavers.add(sw);
+        sw.setIndex(samWeavers.size());
+        
+        return sw;
+    }
+
+    String getName() {
+        return classFlow.name;
+    }
+
 }
 
 

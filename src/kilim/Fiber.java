@@ -266,6 +266,12 @@ public final class Fiber {
         assert stateStack[iStack] != null : "Callee is null";
         return stateStack[iStack + 1].self;
     }
+    
+    public void setCallee(Object callee) {
+        if (isPausing) {
+            stateStack[iStack].self = callee;
+        }
+    }
 
     private State[] ensureSize(int newsize) {
 //        System.out.println("ENSURE SIZE = " + newsize);

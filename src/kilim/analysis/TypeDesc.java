@@ -124,7 +124,7 @@ public class TypeDesc {
         case '[':
             return typelen(buf, off + 1) + 1;
         default:
-            throw new InternalError("Unknown descriptor type");
+            throw new InternalError("Unknown descriptor type: " + buf[0]);
         }
     }
 

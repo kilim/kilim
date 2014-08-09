@@ -13,7 +13,7 @@
 		<dependency>
 			<groupId>org.ow2.asm</groupId>
 			<artifactId>asm-all</artifactId>
-			<version>4.1</version>
+			<version>5.0.3</version>
 		</dependency>
 	</dependencies>
 
@@ -27,7 +27,7 @@
 					<dependency>
 						<groupId>com.sun</groupId>
 						<artifactId>tools</artifactId>
-						<version>1.7.0</version>
+						<version>1.8.0</version>
 						<scope>system</scope>
 						<systemPath>${java.home}/../lib/tools.jar</systemPath>
 					</dependency>
