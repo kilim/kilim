@@ -227,11 +227,15 @@ public class MethodWeaver {
 
     private void transformIndyBootstrap(MethodVisitor mv, AbstractInsnNode ain) {
         InvokeDynamicInsnNode indy = (InvokeDynamicInsnNode)ain;
-        Object[]bsmArgs = indy.bsmArgs;
+        transformIndyBootstrap(indy.bsm,indy.bsmArgs,methodFlow);
+        ain.accept(mv);
+    }
+    
+    static void transformIndyBootstrap(Handle bsm,Object [] bsmArgs,MethodFlow mf) {
         // Is it a lambda conversion
-        if (indy.bsm.getOwner().equals("java/lang/invoke/LambdaMetafactory")) {
+        if (bsm.getOwner().equals("java/lang/invoke/LambdaMetafactory")) {
             Handle lambdaBody = (Handle)bsmArgs[1];
-            Detector detector = this.methodFlow.detector();
+            Detector detector = mf.detector();
             String desc = lambdaBody.getDesc();
             if (detector.isPausable(lambdaBody.getOwner(), lambdaBody.getName(), desc)) {
                 bsmArgs[0] = addFiberType((Type)bsmArgs[0]);
@@ -242,7 +246,6 @@ public class MethodWeaver {
                 bsmArgs[2] = addFiberType((Type)bsmArgs[2]);
             }
         }
-        ain.accept(mv);
     }
 
     private static Type addFiberType(Type type) {

@@ -5,15 +5,6 @@
  */
 
 package kilim.analysis;
-import static kilim.Constants.NOT_PAUSABLE_CLASS;
-import static kilim.Constants.PAUSABLE_CLASS;
-import static kilim.analysis.BasicBlock.COALESCED;
-import static kilim.analysis.BasicBlock.ENQUEUED;
-import static kilim.analysis.BasicBlock.INLINE_CHECKED;
-import static org.objectweb.asm.Opcodes.ACC_STATIC;
-import static org.objectweb.asm.Opcodes.ACC_VOLATILE;
-import static org.objectweb.asm.Opcodes.JSR;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -22,15 +13,22 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.TreeMap;
-
+import static kilim.Constants.NOT_PAUSABLE_CLASS;
+import static kilim.Constants.PAUSABLE_CLASS;
 import kilim.KilimException;
+import static kilim.analysis.BasicBlock.COALESCED;
+import static kilim.analysis.BasicBlock.ENQUEUED;
+import static kilim.analysis.BasicBlock.INLINE_CHECKED;
 import kilim.mirrors.Detector;
-
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import static org.objectweb.asm.Opcodes.ACC_STATIC;
+import static org.objectweb.asm.Opcodes.ACC_VOLATILE;
+import static org.objectweb.asm.Opcodes.JSR;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.FrameNode;
@@ -205,6 +203,12 @@ public class MethodFlow extends MethodNode {
 
     private String toString(String className, String methName, String desc) {
         return className.replace('/', '.') + '.' + methName + desc;
+    }
+
+    @Override
+    public void visitInvokeDynamicInsn(String name,String desc,Handle bsm,Object... bsmArgs) {
+        MethodWeaver.transformIndyBootstrap(bsm,bsmArgs,this);
+        super.visitInvokeDynamicInsn(name,desc,bsm,bsmArgs);
     }
     
     
