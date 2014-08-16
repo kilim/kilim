@@ -511,7 +511,6 @@ public abstract class Task implements EventSubscriber {
     }
     
     public void checkKill() {
-    }
-
+    }    
 }
 
