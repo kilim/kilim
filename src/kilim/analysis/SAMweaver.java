@@ -134,7 +134,8 @@ public class SAMweaver implements Constants {
      */
     public void accept(ClassVisitor cv) {
         String shimDesc = getShimDesc();
-        MethodVisitor mv = cv.visitMethod(ACC_STATIC | ACC_PRIVATE, getShimMethodName(), shimDesc, null, getExceptions());
+        MethodVisitor mv = cv.visitMethod(ACC_STATIC | ACC_PRIVATE, getShimMethodName(), shimDesc, null, 
+                getExceptions());
         // load arguments
         int ivar = 0;
         for (String argType : TypeDesc.getArgumentTypes(shimDesc)) {
@@ -156,8 +157,13 @@ public class SAMweaver implements Constants {
                 "(" + D_OBJECT + ")V");
 
         // return .. RETURN (if void) or ARETURN, IRETURN, etc.
-        int vmt = VMType.toVmType(TypeDesc.getReturnTypeDesc(shimDesc));
-        mv.visitInsn(VMType.retInsn[vmt]);
+        String retDesc = TypeDesc.getReturnTypeDesc(shimDesc);
+        if (retDesc.charAt(0) == 'V') {
+            mv.visitInsn(RETURN);
+        } else {
+            int vmt = VMType.toVmType(retDesc);
+            mv.visitInsn(VMType.retInsn[vmt]);
+        }
         mv.visitMaxs(0, 0); // maxLocals and maxStackDepth will be computed by asm's MethodWriter
         mv.visitEnd();
     }
@@ -168,7 +174,15 @@ public class SAMweaver implements Constants {
             for (MethodMirror m : cm.getDeclaredMethods()) {
                 if (m.getName().equals(this.methodName)
                         && m.getMethodDescriptor().equals(this.desc)) {
-                    return m.getExceptionTypes();
+                    // Convert dots to slashes. 
+                    String[] ret = m.getExceptionTypes();
+                    if (ret != null) {
+                        for (int i = 0; i < ret.length; i++) {
+                            ret[i] = ret[i].replace('.', '/');
+                        }
+                        return ret;
+                    }
+                    break;
                 }
             }
         } catch (ClassMirrorNotFoundException cmnfe) {
