@@ -8,10 +8,12 @@ package kilim;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import kilim.queuehelper.TaskQueue;
+import kilim.queuehelper.TaskQueueJava;
 import kilim.timerhelper.Timer;
 
 /**
@@ -35,7 +37,10 @@ public class Scheduler
 	private String name_;
 	private AffineThreadPool affinePool_;
 	protected AtomicBoolean shutdown = new AtomicBoolean(false);
-    public final kilim.queuehelper.TaskQueue taskQueue = new kilim.queuehelper.TaskQueue(); 
+	//public final kilim.queuehelper.TaskQueue taskQueue = new kilim.queuehelper.TaskQueue(); 
+	//public final PriorityBlockingQueue<Timer> taskQueue = new PriorityBlockingQueue<Timer>();
+	public final MailboxMPSC<Timer> producertaskQueue = new MailboxMPSC<Timer>(1000*1000);
+	public final TaskQueue taskQueue = new TaskQueue();
 	static
 	{
 		String s = System.getProperty("kilim.Scheduler.numThreads");
@@ -78,7 +83,7 @@ public class Scheduler
 	{
 		name_ = name;
 		nameGenerator_.putIfAbsent(name_, new AtomicInteger());
-		affinePool_ = new AffineThreadPool(numThreads, queueSize, name,taskQueue);
+		affinePool_ = new AffineThreadPool(numThreads, queueSize, name,taskQueue,producertaskQueue);
 	}
 	
 	public long getTaskCount()
