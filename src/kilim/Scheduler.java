@@ -36,9 +36,7 @@ public class Scheduler
 	private String name_;
 	private AffineThreadPool affinePool_;
 	protected AtomicBoolean shutdown = new AtomicBoolean(false);
-	//public final kilim.queuehelper.TaskQueue taskQueue = new kilim.queuehelper.TaskQueue(); 
-	//public final PriorityBlockingQueue<Timer> taskQueue = new PriorityBlockingQueue<Timer>();
-	public final MailboxMPSC<Timer> producertaskQueue = new MailboxMPSC<Timer>(1000*1000);
+	public final MailboxMPSC<Timer> producertaskQueue = new MailboxMPSC<Timer>(1<<20); //set size = number of possible timer task in system
 	public final TaskQueue taskQueue = new TaskQueue();
 	static
 	{

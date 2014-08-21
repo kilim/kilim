@@ -143,12 +143,8 @@ public class Cell<T> implements PauseReason, EventPublisher {
             Task.pause(this);
             t.timer_new.nextExecutionTime = -1;
             removeMsgAvailableListener(t);
-            if (System.currentTimeMillis() - begin > timeoutMillis) {
-                break;
-            } else {
-                time = timeoutMillis - (System.currentTimeMillis() - begin);
-            }
-            if (time < 0) {
+            time = timeoutMillis - (System.currentTimeMillis() - begin);
+            if (time <= 0) {
                 break;
             }
             msg = get(t);
@@ -201,12 +197,8 @@ public class Cell<T> implements PauseReason, EventPublisher {
             Task.pause(this);
             t.timer_new.nextExecutionTime = -1;
             removeMsgAvailableListener(t);
-            if (System.currentTimeMillis() - begin >= timeoutMillis) {
-                return false;
-            } else {
-                time = timeoutMillis - (System.currentTimeMillis() - begin);
-            }
-            if (time < 0) {
+            time = timeoutMillis - (System.currentTimeMillis() - begin);
+            if (time <= 0) {
                 return false;
             }
         }
