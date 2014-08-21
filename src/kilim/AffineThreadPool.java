@@ -129,6 +129,7 @@ class KilimThreadPoolExecutor extends ThreadPoolExecutor {
 
     protected void afterExecute(Runnable r, Throwable th) {
         super.afterExecute(r, th);
+        long max = 0;
         do {
             boolean taskFired = false;
             Timer t = null;
@@ -143,7 +144,7 @@ class KilimThreadPoolExecutor extends ThreadPoolExecutor {
                         if (buf[i] != null) {
                             buf[i].onQueue.set(false);
                             if (buf[i].nextExecutionTime < 0) {
-
+                                buf[i] = null;
                                 continue;
                             }
                             long currentTime = System.currentTimeMillis();
@@ -159,6 +160,7 @@ class KilimThreadPoolExecutor extends ThreadPoolExecutor {
                                     taskQueue.heapifyDown(buf[i].index);
                                 }
                             }
+                            buf[i] = null;
                         } else {
                             break;
                         }
@@ -183,6 +185,8 @@ class KilimThreadPoolExecutor extends ThreadPoolExecutor {
                         if (taskFired = (executionTime <= currentTime)) {
                             t.onHeap = false;
                             taskQueue.poll();
+                        } else {
+                            max = executionTime - currentTime;
                         }
                     }
                     if (taskFired) {
@@ -191,6 +195,14 @@ class KilimThreadPoolExecutor extends ThreadPoolExecutor {
 
                 } while (taskFired);
                 taskQueue.lock.unlock();
+            }
+            if (queue.isEmpty()) {
+                try {
+                    Thread.sleep(5);
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
             }
         } while (queue.isEmpty());
 
