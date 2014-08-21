@@ -27,7 +27,7 @@ abstract class MPSCQueueL0Pad {
 }
 
 abstract class MPSCQueueColdFields<E> extends MPSCQueueL0Pad {
-    protected static final int BUFFER_PAD = 0;
+    protected static final int BUFFER_PAD = 32;
     protected static final int SPARSE_SHIFT = Integer.getInteger(
             "sparse.shift", 0);
     protected final int capacity;

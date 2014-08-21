@@ -9,6 +9,9 @@ package kilim;
 import java.util.Deque;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
+import kilim.queuehelper.TaskQueue;
+import kilim.timerhelper.Timer;
+
 /**
  * A cell is a single-space buffer that supports multiple producers and a single
  * consumer, functionally identical to Mailbox bounded to a size of 1 (and hence
@@ -23,9 +26,7 @@ public class Cell<T> implements PauseReason, EventPublisher {
     public static final Event spaceAvailble = new Event(MSG_AVAILABLE);
     public static final Event messageAvailable = new Event(SPACE_AVAILABLE);
     public static final Event timedOut = new Event(TIMED_OUT);
-    private static final String defaultName_ = "DEFAULT-CELL";
-
-    private String name_;
+    // private static final String defaultName_ = "DEFAULT-CELL";
 
     VolatileReferenceCell<EventSubscriber> sink = new VolatileReferenceCell<EventSubscriber>();
     VolatileReferenceCell<T> message = new VolatileReferenceCell<T>();
@@ -37,11 +38,6 @@ public class Cell<T> implements PauseReason, EventPublisher {
      * public int nWastedGets = 0;
      */
     public Cell() {
-        this(defaultName_);
-    }
-
-    public Cell(String name) {
-        name_ = name;
     }
 
     /**
@@ -57,10 +53,11 @@ public class Cell<T> implements PauseReason, EventPublisher {
     public T get(EventSubscriber eo) {
         EventSubscriber producer = null;
         T ret;
-        ret = message.getAndSet(null);
+        ret = message.get();
         if (ret == null) {
             addMsgAvailableListener(eo);
         } else {
+            message.compareAndSet(ret, null);
             if (srcs.size() > 0) {
                 producer = srcs.poll();
             }
@@ -87,7 +84,7 @@ public class Cell<T> implements PauseReason, EventPublisher {
 
         if (message.compareAndSet(null, amsg)) {
             subscriber = sink.get();
-            sink.set(null);
+            // sink.set(null);
         } else {
             ret = false;
             subscriber = null;
@@ -97,7 +94,10 @@ public class Cell<T> implements PauseReason, EventPublisher {
         }
         // notify get's subscriber that something is available
         if (subscriber != null) {
-            subscriber.onEvent(this, messageAvailable);
+            // removeMsgAvailableListener(subscriber);
+            if (sink.compareAndSet(subscriber, null)) {
+                subscriber.onEvent(this, messageAvailable);
+            }
         }
         return ret;
     }
@@ -134,24 +134,24 @@ public class Cell<T> implements PauseReason, EventPublisher {
         final Task t = Task.getCurrentTask();
         T msg = get(t);
         long begin = System.currentTimeMillis();
-        int nTries = 0;
+        long time = timeoutMillis;
         while (msg == null) {
-            if (nTries < /*no of tries*/ 3) {
-                nTries++;
-                Task.yield();
-            } else {
-                t.timer_new.setTimer(timeoutMillis, /* period */0);
-                t.scheduler.taskQueue.add(t.timer_new);
-                Task.pause(this);
-                t.cancle();
+            t.timer_new.setTimer(time);
+            if (t.timer_new.onQueue.compareAndSet(false, true)) {
+                t.scheduler.producertaskQueue.put(t.timer_new);
             }
-
+            Task.pause(this);
+            t.timer_new.nextExecutionTime = -1;
+            removeMsgAvailableListener(t);
             if (System.currentTimeMillis() - begin > timeoutMillis) {
                 break;
+            } else {
+                time = timeoutMillis - (System.currentTimeMillis() - begin);
             }
-            removeMsgAvailableListener(t);
+            if (time < 0) {
+                break;
+            }
             msg = get(t);
-
         }
         return msg;
     }
@@ -192,18 +192,21 @@ public class Cell<T> implements PauseReason, EventPublisher {
     public boolean put(T msg, int timeoutMillis) throws Pausable {
         final Task t = Task.getCurrentTask();
         long begin = System.currentTimeMillis();
-        int nTries = 0;
+        long time = timeoutMillis;
         while (!put(msg, t)) {
-            if (nTries < /*no of tries*/ 3) {
-                nTries++;
-                Task.yield();
-            } else {
-                t.timer_new.setTimer(timeoutMillis, /* period */0);
-                t.scheduler.taskQueue.add(t.timer_new);
-                Task.pause(this);
+            t.timer_new.setTimer(time);
+            if (t.timer_new.onQueue.compareAndSet(false, true)) {
+                t.scheduler.producertaskQueue.put(t.timer_new);
             }
-            removeSpaceAvailableListener(t);
+            Task.pause(this);
+            t.timer_new.nextExecutionTime = -1;
+            removeMsgAvailableListener(t);
             if (System.currentTimeMillis() - begin >= timeoutMillis) {
+                return false;
+            } else {
+                time = timeoutMillis - (System.currentTimeMillis() - begin);
+            }
+            if (time < 0) {
                 return false;
             }
         }
