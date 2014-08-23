@@ -5,7 +5,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -31,6 +34,7 @@ public class AffineThreadPool {
     private List<BlockingQueue<Runnable>> queues_ = new ArrayList<BlockingQueue<Runnable>>();
     private List<KilimStats> queueStats_ = new ArrayList<KilimStats>();
     private List<KilimThreadPoolExecutor> executorService_ = new ArrayList<KilimThreadPoolExecutor>();
+    ScheduledExecutorService timer;
 
     public AffineThreadPool(int nThreads, String name, TaskQueue taskQueue/*
                                                                            * PriorityBlockingQueue
@@ -49,6 +53,7 @@ public class AffineThreadPool {
                                  */, MailboxMPSC<Timer> producertaskQueue) {
         nThreads_ = nThreads;
         poolName_ = name;
+        timer = Executors.newSingleThreadScheduledExecutor();
         for (int i = 0; i < nThreads; ++i) {
             String threadName = name + colon_ + i;
             BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(
@@ -57,7 +62,7 @@ public class AffineThreadPool {
 
             KilimThreadPoolExecutor executorService = new KilimThreadPoolExecutor(
                     i, 1, queue, new ThreadFactoryImpl(threadName), taskQueue,
-                    producertaskQueue);
+                    producertaskQueue, timer);
             executorService_.add(executorService);
 
             queueStats_.add(new KilimStats(12, "num"));
@@ -73,9 +78,12 @@ public class AffineThreadPool {
     }
 
     private int getNextIndex() {
-        currentIndex_.compareAndSet(Integer.MAX_VALUE, 0);
-        int index = currentIndex_.getAndIncrement() % nThreads_;
-        return index;
+        int value = 0, newValue = 0;
+        do {
+            value = currentIndex_.get();
+            newValue = ((value != Integer.MAX_VALUE) ? (value + 1) : 0);
+        } while (!currentIndex_.compareAndSet(value, newValue));
+        return (newValue) % nThreads_;
     }
 
     public int publish(Task task) {
@@ -112,102 +120,123 @@ class KilimThreadPoolExecutor extends ThreadPoolExecutor {
     MailboxMPSC<Timer> producertaskQueue;
     int id = 0;
     BlockingQueue<Runnable> queue;
+    ScheduledExecutorService timer;
+    Timer[] buf = new Timer[10];
 
     KilimThreadPoolExecutor(int id, int nThreads,
             BlockingQueue<Runnable> queue, ThreadFactory tFactory,
             TaskQueue taskQueue/*
                                 * PriorityBlockingQueue < Timer> taskQueue
-                                */, MailboxMPSC<Timer> producertaskQueue) {
+                                */, MailboxMPSC<Timer> producertaskQueue,
+            ScheduledExecutorService timer) {
         super(nThreads, nThreads, Integer.MAX_VALUE, TimeUnit.MILLISECONDS,
                 queue, tFactory);
         this.id = id;
         this.taskQueue = taskQueue;
         this.queue = queue;
         this.producertaskQueue = producertaskQueue;
+        this.timer = timer;
+
     }
 
     protected void afterExecute(Runnable r, Throwable th) {
         super.afterExecute(r, th);
         long max = 0;
-        do {
-            boolean taskFired = false;
-            Timer t = null;
-            if (taskQueue.lock.tryLock()) {
 
-                int i = 0;
-                do {
-                    Timer[] buf = new Timer[100];
-                    producertaskQueue.fill(buf);
+        boolean taskFired = false;
+        Timer t = null;
+        if (taskQueue.lock.tryLock()) {
 
-                    for (i = 0; i < buf.length; i++) {
-                        if (buf[i] != null) {
-                            buf[i].onQueue.set(false);
-                            if (buf[i].nextExecutionTime < 0) {
-                                buf[i] = null;
-                                continue;
-                            }
-                            long currentTime = System.currentTimeMillis();
-                            long executionTime = buf[i].nextExecutionTime;
-                            if (executionTime <= currentTime) {
-                                buf[i].es.onEvent(null, Cell.timedOut);
-                            } else {
-                                if (!buf[i].onHeap) {
-                                    taskQueue.add(buf[i]);
-                                    buf[i].onHeap = true;
-                                } else {
-                                    taskQueue.heapifyUp(buf[i].index);
-                                    taskQueue.heapifyDown(buf[i].index);
-                                }
-                            }
+            int i = 0;
+
+            do {
+
+                producertaskQueue.fill(buf);
+
+                for (i = 0; i < buf.length; i++) {
+                    if (buf[i] != null) {
+                        buf[i].onQueue.set(false);
+                        if (buf[i].nextExecutionTime < 0) {
                             buf[i] = null;
-                        } else {
-                            break;
-                        }
-                    }
-                } while (i == 100);
-
-                retry: do {
-
-                    taskFired = false;
-
-                    if (!taskQueue.isEmpty()) {
-
-                        t = taskQueue.peek();
-                        if (t.nextExecutionTime < 0) {
-                            t.onHeap = false;
-                            taskQueue.poll();
-                            continue retry; // No action required, poll queue
-                                            // again
+                            continue;
                         }
                         long currentTime = System.currentTimeMillis();
-                        long executionTime = t.nextExecutionTime;
-                        if (taskFired = (executionTime <= currentTime)) {
-                            t.onHeap = false;
-                            taskQueue.poll();
+                        long executionTime = buf[i].nextExecutionTime;
+                        if (executionTime <= currentTime) {
+                            buf[i].es.onEvent(null, Cell.timedOut);
                         } else {
-                            max = executionTime - currentTime;
+                            if (!buf[i].onHeap) {
+                                taskQueue.add(buf[i]);
+                                buf[i].onHeap = true;
+                            } else {
+                                taskQueue.heapifyUp(buf[i].index);
+                                taskQueue.heapifyDown(buf[i].index);
+                            }
                         }
+                        buf[i] = null;
+                    } else {
+                        break;
                     }
-                    if (taskFired) {
-                        t.es.onEvent(null, Cell.timedOut);
-                    }
-
-                } while (taskFired);
-                taskQueue.lock.unlock();
-            }
-            if (queue.isEmpty()) {
-                try {
-                    Thread.sleep(5);
-                } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
                 }
-            }
-        } while (queue.isEmpty());
+            } while (i == 100);
 
+            retry: do {
+
+                taskFired = false;
+
+                if (!taskQueue.isEmpty()) {
+
+                    t = taskQueue.peek();
+                    if (t.nextExecutionTime < 0) {
+                        t.onHeap = false;
+                        taskQueue.poll();
+                        continue retry; // No action required, poll queue
+                                        // again
+                    }
+                    long currentTime = System.currentTimeMillis();
+                    long executionTime = t.nextExecutionTime;
+                    if (taskFired = (executionTime <= currentTime)) {
+                        t.onHeap = false;
+                        taskQueue.poll();
+                    } else {
+                        max = executionTime - currentTime;
+                    }
+                }
+                if (taskFired) {
+                    t.es.onEvent(null, Cell.timedOut);
+                }
+
+            } while (taskFired);
+            taskQueue.lock.unlock();
+        }
+        if (Scheduler.getDefaultScheduler().getTaskCount() == 0
+                && this.getActiveCount() == 1
+                && (taskQueue.size() != 0 || producertaskQueue.size() != 0)) {
+            Runnable tt = new Runnable() {
+                @Override
+                public void run() {
+                    if (queue.size() == 0) {
+                        queue.add(new Watchdog());
+                    }
+                }
+            };
+
+            timer.schedule(tt, max, TimeUnit.MILLISECONDS);
+        }
     }
 
     protected int getQueueSize() {
         return super.getQueue().size();
     }
+
+    private class Watchdog implements Runnable {
+
+        @Override
+        public void run() {
+            // TODO Auto-generated method stub
+
+        }
+
+    }
+
 }
