@@ -9,7 +9,6 @@ package kilim;
 import java.util.Deque;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import kilim.queuehelper.MPSCQueue32;
 
@@ -28,7 +27,7 @@ import kilim.queuehelper.MPSCQueue32;
 public class MailboxMPSC<T> implements PauseReason, EventPublisher {
     // TODO. Give mbox a config name and id and make monitorable
     MPSCQueue32<T> msgs;
-    PaddedEventSubscriber sink = new PaddedEventSubscriber();
+    VolatileReferenceCell<EventSubscriber> sink = new VolatileReferenceCell<EventSubscriber>();
     Deque<EventSubscriber> srcs = new ConcurrentLinkedDeque<EventSubscriber>();
 
     // FIX: I don't like this event design. The only good thing is that
@@ -75,20 +74,20 @@ public class MailboxMPSC<T> implements PauseReason, EventPublisher {
         return msg;
     }
 
-    public T get(EventSubscriber eo, boolean blocking) {
+    public T get(EventSubscriber eo) {
         EventSubscriber producer = null;
         T e = getMsg();
-        if (blocking) {
-            if (e == null) {
+        if (e == null) {
+            if (eo != null) {
                 addMsgAvailableListener(eo);
-                return null;
             }
-            if (srcs.size() > 0) {
-                producer = srcs.poll();
-            }
-            if (producer != null) {
-                producer.onEvent(this, spaceAvailble);
-            }
+        }
+
+        if (srcs.size() > 0) {
+            producer = srcs.poll();
+        }
+        if (producer != null) {
+            producer.onEvent(this, spaceAvailble);
         }
         return e;
     }
@@ -107,18 +106,15 @@ public class MailboxMPSC<T> implements PauseReason, EventPublisher {
         return msgs.offer(msg);
     }
 
-    public boolean put(T msg, EventSubscriber eo, boolean blocking) {
+    public boolean put(T msg, EventSubscriber eo) {
         if (msg == null) {
             throw new NullPointerException("Null is not a valid element");
         }
         EventSubscriber subscriber;
         boolean b = putMsg(msg);
-        if (blocking) {
-            if (!b) {
-                if (eo != null) {
-                    srcs.offer(eo);
-                }
-                return false;
+        if (!b) {
+            if (eo != null) {
+                srcs.offer(eo);
             }
         }
         subscriber = sink.get();
@@ -136,7 +132,17 @@ public class MailboxMPSC<T> implements PauseReason, EventPublisher {
      * @return stored message, or null if no message found.
      */
     public T getnb() {
-        return get(null, false);
+        return get(null);
+    }
+
+    public void fill(T[] buf) {
+
+        for (int i = 0; i < buf.length; i++) {
+            buf[i] = getnb();
+            if (buf[i] == null) {
+                break;
+            }
+        }
     }
 
     /**
@@ -145,11 +151,11 @@ public class MailboxMPSC<T> implements PauseReason, EventPublisher {
      */
     public T get() throws Pausable {
         Task t = Task.getCurrentTask();
-        T msg = get(t, true);
+        T msg = get(t);
         while (msg == null) {
             Task.pause(this);
             removeMsgAvailableListener(t);
-            msg = get(t, true);
+            msg = get(t);
         }
         return msg;
     }
@@ -160,7 +166,7 @@ public class MailboxMPSC<T> implements PauseReason, EventPublisher {
      */
     public T get(long timeoutMillis) throws Pausable {
         final Task t = Task.getCurrentTask();
-        T msg = get(t, true);
+        T msg = get(t);
         long end = System.currentTimeMillis() + timeoutMillis;
         while (msg == null) {
             TimerTask tt = new TimerTask() {
@@ -173,7 +179,7 @@ public class MailboxMPSC<T> implements PauseReason, EventPublisher {
             Task.pause(this);
             tt.cancel();
             removeMsgAvailableListener(t);
-            msg = get(t, true);
+            msg = get(t);
 
             timeoutMillis = end - System.currentTimeMillis();
             if (timeoutMillis <= 0) {
@@ -358,7 +364,7 @@ public class MailboxMPSC<T> implements PauseReason, EventPublisher {
      * not blocked, nor is the task paused under any circumstance.
      */
     public boolean putnb(T msg) {
-        return put(msg, null, false);
+        return put(msg, null);
     }
 
     /**
@@ -368,8 +374,9 @@ public class MailboxMPSC<T> implements PauseReason, EventPublisher {
 
     public void put(T msg) throws Pausable {
         Task t = Task.getCurrentTask();
-        while (!put(msg, t, true)) {
+        while (!put(msg, t)) {
             Task.pause(this);
+            System.out.println("paused");
             removeSpaceAvailableListener(t);
         }
     }
@@ -382,7 +389,7 @@ public class MailboxMPSC<T> implements PauseReason, EventPublisher {
     public boolean put(T msg, int timeoutMillis) throws Pausable {
         final Task t = Task.getCurrentTask();
         long begin = System.currentTimeMillis();
-        while (!put(msg, t, true)) {
+        while (!put(msg, t)) {
             TimerTask tt = new TimerTask() {
                 public void run() {
                     MailboxMPSC.this.removeSpaceAvailableListener(t);
@@ -436,7 +443,7 @@ public class MailboxMPSC<T> implements PauseReason, EventPublisher {
      */
     public void putb(T msg, final long timeoutMillis) {
         BlockingSubscriber evs = new BlockingSubscriber();
-        if (!put(msg, evs, true)) {
+        if (!put(msg, evs)) {
             evs.blockingWait(timeoutMillis);
         }
         if (!evs.eventRcvd) {
@@ -478,10 +485,10 @@ public class MailboxMPSC<T> implements PauseReason, EventPublisher {
         BlockingSubscriber evs = new BlockingSubscriber();
         T msg;
 
-        if ((msg = get(evs, true)) == null) {
+        if ((msg = get(evs)) == null) {
             evs.blockingWait(timeoutMillis);
             if (evs.eventRcvd) {
-                msg = get(null, false); // non-blocking get.
+                msg = get(null); // non-blocking get.
                 assert msg != null : "Received event, but message is null";
             }
         }
