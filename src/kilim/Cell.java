@@ -9,9 +9,6 @@ package kilim;
 import java.util.Deque;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
-import kilim.queuehelper.TaskQueue;
-import kilim.timerhelper.Timer;
-
 /**
  * A cell is a single-space buffer that supports multiple producers and a single
  * consumer, functionally identical to Mailbox bounded to a size of 1 (and hence
@@ -138,7 +135,20 @@ public class Cell<T> implements PauseReason, EventPublisher {
         while (msg == null) {
             t.timer_new.setTimer(time);
             if (t.timer_new.onQueue.compareAndSet(false, true)) {
-                t.scheduler.producertaskQueue.put(t.timer_new);
+                if (!t.scheduler.timerQueue.putnb(t.timer_new)) {
+                    try {
+                        throw new Exception(
+                                "Maximum pending timers limit:"
+                                        + Integer
+                                                .getInteger(
+                                                        "kilim.maxpendingtimers",
+                                                        10000)
+                                        + " exceeded, set kilim.maxpendingtimers property");
+                    } catch (Exception e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                }
             }
             Task.pause(this);
             t.timer_new.nextExecutionTime = -1;
@@ -192,7 +202,20 @@ public class Cell<T> implements PauseReason, EventPublisher {
         while (!put(msg, t)) {
             t.timer_new.setTimer(time);
             if (t.timer_new.onQueue.compareAndSet(false, true)) {
-                t.scheduler.producertaskQueue.put(t.timer_new);
+                if (!t.scheduler.timerQueue.putnb(t.timer_new)) {
+                    try {
+                        throw new Exception(
+                                "Maximum pending timers limit:"
+                                        + Integer
+                                                .getInteger(
+                                                        "kilim.maxpendingtimers",
+                                                        10000)
+                                        + " exceeded, set kilim.maxpendingtimers property");
+                    } catch (Exception e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                }
             }
             Task.pause(this);
             t.timer_new.nextExecutionTime = -1;

@@ -1,22 +1,19 @@
 package kilim;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Lock;
 
-import kilim.queuehelper.TaskQueue;
 import kilim.timerhelper.Timer;
+import kilim.timerhelper.TimerPriorityHeap;
 
 public class AffineThreadPool {
     private static final int MAX_QUEUE_SIZE = 4096;
@@ -36,21 +33,13 @@ public class AffineThreadPool {
     private List<KilimThreadPoolExecutor> executorService_ = new ArrayList<KilimThreadPoolExecutor>();
     ScheduledExecutorService timer;
 
-    public AffineThreadPool(int nThreads, String name, TaskQueue taskQueue/*
-                                                                           * PriorityBlockingQueue
-                                                                           * <
-                                                                           * Timer
-                                                                           * >
-                                                                           * taskQueue
-                                                                           */,
-            MailboxMPSC<Timer> producertaskQueue) {
-        this(nThreads, MAX_QUEUE_SIZE, name, taskQueue, producertaskQueue);
+    public AffineThreadPool(int nThreads, String name,
+            TimerPriorityHeap timerHeap, MailboxMPSC<Timer> timerQueue) {
+        this(nThreads, MAX_QUEUE_SIZE, name, timerHeap, timerQueue);
     }
 
     public AffineThreadPool(int nThreads, int queueSize, String name,
-            TaskQueue taskQueue /*
-                                 * PriorityBlockingQueue< Timer> taskQueue
-                                 */, MailboxMPSC<Timer> producertaskQueue) {
+            TimerPriorityHeap timerHeap, MailboxMPSC<Timer> timerQueue) {
         nThreads_ = nThreads;
         poolName_ = name;
         timer = Executors.newSingleThreadScheduledExecutor();
@@ -61,8 +50,8 @@ public class AffineThreadPool {
             queues_.add(queue);
 
             KilimThreadPoolExecutor executorService = new KilimThreadPoolExecutor(
-                    i, 1, queue, new ThreadFactoryImpl(threadName), taskQueue,
-                    producertaskQueue, timer);
+                    i, 1, queue, new ThreadFactoryImpl(threadName), timerHeap,
+                    timerQueue, timer);
             executorService_.add(executorService);
 
             queueStats_.add(new KilimStats(12, "num"));
@@ -116,8 +105,8 @@ public class AffineThreadPool {
 }
 
 class KilimThreadPoolExecutor extends ThreadPoolExecutor {
-    TaskQueue taskQueue;
-    MailboxMPSC<Timer> producertaskQueue;
+    TimerPriorityHeap timerHeap;
+    MailboxMPSC<Timer> timerQueue;
     int id = 0;
     BlockingQueue<Runnable> queue;
     ScheduledExecutorService timer;
@@ -125,16 +114,14 @@ class KilimThreadPoolExecutor extends ThreadPoolExecutor {
 
     KilimThreadPoolExecutor(int id, int nThreads,
             BlockingQueue<Runnable> queue, ThreadFactory tFactory,
-            TaskQueue taskQueue/*
-                                * PriorityBlockingQueue < Timer> taskQueue
-                                */, MailboxMPSC<Timer> producertaskQueue,
+            TimerPriorityHeap timerHeap, MailboxMPSC<Timer> timerQueue,
             ScheduledExecutorService timer) {
         super(nThreads, nThreads, Integer.MAX_VALUE, TimeUnit.MILLISECONDS,
                 queue, tFactory);
         this.id = id;
-        this.taskQueue = taskQueue;
+        this.timerHeap = timerHeap;
         this.queue = queue;
-        this.producertaskQueue = producertaskQueue;
+        this.timerQueue = timerQueue;
         this.timer = timer;
 
     }
@@ -142,16 +129,12 @@ class KilimThreadPoolExecutor extends ThreadPoolExecutor {
     protected void afterExecute(Runnable r, Throwable th) {
         super.afterExecute(r, th);
         long max = 0;
-
         boolean taskFired = false;
         Timer t = null;
-        if (taskQueue.lock.tryLock()) {
-
+        if (timerHeap.lock.tryLock()) {
             int i = 0;
-
             do {
-
-                producertaskQueue.fill(buf);
+                timerQueue.fill(buf);
 
                 for (i = 0; i < buf.length; i++) {
                     if (buf[i] != null) {
@@ -166,11 +149,11 @@ class KilimThreadPoolExecutor extends ThreadPoolExecutor {
                             buf[i].es.onEvent(null, Cell.timedOut);
                         } else {
                             if (!buf[i].onHeap) {
-                                taskQueue.add(buf[i]);
+                                timerHeap.add(buf[i]);
                                 buf[i].onHeap = true;
                             } else {
-                                taskQueue.heapifyUp(buf[i].index);
-                                taskQueue.heapifyDown(buf[i].index);
+                                timerHeap.heapifyUp(buf[i].index);
+                                timerHeap.heapifyDown(buf[i].index);
                             }
                         }
                         buf[i] = null;
@@ -184,12 +167,12 @@ class KilimThreadPoolExecutor extends ThreadPoolExecutor {
 
                 taskFired = false;
 
-                if (!taskQueue.isEmpty()) {
+                if (!timerHeap.isEmpty()) {
 
-                    t = taskQueue.peek();
+                    t = timerHeap.peek();
                     if (t.nextExecutionTime < 0) {
                         t.onHeap = false;
-                        taskQueue.poll();
+                        timerHeap.poll();
                         continue retry; // No action required, poll queue
                                         // again
                     }
@@ -197,7 +180,7 @@ class KilimThreadPoolExecutor extends ThreadPoolExecutor {
                     long executionTime = t.nextExecutionTime;
                     if (taskFired = (executionTime <= currentTime)) {
                         t.onHeap = false;
-                        taskQueue.poll();
+                        timerHeap.poll();
                     } else {
                         max = executionTime - currentTime;
                     }
@@ -207,16 +190,16 @@ class KilimThreadPoolExecutor extends ThreadPoolExecutor {
                 }
 
             } while (taskFired);
-            taskQueue.lock.unlock();
+            timerHeap.lock.unlock();
         }
         if (Scheduler.getDefaultScheduler().getTaskCount() == 0
                 && this.getActiveCount() == 1
-                && (taskQueue.size() != 0 || producertaskQueue.size() != 0)) {
+                && (timerHeap.size() != 0 || timerQueue.size() != 0)) {
             Runnable tt = new Runnable() {
                 @Override
                 public void run() {
                     if (queue.size() == 0) {
-                        queue.add(new Watchdog());
+                        queue.add(new WatchdogTask());
                     }
                 }
             };
@@ -229,12 +212,10 @@ class KilimThreadPoolExecutor extends ThreadPoolExecutor {
         return super.getQueue().size();
     }
 
-    private class Watchdog implements Runnable {
+    private class WatchdogTask implements Runnable {
 
         @Override
         public void run() {
-            // TODO Auto-generated method stub
-
         }
 
     }
