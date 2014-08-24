@@ -1,12 +1,11 @@
-package kilim.queuehelper;
+package kilim.timerhelper;
 
 import java.util.Arrays;
 import java.util.concurrent.locks.Lock;
 
 import kilim.ReentrantLock;
-import kilim.timerhelper.Timer;
 
-public class TaskQueue {
+public class TimerPriorityHeap {
     public Lock lock = new java.util.concurrent.locks.ReentrantLock();
     public Timer[] queue = new Timer[128];
     private int size = 0;
@@ -54,8 +53,7 @@ public class TaskQueue {
             queue = Arrays.copyOf(queue, 2 * queue.length);
         queue[++size] = task;
         queue[size-1].index=size-1;
-       // heapifyUp(size);
-
+    
     }
 
     public void heapifyUp(int k) {
