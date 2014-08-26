@@ -79,7 +79,7 @@ public abstract class Task implements Runnable, EventSubscriber {
      */
     protected Scheduler                  scheduler;
 
-    public Object                        exitResult            = "OK";
+    public    volatile Object           exitResult = "OK";
 
     // TODO: move into a separate timer service or into the schduler.
     public final static Timer            timer                 = new Timer(true);
@@ -187,17 +187,16 @@ public abstract class Task implements Runnable, EventSubscriber {
         }
         return doSchedule;
     }
-
-    public void informOnExit(Mailbox<ExitMsg> exit) {
-        if (isDone()) {
+    
+    public synchronized void informOnExit(Mailbox<ExitMsg> exit) {
+        if (done) {
             exit.putnb(new ExitMsg(this, exitResult));
             return;
         }
-        synchronized (this) {
-            if (exitMBs == null)
-                exitMBs = new LinkedList<Mailbox<ExitMsg>>();
-            exitMBs.add(exit);
+        if (exitMBs == null) {
+            exitMBs = new LinkedList<Mailbox<ExitMsg>>();
         }
+        exitMBs.add(exit);
     }
 
     /**
@@ -490,21 +489,23 @@ public abstract class Task implements Runnable, EventSubscriber {
         }
 
         if (isDone) {
-            done = true;
             // inform on exit
             if (numActivePins > 0) {
                 throw new AssertionError("Task ended but has active locks");
             }
-            if (exitMBs != null) {
-                if (pauseReason instanceof TaskDoneReason) {
-                    exitResult = ((TaskDoneReason) pauseReason).exitObj;
-                }
-                ExitMsg msg = new ExitMsg(this, exitResult);
-                for (Mailbox<ExitMsg> exitMB : exitMBs) {
-                    exitMB.putnb(msg);
-                }
+            if (pauseReason instanceof TaskDoneReason) {
+                exitResult = ((TaskDoneReason)pauseReason).exitObj;
             }
             preferredResumeThread = -1;
+            synchronized(this){
+                done = true;
+                if (exitMBs != null) {
+                    ExitMsg msg = new ExitMsg(this, exitResult);
+                    for (Mailbox<ExitMsg> exitMB: exitMBs) {
+                        exitMB.putnb(msg);
+                    }
+                }
+            }
         } else {
             if (tid >= 0) { // it is null for generators
                 if (numActivePins > 0) {
@@ -563,13 +564,19 @@ public abstract class Task implements Runnable, EventSubscriber {
     public boolean getState() {
         return running.get();
     }
-
-    // public void cancle() {
-    // //boolean result = false;
-    // // result = (timer_new.state.get() == kilim.timerhelper.Timer.SCHEDULED);
-    // // timer_new.nextExecutionTimeLong.MAX_VALUE);
-    // timer_new.setState(kilim.timerhelper.Timer.CANCELLED);
-    //
-    // //return result;
-    // }
+    
+    /**
+     * Wraps the given object or lambda expression in a Task and starts that task.
+     * Beware of inadvertent sharing when multiple lambdas are created in the same context 
+     * 
+     * @return the spawned task. 
+     */
+    public static Task spawn (final Spawnable body) {
+        return new Task() {
+            @Override
+            public void execute() throws Pausable, Exception {
+                body.execute();
+            }
+        }.start();
+    }
 }

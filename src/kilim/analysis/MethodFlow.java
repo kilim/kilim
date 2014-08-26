@@ -46,7 +46,6 @@ import org.objectweb.asm.tree.TryCatchBlockNode;
  * This represents all the basic blocks of a method. 
  */
 public class MethodFlow extends MethodNode {
-    
 	
     /**
      * The classFlow to which this methodFlow belongs
@@ -92,6 +91,8 @@ public class MethodFlow extends MethodNode {
     private TreeMap<Integer, LineNumberNode> lineNumberNodes = new TreeMap<Integer, LineNumberNode>();
 
     private HashMap<Integer, FrameNode> frameNodes = new HashMap<Integer, FrameNode>();
+
+    private boolean hasPausableInvokeDynamic;
     
     public MethodFlow(
             ClassFlow classFlow,
@@ -223,10 +224,19 @@ public class MethodFlow extends MethodNode {
         }
     }
     
-//    @Override
-//    public void visitInvokeDynamicInsn(String name, String desc, Handle bsm, Object[] bsmArgs) {
-//        
-//    }
+    @Override
+    public void visitInvokeDynamicInsn(String name, String desc, Handle bsm, Object... bsmArgs) {
+        if (!classFlow.isWoven) {
+            if (bsm.getOwner().equals("java/lang/invoke/LambdaMetafactory")) {
+                Handle lambdaBody = (Handle)bsmArgs[1];
+                String lambdaDesc = lambdaBody.getDesc();
+                if (detector.isPausable(lambdaBody.getOwner(), lambdaBody.getName(), lambdaDesc)) {
+                    hasPausableInvokeDynamic = true;
+                }
+            }
+        }
+        super.visitInvokeDynamicInsn(name, desc, bsm, bsmArgs);
+    }
     
     @Override
     public void visitLabel(Label label) {
@@ -535,7 +545,11 @@ public class MethodFlow extends MethodNode {
                 ln.resetLabel();
             }
         }
+    }
         
+
+    boolean needsWeaving() {
+        return isPausable() || hasPausableInvokeDynamic;
     }
 
 

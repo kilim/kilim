@@ -109,7 +109,7 @@ public class ClassFlow extends ClassNode {
                     mf.verifyPausables();
                     if (mf.isPausable())
                         isPausable = true;
-                    if ((mf.isPausable() || forceAnalysis) && (!mf.isAbstract())) {
+                    if ((mf.needsWeaving() || forceAnalysis) && (!mf.isAbstract())) {
                         mf.analyze();
                     }
                     flows.add(mf);
@@ -164,5 +164,26 @@ public class ClassFlow extends ClassNode {
 
     public Detector detector() {
         return detector;
+    }
+    
+    /*
+     * If this class is a functional interface, return the one "Single Abstract
+     * Method". If there is more than one abstract method, return null.
+     * SAM methods are given special treatment 
+     */
+    public MethodFlow getSAM() {
+        if (!isInterface()) {
+            return null;
+        }
+        MethodFlow sam = null;
+        for (MethodFlow mf: methodFlows) {
+            if (mf.isAbstract()) {
+                if (sam != null) {
+                    return null;
+                }
+                sam = mf;
+            }
+        }
+        return sam;
     }
 }

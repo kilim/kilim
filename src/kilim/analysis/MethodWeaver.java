@@ -58,6 +58,8 @@ public class MethodWeaver {
     private int                   maxVars;
 
     private int                   maxStack;
+    
+    private boolean               isSAM;
 
     /**
      * The last parameter to a pausable method is a Fiber ref. The rest of the
@@ -72,14 +74,15 @@ public class MethodWeaver {
 
     private Detector detector;
 
-    MethodWeaver(ClassWeaver cw, Detector detector, MethodFlow mf) {
+    MethodWeaver(ClassWeaver cw, Detector detector, MethodFlow mf, boolean isSAM) {
         this.detector = detector;
         this.classWeaver = cw;
         this.methodFlow = mf;
         isPausable = mf.isPausable();
         fiberVar =  methodFlow.maxLocals;
         maxVars = fiberVar + 1;
-        maxStack = methodFlow.maxStack + 1; // plus Fiber 
+        maxStack = methodFlow.maxStack + 1; // plus Fiber
+        this.isSAM = isSAM;
         if (!mf.isAbstract()) {
             createCallWeavers();
         }
@@ -92,14 +95,16 @@ public class MethodWeaver {
         String desc = mf.desc;
         String sig = mf.signature;
         if (mf.isPausable()) {
-            desc = desc.replace(")", D_FIBER_LAST_ARG);
-            if (sig != null)
-                sig = sig.replace(")", D_FIBER_LAST_ARG);
+            if (!isSAM) {
+                desc = desc.replace(")", D_FIBER_LAST_ARG);
+                if (sig != null)
+                    sig = sig.replace(")", D_FIBER_LAST_ARG);
+            }
         }
         MethodVisitor mv = cv.visitMethod(mf.access, mf.name, desc, sig, exceptions);
 
         if (!mf.isAbstract()) {
-            if (mf.isPausable()) {
+            if (mf.needsWeaving()) {
                 accept(mv);
             } else {
                 mf.accept(mv);
@@ -164,7 +169,7 @@ public class MethodWeaver {
             mv.visitAttribute((Attribute) mf.attrs.get(i));
         }
     }
-
+    
     private void visitCode(MethodVisitor mv) {
         mv.visitCode();
         methodFlow.resetLabels();
@@ -361,7 +366,7 @@ public class MethodWeaver {
      * </pre>
      */
     private void genPrelude(MethodVisitor mv) {
-        assert isPausable : "MethodWeaver.genPrelude called for nonPausable method";
+        if (!methodFlow.isPausable()) return;
         if (callWeavers.size() == 0 && (!hasGetCurrentTask())) {
             // Method has been marked pausable, but does not call any pausable methods, nor Task.getCurrentTask.  
             // Prelude is not needed at all.
@@ -541,16 +546,17 @@ public class MethodWeaver {
         return classWeaver.createStateClass(valInfoList);
     }
     
-    void makeNotWovenMethod(ClassVisitor cv, MethodFlow mf) {
-        if (classWeaver.isInterface()) {
-             MethodVisitor mv = cv.visitMethod(mf.access, mf.name, mf.desc, 
-                    mf.signature, ClassWeaver.toStringArray(mf.exceptions));
-             mv.visitEnd();
-        } else {
+    void makeNotWovenMethod(ClassVisitor cv, MethodFlow mf, boolean isSAM) {
+//        if (classWeaver.isInterface()) {
+//             MethodVisitor mv = cv.visitMethod(mf.access, mf.name, mf.desc, 
+//                    mf.signature, ClassWeaver.toStringArray(mf.exceptions));
+//             mv.visitEnd();
+//        } else {
             // Turn of abstract modifier
             int access = mf.access;
             access &= ~Constants.ACC_ABSTRACT;
-            MethodVisitor mv = cv.visitMethod(access, mf.name, mf.desc, 
+            String desc = isSAM ? mf.desc.replace(")", Constants.D_FIBER_LAST_ARG) : mf.desc;
+            MethodVisitor mv = cv.visitMethod(access, mf.name, desc, 
                     mf.signature, ClassWeaver.toStringArray(mf.exceptions));
             mv.visitCode();
             visitAttrs(mv);
@@ -582,12 +588,16 @@ public class MethodWeaver {
             }
             mv.visitMaxs(stacksize, numlocals);
             mv.visitEnd();
-        }
+//        }
     }
 
 
     ClassWeaver getClassWeaver() {
         return this.classWeaver;
+    }
+    
+    MethodFlow getMethodFlow() {
+        return this.methodFlow;
     }
 }
 

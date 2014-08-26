@@ -146,12 +146,29 @@ public class ClassWeaver {
          */
         cv.visitField(ACC_PUBLIC | ACC_STATIC | ACC_FINAL, WOVEN_FIELD, "Z", "Z", Boolean.TRUE);
         // visits methods
+        
+        MethodFlow sam = classFlow.getSAM(); 
         for (i = 0; i < cf.methods.size(); ++i) {
             MethodFlow m = (MethodFlow) cf.methods.get(i);
             if (needsWeaving(m)) {
-                MethodWeaver mw = new MethodWeaver(this, detector, m);
+                // For pausable methods, we generate two function signatures, one the original
+                // and the other with a fiber as the last param. For a non-abstract method, the 
+                // fiber'd version gets the original's body, and the original version throws
+                // an error saying "Not Woven", in case it is called at run time. This latter part
+                // is done in makeNotWovenMethod below.
+                
+                // However, if it is a single abstract method (SAM) of a functional interface,
+                // then we invert the arrangement. We generate two method bodies as before,
+                // but the fiber'd version gets the "not woven" message. This preserves the 
+                // original method as the SAM. However, the weaver (see CallWeaver and SAMWeaver)
+                // arranges it such that the invokedynamic instruction bridges the fiber'd version
+                // of the method with the body of the lambda expression. 
+                
+                boolean isSAM = (sam == m);
+                MethodWeaver mw = new MethodWeaver(this, detector, m, isSAM);
                 mw.accept(cv);
-                mw.makeNotWovenMethod(cv, m);
+                if (m.isPausable())
+                    mw.makeNotWovenMethod(cv, m, isSAM);
             } else {
                 m.restoreNonInstructionNodes();
                 m.accept(cv);
@@ -190,7 +207,7 @@ public class ClassWeaver {
      * kilim.Task.yield and kilim.Task.sleep
      */
     boolean needsWeaving(MethodFlow mf) {
-        if (!mf.isPausable() || mf.desc.endsWith(Constants.D_FIBER_LAST_ARG)) 
+        if (!mf.needsWeaving() || mf.desc.endsWith(Constants.D_FIBER_LAST_ARG)) 
             return false;
         String fdesc = mf.desc.replace(")", Constants.D_FIBER_LAST_ARG);
         for (MethodFlow omf: classFlow.getMethodFlows()) {
