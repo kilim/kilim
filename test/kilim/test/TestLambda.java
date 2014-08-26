@@ -2,7 +2,9 @@ package kilim.test;
 
 import junit.framework.TestCase;
 import kilim.ExitMsg;
+import kilim.Mailbox;
 import kilim.Pausable;
+import kilim.Spawnable;
 import kilim.Task;
 
 public class TestLambda extends TestCase {
@@ -15,6 +17,56 @@ public class TestLambda extends TestCase {
             }
         }
     }
+    
+    
+    public void testSpawn() throws Exception {
+        Mailbox<Integer> mb = new Mailbox<Integer>();
+        Task t1 = Task.spawn(() -> {
+            Task.sleep(100);
+            Integer i = mb.get();
+            Task.exit(i);
+        });
+        Task t2 = Task.spawn(() -> {
+            mb.put(100);
+        });
+        
+        t2.joinb();
+        ExitMsg m = t1.joinb();
+        if ((Integer)m.result != 100) {
+            fail("Expected 100");
+        }
+    }
+    
+    
+    public void testManualSpawn() throws Exception {
+        // give normal (non-lambda) instances of Spawnable to spawn.
+        
+        Mailbox<Integer> mb = new Mailbox<Integer>();
+        Task t1 = Task.spawn( new Spawnable() {
+            @Override
+            public void execute() throws Pausable {
+                Integer i = mb.get();
+                Task.exit(i);
+            }
+        });
+        
+        Task t2 = Task.spawn( new Spawnable() {
+            @Override
+            public void execute() throws Pausable {
+                Task.sleep(100);
+                mb.put(100);
+            }
+        });
+
+        t2.joinb();
+        ExitMsg m = t1.joinb();
+        if ((Integer)m.result != 100) {
+            fail("Expected 100");
+        }
+    }
+
+
+    
     /**
      * Task that calls a pausable lambda method. We test with repeated pauses, captured variables
      * and explicit arguments. 
