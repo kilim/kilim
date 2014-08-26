@@ -1005,13 +1005,15 @@ class VMType {
 
     static final int      TFLOAT    = 4;
 
+    static final int      TVOID     = 5;
+
     static final int[]    constInsn = { ACONST_NULL, ICONST_0, LCONST_0,
             DCONST_0, FCONST_0     };
 
     static final int[]    loadInsn  = { ALOAD, ILOAD, LLOAD, DLOAD, FLOAD };
 
     static final int[]    retInsn   = { ARETURN, IRETURN, LRETURN, DRETURN,
-            FRETURN                };
+            FRETURN, RETURN        };
 
 
     static final int[]    ldInsn    = { ALOAD_0, ILOAD_0, LLOAD_0, DLOAD_0,
@@ -1050,6 +1052,9 @@ class VMType {
             case 'L': // normal type
             case '[': // array
                 return TOBJECT;
+
+            case 'V': // void
+                return TVOID;
 
             default:
                 assert false : "Type " + type + " not handled";
