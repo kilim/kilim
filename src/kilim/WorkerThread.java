@@ -6,21 +6,18 @@
 
 package kilim;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
-public class WorkerThread extends Thread {
+public class WorkerThread extends Thread {	
     volatile Task        runningTask;
     /**
      * A list of tasks that prefer to run only on this thread. This is used by kilim.ReentrantLock and Task to ensure
      * that lock.release() is done on the same thread as lock.acquire()
      */
     RingQueue<Task>      tasks      = new RingQueue<Task>(10);
-    Scheduler            scheduler;
-    static AtomicInteger gid        = new AtomicInteger();
+    Scheduler            scheduler;    
     public int           numResumes = 0;
 
     WorkerThread(Scheduler ascheduler) {
-        super("KilimWorker-" + gid.incrementAndGet());
+        super(ascheduler.getNextName());
         scheduler = ascheduler;
     }
 
