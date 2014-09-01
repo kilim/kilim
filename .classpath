@@ -7,5 +7,8 @@
 	<classpathentry kind="lib" path="libs/junit.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
 	<classpathentry kind="lib" path="libs/asm-all-4.1.jar" sourcepath="/Users/s/sw/asm-4.1/src"/>
+	<classpathentry kind="lib" path="libs/slf4j-log4j12-1.6.6.jar"/>
+	<classpathentry kind="lib" path="libs/slf4j-api-1.6.6.jar"/>
+	<classpathentry kind="lib" path="libs/log4j-1.2.15.jar"/>
 	<classpathentry kind="output" path="classes"/>
 </classpath>

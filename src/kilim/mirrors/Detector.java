@@ -8,8 +8,6 @@ package kilim.mirrors;
 import static kilim.Constants.D_OBJECT;
 
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
 
 import kilim.Constants;
 import kilim.NotPausable;
@@ -190,16 +188,12 @@ public class Detector {
             if (cb.isAssignableFrom(ca))
                 return ob;
             if (ca.isInterface() && cb.isInterface()) {
-                return "java/lang/Object"; // This is what the java bytecode verifier does
+                return D_OBJECT; // This is what the java bytecode verifier does
             }
         } catch (ClassMirrorNotFoundException e) {
             // try to see if the below works...
         }
 
-        if (a.equals(b)) {
-        	return oa;
-        }
-        
         ArrayList<String> sca = getSuperClasses(a);
         ArrayList<String> scb = getSuperClasses(b);
         int lasta = sca.size() - 1;
@@ -212,12 +206,7 @@ public class Detector {
                 break;
             }
         } while (lasta >= 0 && lastb >= 0);
-        
-        if (sca.size() == lasta+1) {
-        	return "java/lang/Object";
-        }
-        
-        return sca.get(lasta + 1).replace('.', '/');
+        return toDesc(sca.get(lasta + 1));
     }
 
     final private static ArrayList<String> EMPTY_STRINGS = new ArrayList<String>(0);
@@ -240,10 +229,7 @@ public class Detector {
     }
 
     private static String toClassName(String s) {
-    	if (s.endsWith(";"))
-    		return s.replace('/', '.').substring(1, s.length() - 1);
-    	else
-    		return s.replace('/', '.');
+        return s.replace('/', '.').substring(1, s.length() - 1);
     }
 
     static String JAVA_LANG_OBJECT = "java.lang.Object";

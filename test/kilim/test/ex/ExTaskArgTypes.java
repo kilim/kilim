@@ -11,7 +11,6 @@ public class ExTaskArgTypes extends Task {
         String s = "foobar";
         long l = Long.MAX_VALUE;
         float f = 10.5f;
-        System.out.println("Going into check");
         check(f, l, s, d, i);
 //        Task.yield();
         assert i == 99 : "Int wrong";
@@ -19,7 +18,6 @@ public class ExTaskArgTypes extends Task {
         assert s == "foobar" : "String wrong";
         assert l == Long.MAX_VALUE : "Long wrong";
         assert f == 10.5f: "Float wrong";
-        System.out.println("Exiting");
         Task.exit("Done");
     }
  
@@ -27,9 +25,7 @@ public class ExTaskArgTypes extends Task {
         assert d == Math.PI;
         assert l == Long.MAX_VALUE;
         assert f == 10.5f;
-        System.out.println("Before yield");
         Task.yield();
-        System.out.println("After yield");
         assert i == 99;
         assert l == Long.MAX_VALUE;
     }

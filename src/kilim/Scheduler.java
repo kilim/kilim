@@ -8,8 +8,12 @@ package kilim;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import kilim.timerhelper.Timer;
+import kilim.timerhelper.TimerPriorityHeap;
 
 /**
  * This is a basic FIFO Executor. It maintains a list of runnable tasks and
@@ -19,126 +23,107 @@ import java.util.concurrent.atomic.AtomicInteger;
  * registered with some other live object.
  * 
  */
-public class Scheduler
-{
-	private static final String defaultName_ = "KilimWorker";
-	private static final int defaultQueueSize_ = 65536;
-	public static volatile Scheduler defaultScheduler = null;
-	public static int defaultNumberThreads;
-	private static final String dash_ = "-";
-	private static final ThreadLocal<Task> taskMgr_ = new ThreadLocal<Task>();
-	private static ConcurrentMap<String, AtomicInteger> nameGenerator_ = new ConcurrentHashMap<String, AtomicInteger>();
+public class Scheduler {
+    private static final String                         defaultName_      = "KilimWorker";
+    private static final int                            defaultQueueSize_ = 65536;
+    public static volatile Scheduler                    defaultScheduler  = null;
+    public static int                                   defaultNumberThreads;
+    private static final String                         dash_             = "-";
+    private static final ThreadLocal<Task>              taskMgr_          = new ThreadLocal<Task>();
+    private static ConcurrentMap<String, AtomicInteger> nameGenerator_    = new ConcurrentHashMap<String, AtomicInteger>();
 
-	private String name_;
-	private AffineThreadPool affinePool_;
-	protected AtomicBoolean shutdown = new AtomicBoolean(false);
+    private String                                      name_;
+    private AffineThreadPool                            affinePool_;
+    protected AtomicBoolean                             shutdown          = new AtomicBoolean(false);
 
-	static
-	{
-		String s = System.getProperty("kilim.Scheduler.numThreads");
-		if (s != null)
-		{
-			try
-			{
-				defaultNumberThreads = Integer.parseInt(s);
-			}
-			catch (Exception e)
-			{
-			}
-		}
-		if (defaultNumberThreads == 0)
-		{
-			defaultNumberThreads = Runtime.getRuntime().availableProcessors();
-		}
-	}
-	
-	protected static Task getCurrentTask()
-	{
-		return taskMgr_.get();
-	}
-	
-	protected static void setCurrentTask(Task t)
-	{
-		taskMgr_.set(t);
-	}
+    // Added for new Timer service
+    public final MailboxMPSC<Timer>                     timerQueue        = new MailboxMPSC<Timer>(Integer.getInteger("kilim.maxpendingtimers", 10000)); // set
+                                                                                                                                                         // system
+    public final TimerPriorityHeap                      timerHeap         = new TimerPriorityHeap();
 
-	protected Scheduler()
-	{
-	}
+    static {
+        String s = System.getProperty("kilim.Scheduler.numThreads");
+        if (s != null) {
+            try {
+                defaultNumberThreads = Integer.parseInt(s);
+            } catch (Exception e) {
+            }
+        }
+        if (defaultNumberThreads == 0) {
+            defaultNumberThreads = Runtime.getRuntime().availableProcessors();
+        }
+    }
 
-	public Scheduler(int numThreads)
-	{
-		this(numThreads, defaultQueueSize_, defaultName_);
-	}
+    protected static Task getCurrentTask() {
+        return taskMgr_.get();
+    }
 
-	public Scheduler(int numThreads, int queueSize, String name)
-	{
-		name_ = name;
-		nameGenerator_.putIfAbsent(name_, new AtomicInteger());
-		affinePool_ = new AffineThreadPool(numThreads, queueSize, name);
-	}
-	
-	public long getTaskCount()
-	{
-		return affinePool_.getTaskCount();
-	}
+    protected static void setCurrentTask(Task t) {
+        taskMgr_.set(t);
+    }
 
-	protected String getName()
-	{
-		return name_;
-	}
+    protected Scheduler() {
+    }
 
-	protected String getNextName()
-	{
-		AtomicInteger counter = nameGenerator_.get(name_);
-		return name_ + dash_ + counter.incrementAndGet();
-	}
+    public Scheduler(int numThreads) {
+        this(numThreads, defaultQueueSize_, defaultName_);
+    }
 
-	/**
-	 * Schedule a task to run. It is the task's job to ensure that it is not
-	 * scheduled when it is runnable.
-	 */
-	public void schedule(Task t)
-	{
-		affinePool_.publish(t);
-	}
+    public Scheduler(int numThreads, int queueSize, String name) {
+        name_ = name;
+        nameGenerator_.putIfAbsent(name_, new AtomicInteger());
+        affinePool_ = new AffineThreadPool(numThreads, queueSize, name, timerHeap, timerQueue);
+    }
 
-	public void schedule(int index, Task t)
-	{		
-		affinePool_.publish(index, t);
-	}
+    public long getTaskCount() {
+        return affinePool_.getTaskCount();
+    }
 
-	public void shutdown()
-	{
-		shutdown.set(true);
-		if (defaultScheduler == this)
-		{
-			defaultScheduler = null;
-		}
-		affinePool_.shutdown();
-	}
+    protected String getName() {
+        return name_;
+    }
 
-	public boolean isShutdown()
-	{
-		return shutdown.get();
-	}
-	
-	public String getSchedulerStats()
-	{
-	    return affinePool_.getQueueStats();
-	}
+    protected String getNextName() {
+        AtomicInteger counter = nameGenerator_.get(name_);
+        return name_ + dash_ + counter.incrementAndGet();
+    }
 
-	public synchronized static Scheduler getDefaultScheduler()
-	{
-		if (defaultScheduler == null)
-		{
-			defaultScheduler = new Scheduler(defaultNumberThreads);
-		}
-		return defaultScheduler;
-	}
+    /**
+     * Schedule a task to run. It is the task's job to ensure that it is not
+     * scheduled when it is runnable.
+     */
+    public void schedule(Task t) {
+        affinePool_.publish(t);
+    }
 
-	public static void setDefaultScheduler(Scheduler s)
-	{
-		defaultScheduler = s;
-	}
+    public void schedule(int index, Task t) {
+        affinePool_.publish(index, t);
+    }
+
+    public void shutdown() {
+        shutdown.set(true);
+        if (defaultScheduler == this) {
+            defaultScheduler = null;
+        }
+        affinePool_.shutdown();
+    }
+
+    public boolean isShutdown() {
+        return shutdown.get();
+    }
+
+    public String getSchedulerStats() {
+        return affinePool_.getQueueStats();
+    }
+
+    public synchronized static Scheduler getDefaultScheduler() {
+        if (defaultScheduler == null) {
+            defaultScheduler = new Scheduler(defaultNumberThreads);
+        }
+        return defaultScheduler;
+    }
+
+    public static void setDefaultScheduler(Scheduler s) {
+        defaultScheduler = s;
+    }
 }

@@ -41,7 +41,7 @@ public class RuntimeClassMirrors implements Mirrors {
             }
             return ret;
         } catch (ClassNotFoundException e) {
-            throw new ClassMirrorNotFoundException(className, e);
+            throw new ClassMirrorNotFoundException(e);
         }
     }
 

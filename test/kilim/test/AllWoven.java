@@ -12,6 +12,7 @@ import junit.framework.TestSuite;
 public class AllWoven extends TestSuite {
     public static Test suite() {
         TestSuite ret = new AllWoven();
+        ret.addTestSuite(TestPrefThread.class);
         ret.addTestSuite(TestYield.class);
         ret.addTestSuite(TestInterface.class);
         ret.addTestSuite(TestYieldExceptions.class);
@@ -19,8 +20,6 @@ public class AllWoven extends TestSuite {
         ret.addTestSuite(TestMailbox.class);
         ret.addTestSuite(TestLock.class);
         ret.addTestSuite(TestGenerics.class);
-        ret.addTestSuite(TestIO.class);
-        ret.addTestSuite(TestHTTP.class);
         return ret;
     }
 }

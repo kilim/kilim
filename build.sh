@@ -1,4 +1,4 @@
-export CLASSPATH=./classes:./testclasses:./libs/asm-all-4.1.jar:./libs/junit.jar:$CLASSPATH 
+export CLASSPATH=./classes:./testclasses:./libs/asm-all-4.1.jar:./libs/slf4j-api-1.6.6.jar:./libs/slf4j-log4j12-1.6.6.jar:./libs/log4j-1.2.15.jar:./libs/junit.jar:$CLASSPATH 
 
 echo making dir:  ./classes
 rm -rf ./classes
@@ -7,7 +7,7 @@ mkdir ./classes
 mkdir ./testclasses
 
 echo Compiling java source ===========================================
-javac -Xlint:unchecked -g -d ./classes `find . -name "*.java" `
+javac -Xlint:unchecked -XDignore.symbol.file -g -d ./classes `find . -name "*.java" `
 
 echo Compiling .j files for testing ==================================
 java -ea kilim.tools.Asm -nf -d ./classes `find . -name "*.j"`
