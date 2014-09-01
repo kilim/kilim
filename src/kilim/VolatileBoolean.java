@@ -3,20 +3,20 @@ package kilim;
 import static kilim.UnsafeAccess.UNSAFE;
 
 abstract class VolatileBooleanPrePad {
-  //  long p0, p1, p2, p3, p4, p5, p6;
+    // long p0, p1, p2, p3, p4, p5, p6;
 }
 
 abstract class VolatileBooleanValue extends VolatileBooleanPrePad {
     protected volatile int value;
 }
 
+@SuppressWarnings("restriction")
 public final class VolatileBoolean extends VolatileBooleanValue {
-  //  long p10, p11, p12, p13, p14, p15, p16;
+    // long p10, p11, p12, p13, p14, p15, p16;
     private final static long VALUE_OFFSET;
     static {
         try {
-            VALUE_OFFSET = UNSAFE.objectFieldOffset(VolatileBooleanValue.class
-                    .getDeclaredField("value"));
+            VALUE_OFFSET = UNSAFE.objectFieldOffset(VolatileBooleanValue.class.getDeclaredField("value"));
         } catch (NoSuchFieldException e) {
             throw new RuntimeException(e);
         }
@@ -42,6 +42,7 @@ public final class VolatileBoolean extends VolatileBooleanValue {
     public boolean get() {
         return value != 0;
     }
+
     public final boolean compareAndSet(boolean expect, boolean update) {
         int e = expect ? 1 : 0;
         int u = update ? 1 : 0;

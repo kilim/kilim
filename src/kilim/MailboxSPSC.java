@@ -25,32 +25,32 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class MailboxSPSC<T> implements PauseReason, EventPublisher {
     // TODO. Give mbox a config name and id and make monitorable
-    T[] msgs;
+    T[]                                    msgs;
 
     VolatileReferenceCell<EventSubscriber> sink = new VolatileReferenceCell<EventSubscriber>();
-    Deque<EventSubscriber> srcs = new ConcurrentLinkedDeque<EventSubscriber>();
+    Deque<EventSubscriber>                 srcs = new ConcurrentLinkedDeque<EventSubscriber>();
 
-    public final VolatileLongCell tail = new VolatileLongCell(0L);
-    public final VolatileLongCell head = new VolatileLongCell(0L);
+    public final VolatileLongCell          tail = new VolatileLongCell(0L);
+    public final VolatileLongCell          head = new VolatileLongCell(0L);
 
     public static class PaddedLong {
         public long value = 0;
     }
 
-    private final PaddedLong tailCache = new PaddedLong();
-    private final PaddedLong headCache = new PaddedLong();
-    private final int mask;
+    private final PaddedLong  tailCache        = new PaddedLong();
+    private final PaddedLong  headCache        = new PaddedLong();
+    private final int         mask;
 
     // FIX: I don't like this event design. The only good thing is that
     // we don't create new event objects every time we signal a client
     // (subscriber) that's blocked on this mailbox.
-    public static final int SPACE_AVAILABLE = 1;
-    public static final int MSG_AVAILABLE = 2;
-    public static final int TIMED_OUT = 3;
+    public static final int   SPACE_AVAILABLE  = 1;
+    public static final int   MSG_AVAILABLE    = 2;
+    public static final int   TIMED_OUT        = 3;
 
-    public static final Event spaceAvailble = new Event(MSG_AVAILABLE);
+    public static final Event spaceAvailble    = new Event(MSG_AVAILABLE);
     public static final Event messageAvailable = new Event(SPACE_AVAILABLE);
-    public static final Event timedOut = new Event(TIMED_OUT);
+    public static final Event timedOut         = new Event(TIMED_OUT);
 
     // DEBUG steuuff
     // To do: move into monitorable stat object
@@ -82,10 +82,10 @@ public class MailboxSPSC<T> implements PauseReason, EventPublisher {
      * Non-blocking, nonpausing fill.
      * 
      * @param eo
-     *            . If non-null, registers this observer and calls it with a
-     *            MessageAvailable event when a put() is done.
+     * . If non-null, registers this observer and calls it with a
+     * MessageAvailable event when a put() is done.
      * @return buffered true if there's one, or up to burst size messages else
-     *         false
+     * false
      */
     public boolean fill(EventSubscriber eo, T[] msg) {
         int n = msg.length;
@@ -135,8 +135,8 @@ public class MailboxSPSC<T> implements PauseReason, EventPublisher {
      * Non-blocking, nonpausing get.
      * 
      * @param eo
-     *            . If non-null, registers this observer and calls it with a
-     *            MessageAvailable event when a put() is done.
+     * . If non-null, registers this observer and calls it with a
+     * MessageAvailable event when a put() is done.
      * @return buffered message if there's one, or null
      */
     public T get(EventSubscriber eo) {
@@ -373,7 +373,7 @@ public class MailboxSPSC<T> implements PauseReason, EventPublisher {
      * @throws Pausable
      */
     public boolean untilHasMessages(int num, long timeoutMillis)
-            throws Pausable {
+                                                                throws Pausable {
         final Task t = Task.getCurrentTask();
         final long end = System.currentTimeMillis() + timeoutMillis;
 
@@ -443,8 +443,7 @@ public class MailboxSPSC<T> implements PauseReason, EventPublisher {
                 }
             }
             Task t = Task.getCurrentTask();
-            EmptySet_MsgAvListenerSpSc pauseReason = new EmptySet_MsgAvListenerSpSc(
-                    t, mboxes);
+            EmptySet_MsgAvListenerSpSc pauseReason = new EmptySet_MsgAvListenerSpSc(t, mboxes);
             for (int i = 0; i < mboxes.length; i++) {
                 mboxes[i].addMsgAvailableListener(pauseReason);
             }
@@ -466,9 +465,8 @@ public class MailboxSPSC<T> implements PauseReason, EventPublisher {
     public void addMsgAvailableListener(EventSubscriber msgSub) {
         EventSubscriber sink1 = sink.get();
         if (sink1 != null && sink1 != msgSub) {
-            throw new AssertionError(
-                    "Error: A mailbox can not be shared by two consumers.  New = "
-                            + msgSub + ", Old = " + sink1);
+            throw new AssertionError("Error: A mailbox can not be shared by two consumers.  New = "
+                    + msgSub + ", Old = " + sink1);
         }
         sink.set(msgSub);
     }
@@ -596,7 +594,7 @@ public class MailboxSPSC<T> implements PauseReason, EventPublisher {
      * retrieve a msg, and block the Java thread for the time given.
      * 
      * @param millis
-     *            . max wait time
+     * . max wait time
      * @return null if timed out.
      */
     public T getb(final long timeoutMillis) {
@@ -646,7 +644,7 @@ public class MailboxSPSC<T> implements PauseReason, EventPublisher {
 }
 
 class EmptySet_MsgAvListenerSpSc implements PauseReason, EventSubscriber {
-    final Task task;
+    final Task             task;
     final MailboxSPSC<?>[] mbxs;
 
     EmptySet_MsgAvListenerSpSc(Task t, MailboxSPSC<?>[] mbs) {

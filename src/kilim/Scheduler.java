@@ -24,24 +24,22 @@ import kilim.timerhelper.TimerPriorityHeap;
  * 
  */
 public class Scheduler {
-    private static final String defaultName_ = "KilimWorker";
-    private static final int defaultQueueSize_ = 65536;
-    public static volatile Scheduler defaultScheduler = null;
-    public static int defaultNumberThreads;
-    private static final String dash_ = "-";
-    private static final ThreadLocal<Task> taskMgr_ = new ThreadLocal<Task>();
-    private static ConcurrentMap<String, AtomicInteger> nameGenerator_ = new ConcurrentHashMap<String, AtomicInteger>();
+    private static final String                         defaultName_      = "KilimWorker";
+    private static final int                            defaultQueueSize_ = 65536;
+    public static volatile Scheduler                    defaultScheduler  = null;
+    public static int                                   defaultNumberThreads;
+    private static final String                         dash_             = "-";
+    private static final ThreadLocal<Task>              taskMgr_          = new ThreadLocal<Task>();
+    private static ConcurrentMap<String, AtomicInteger> nameGenerator_    = new ConcurrentHashMap<String, AtomicInteger>();
 
-    private String name_;
-    private AffineThreadPool affinePool_;
-    protected AtomicBoolean shutdown = new AtomicBoolean(false);
+    private String                                      name_;
+    private AffineThreadPool                            affinePool_;
+    protected AtomicBoolean                             shutdown          = new AtomicBoolean(false);
 
     // Added for new Timer service
-    public final MailboxMPSC<Timer> timerQueue = new MailboxMPSC<Timer>(
-            Integer.getInteger("kilim.maxpendingtimers",
-                    10000)); // set size = number of possible timer task in
-                               // system
-    public final TimerPriorityHeap timerHeap = new TimerPriorityHeap();
+    public final MailboxMPSC<Timer>                     timerQueue        = new MailboxMPSC<Timer>(Integer.getInteger("kilim.maxpendingtimers", 10000)); // set
+                                                                                                                                                         // system
+    public final TimerPriorityHeap                      timerHeap         = new TimerPriorityHeap();
 
     static {
         String s = System.getProperty("kilim.Scheduler.numThreads");
@@ -74,8 +72,7 @@ public class Scheduler {
     public Scheduler(int numThreads, int queueSize, String name) {
         name_ = name;
         nameGenerator_.putIfAbsent(name_, new AtomicInteger());
-        affinePool_ = new AffineThreadPool(numThreads, queueSize, name,
-                timerHeap, timerQueue);
+        affinePool_ = new AffineThreadPool(numThreads, queueSize, name, timerHeap, timerQueue);
     }
 
     public long getTaskCount() {

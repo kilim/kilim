@@ -16,17 +16,17 @@ import java.util.concurrent.ConcurrentLinkedDeque;
  */
 
 public class Cell<T> implements PauseReason, EventPublisher {
-    Deque<EventSubscriber> srcs = new ConcurrentLinkedDeque<EventSubscriber>();
-    public static final int SPACE_AVAILABLE = 1;
-    public static final int MSG_AVAILABLE = 2;
-    public static final int TIMED_OUT = 3;
-    public static final Event spaceAvailble = new Event(MSG_AVAILABLE);
-    public static final Event messageAvailable = new Event(SPACE_AVAILABLE);
-    public static final Event timedOut = new Event(TIMED_OUT);
+    Deque<EventSubscriber>                 srcs             = new ConcurrentLinkedDeque<EventSubscriber>();
+    public static final int                SPACE_AVAILABLE  = 1;
+    public static final int                MSG_AVAILABLE    = 2;
+    public static final int                TIMED_OUT        = 3;
+    public static final Event              spaceAvailble    = new Event(MSG_AVAILABLE);
+    public static final Event              messageAvailable = new Event(SPACE_AVAILABLE);
+    public static final Event              timedOut         = new Event(TIMED_OUT);
     // private static final String defaultName_ = "DEFAULT-CELL";
 
-    VolatileReferenceCell<EventSubscriber> sink = new VolatileReferenceCell<EventSubscriber>();
-    VolatileReferenceCell<T> message = new VolatileReferenceCell<T>();
+    VolatileReferenceCell<EventSubscriber> sink             = new VolatileReferenceCell<EventSubscriber>();
+    VolatileReferenceCell<T>               message          = new VolatileReferenceCell<T>();
 
     // DEBUG stuff
     // To do: move into monitorable stat object
@@ -41,9 +41,8 @@ public class Cell<T> implements PauseReason, EventPublisher {
      * Non-blocking, nonpausing get.
      * 
      * @param eo
-     *            . If non-null (and if there is no message), registers this
-     *            observer. The observer is notified with a MessageAvailable
-     *            event when a put() is done.
+     * . If non-null (and if there is no message), registers this observer. The
+     * observer is notified with a MessageAvailable event when a put() is done.
      * 
      * @return buffered message if there's one, or null
      */
@@ -69,8 +68,8 @@ public class Cell<T> implements PauseReason, EventPublisher {
      * Non-blocking, nonpausing put.
      * 
      * @param eo
-     *            . If non-null, registers this observer and calls it with an
-     *            SpaceAvailable event when there's space.
+     * . If non-null, registers this observer and calls it with an
+     * SpaceAvailable event when there's space.
      * @return buffered message if there's one, or null
      */
     public boolean put(T amsg, EventSubscriber eo) {
@@ -137,13 +136,9 @@ public class Cell<T> implements PauseReason, EventPublisher {
             if (t.timer_new.onQueue.compareAndSet(false, true)) {
                 if (!t.scheduler.timerQueue.putnb(t.timer_new)) {
                     try {
-                        throw new Exception(
-                                "Maximum pending timers limit:"
-                                        + Integer
-                                                .getInteger(
-                                                        "kilim.maxpendingtimers",
-                                                        10000)
-                                        + " exceeded, set kilim.maxpendingtimers property");
+                        throw new Exception("Maximum pending timers limit:"
+                                + Integer.getInteger("kilim.maxpendingtimers", 10000)
+                                + " exceeded, set kilim.maxpendingtimers property");
                     } catch (Exception e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
@@ -172,9 +167,8 @@ public class Cell<T> implements PauseReason, EventPublisher {
 
     public void addMsgAvailableListener(EventSubscriber msgSub) {
         if (sink.get() != null && sink.get() != msgSub) {
-            throw new AssertionError(
-                    "Error: A mailbox can not be shared by two consumers.  New = "
-                            + msgSub + ", Old = " + sink);
+            throw new AssertionError("Error: A mailbox can not be shared by two consumers.  New = "
+                    + msgSub + ", Old = " + sink);
         }
         sink.compareAndSet(null, msgSub);
     }
@@ -204,13 +198,9 @@ public class Cell<T> implements PauseReason, EventPublisher {
             if (t.timer_new.onQueue.compareAndSet(false, true)) {
                 if (!t.scheduler.timerQueue.putnb(t.timer_new)) {
                     try {
-                        throw new Exception(
-                                "Maximum pending timers limit:"
-                                        + Integer
-                                                .getInteger(
-                                                        "kilim.maxpendingtimers",
-                                                        10000)
-                                        + " exceeded, set kilim.maxpendingtimers property");
+                        throw new Exception("Maximum pending timers limit:"
+                                + Integer.getInteger("kilim.maxpendingtimers", 10000)
+                                + " exceeded, set kilim.maxpendingtimers property");
                     } catch (Exception e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
@@ -291,7 +281,7 @@ public class Cell<T> implements PauseReason, EventPublisher {
      * retrieve a msg, and block the Java thread for the time given.
      * 
      * @param millis
-     *            . max wait time
+     * . max wait time
      * @return null if timed out.
      */
     public T getb(final long timeoutMillis) {

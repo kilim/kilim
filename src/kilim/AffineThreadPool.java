@@ -16,8 +16,8 @@ import kilim.timerhelper.Timer;
 import kilim.timerhelper.TimerPriorityHeap;
 
 public class AffineThreadPool {
-    private static final int MAX_QUEUE_SIZE = 4096;
-    private static final String colon_ = ":";
+    private static final int    MAX_QUEUE_SIZE = 4096;
+    private static final String colon_         = ":";
 
     protected static int getCurrentThreadId() {
         String name = Thread.currentThread().getName();
@@ -25,13 +25,13 @@ public class AffineThreadPool {
         return Integer.parseInt(name.substring(sIndex + 1, name.length()));
     }
 
-    private int nThreads_;
-    private String poolName_;
-    private AtomicInteger currentIndex_ = new AtomicInteger(0);
-    private List<BlockingQueue<Runnable>> queues_ = new ArrayList<BlockingQueue<Runnable>>();
-    private List<KilimStats> queueStats_ = new ArrayList<KilimStats>();
+    private int                           nThreads_;
+    private String                        poolName_;
+    private AtomicInteger                 currentIndex_    = new AtomicInteger(0);
+    private List<BlockingQueue<Runnable>> queues_          = new ArrayList<BlockingQueue<Runnable>>();
+    private List<KilimStats>              queueStats_      = new ArrayList<KilimStats>();
     private List<KilimThreadPoolExecutor> executorService_ = new ArrayList<KilimThreadPoolExecutor>();
-    ScheduledExecutorService timer;
+    ScheduledExecutorService              timer;
 
     public AffineThreadPool(int nThreads, String name,
             TimerPriorityHeap timerHeap, MailboxMPSC<Timer> timerQueue) {
@@ -45,13 +45,10 @@ public class AffineThreadPool {
         timer = Executors.newSingleThreadScheduledExecutor();
         for (int i = 0; i < nThreads; ++i) {
             String threadName = name + colon_ + i;
-            BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(
-                    queueSize);
+            BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(queueSize);
             queues_.add(queue);
 
-            KilimThreadPoolExecutor executorService = new KilimThreadPoolExecutor(
-                    i, 1, queue, new ThreadFactoryImpl(threadName), timerHeap,
-                    timerQueue, timer);
+            KilimThreadPoolExecutor executorService = new KilimThreadPoolExecutor(i, 1, queue, new ThreadFactoryImpl(threadName), timerHeap, timerQueue, timer);
             executorService_.add(executorService);
 
             queueStats_.add(new KilimStats(12, "num"));
@@ -91,8 +88,8 @@ public class AffineThreadPool {
     public String getQueueStats() {
         String statsStr = "";
         for (int i = 0; i < queueStats_.size(); ++i) {
-            statsStr += queueStats_.get(i).dumpStatistics(
-                    poolName_ + ":QUEUE-SZ-" + i);
+            statsStr += queueStats_.get(i).dumpStatistics(poolName_
+                    + ":QUEUE-SZ-" + i);
         }
         return statsStr;
     }
@@ -105,19 +102,18 @@ public class AffineThreadPool {
 }
 
 class KilimThreadPoolExecutor extends ThreadPoolExecutor {
-    TimerPriorityHeap timerHeap;
-    MailboxMPSC<Timer> timerQueue;
-    int id = 0;
-    BlockingQueue<Runnable> queue;
+    TimerPriorityHeap        timerHeap;
+    MailboxMPSC<Timer>       timerQueue;
+    int                      id  = 0;
+    BlockingQueue<Runnable>  queue;
     ScheduledExecutorService timer;
-    Timer[] buf = new Timer[10];
+    Timer[]                  buf = new Timer[10];
 
     KilimThreadPoolExecutor(int id, int nThreads,
             BlockingQueue<Runnable> queue, ThreadFactory tFactory,
             TimerPriorityHeap timerHeap, MailboxMPSC<Timer> timerQueue,
             ScheduledExecutorService timer) {
-        super(nThreads, nThreads, Integer.MAX_VALUE, TimeUnit.MILLISECONDS,
-                queue, tFactory);
+        super(nThreads, nThreads, Integer.MAX_VALUE, TimeUnit.MILLISECONDS, queue, tFactory);
         this.id = id;
         this.timerHeap = timerHeap;
         this.queue = queue;

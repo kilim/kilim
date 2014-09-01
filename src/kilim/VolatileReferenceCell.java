@@ -6,15 +6,14 @@ abstract class VolatileReferenceCellValue<V> extends VolatileLongCellPrePad {
     protected volatile V value;
 }
 
+@SuppressWarnings("restriction")
 public class VolatileReferenceCell<V> extends VolatileReferenceCellValue<V> {
-    long p10, p11, p12, p13, p14, p15, p16;
+    long                      p10, p11, p12, p13, p14, p15, p16;
     private static final long valueOffset;
 
     static {
         try {
-            valueOffset = UNSAFE
-                    .objectFieldOffset(VolatileReferenceCellValue.class
-                            .getDeclaredField("value"));
+            valueOffset = UNSAFE.objectFieldOffset(VolatileReferenceCellValue.class.getDeclaredField("value"));
         } catch (Exception ex) {
             throw new Error(ex);
         }

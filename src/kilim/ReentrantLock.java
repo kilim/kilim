@@ -4,9 +4,11 @@ import java.util.concurrent.TimeUnit;
 
 public class ReentrantLock extends java.util.concurrent.locks.ReentrantLock {
     private static final long serialVersionUID = 1L;
+
     public ReentrantLock() {
         super(false);
     }
+
     public ReentrantLock(boolean fair) {
         super(fair);
     }
@@ -15,7 +17,8 @@ public class ReentrantLock extends java.util.concurrent.locks.ReentrantLock {
         return super.getOwner();
     }
 
-    Thread locker = null; ///***************************
+    Thread locker = null; // /***************************
+
     @Override
     public void lock() {
         super.lock();
@@ -23,12 +26,12 @@ public class ReentrantLock extends java.util.concurrent.locks.ReentrantLock {
         locker = t;
 
         if (t != null) {
-        	Task tsk = Scheduler.getCurrentTask();        	
-            if (tsk != null)            
-            	tsk.pinToThread();            	            
+            Task tsk = Scheduler.getCurrentTask();
+            if (tsk != null)
+                tsk.pinToThread();
         }
     }
-    
+
     @Override
     public boolean tryLock() {
         // TODO Auto-generated method stub
@@ -36,41 +39,42 @@ public class ReentrantLock extends java.util.concurrent.locks.ReentrantLock {
         Thread t = Thread.currentThread();
         if (ret && (t != null)) {
             locker = t;
-            Task tsk = Scheduler.getCurrentTask();        	
+            Task tsk = Scheduler.getCurrentTask();
             if (tsk != null)
-            	tsk.pinToThread();
+                tsk.pinToThread();
         }
         return ret;
     }
-    
+
     @Override
     public boolean tryLock(long timeout, TimeUnit unit)
-            throws InterruptedException {
+                                                       throws InterruptedException {
         boolean ret = super.tryLock(timeout, unit);
         Thread t = Thread.currentThread();
         if (ret && (t != null)) {
             locker = t;
-            Task tsk = Scheduler.getCurrentTask();        	
+            Task tsk = Scheduler.getCurrentTask();
             if (tsk != null)
-            	tsk.pinToThread();
+                tsk.pinToThread();
         }
         return ret;
     }
-    
+
     @Override
     public void unlock() {
         try {
-        super.unlock();
+            super.unlock();
         } catch (IllegalMonitorStateException ims) {
-            System.err.println("Locking thread: " + locker.getName() + ", unlocking thread: " + Thread.currentThread().getName());
+            System.err.println("Locking thread: " + locker.getName()
+                    + ", unlocking thread: " + Thread.currentThread().getName());
             ims.printStackTrace();
             System.exit(1);
         }
         Thread t = Thread.currentThread();
-        if (t != null) {        	
-        	Task tsk = Scheduler.getCurrentTask();        	        	
-        	if (tsk != null)
-            	tsk.unpinFromThread();
+        if (t != null) {
+            Task tsk = Scheduler.getCurrentTask();
+            if (tsk != null)
+                tsk.unpinFromThread();
         }
     }
 }

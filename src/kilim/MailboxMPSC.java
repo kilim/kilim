@@ -26,20 +26,20 @@ import java.util.concurrent.locks.LockSupport;
 
 public class MailboxMPSC<T> implements PauseReason, EventPublisher {
     // TODO. Give mbox a config name and id and make monitorable
-    MPSCQueue<T> msgs;
-    VolatileReferenceCell<EventSubscriber> sink = new VolatileReferenceCell<EventSubscriber>();
-    Deque<EventSubscriber> srcs = new ConcurrentLinkedDeque<EventSubscriber>();
+    MPSCQueue<T>                           msgs;
+    VolatileReferenceCell<EventSubscriber> sink             = new VolatileReferenceCell<EventSubscriber>();
+    Deque<EventSubscriber>                 srcs             = new ConcurrentLinkedDeque<EventSubscriber>();
 
     // FIX: I don't like this event design. The only good thing is that
     // we don't create new event objects every time we signal a client
     // (subscriber) that's blocked on this mailbox.
-    public static final int SPACE_AVAILABLE = 1;
-    public static final int MSG_AVAILABLE = 2;
-    public static final int TIMED_OUT = 3;
+    public static final int                SPACE_AVAILABLE  = 1;
+    public static final int                MSG_AVAILABLE    = 2;
+    public static final int                TIMED_OUT        = 3;
 
-    public static final Event spaceAvailble = new Event(MSG_AVAILABLE);
-    public static final Event messageAvailable = new Event(SPACE_AVAILABLE);
-    public static final Event timedOut = new Event(TIMED_OUT);
+    public static final Event              spaceAvailble    = new Event(MSG_AVAILABLE);
+    public static final Event              messageAvailable = new Event(SPACE_AVAILABLE);
+    public static final Event              timedOut         = new Event(TIMED_OUT);
 
     // DEBUG steuuff
     // To do: move into monitorable stat object
@@ -64,8 +64,8 @@ public class MailboxMPSC<T> implements PauseReason, EventPublisher {
      * Non-blocking, nonpausing get.
      * 
      * @param eo
-     *            . If non-null, registers this observer and calls it with a
-     *            MessageAvailable event when a put() is done.
+     * . If non-null, registers this observer and calls it with a
+     * MessageAvailable event when a put() is done.
      * @return buffered message if there's one, or null
      */
 
@@ -96,8 +96,8 @@ public class MailboxMPSC<T> implements PauseReason, EventPublisher {
      * Non-blocking, nonpausing put.
      * 
      * @param eo
-     *            . If non-null, registers this observer and calls it with an
-     *            SpaceAvailable event when there's space.
+     * . If non-null, registers this observer and calls it with an
+     * SpaceAvailable event when there's space.
      * @return buffered message if there's one, or null
      * @see #putnb(Object)
      * @see #putb(Object)
@@ -253,7 +253,7 @@ public class MailboxMPSC<T> implements PauseReason, EventPublisher {
      * @throws Pausable
      */
     public boolean untilHasMessages(int num, long timeoutMillis)
-            throws Pausable {
+                                                                throws Pausable {
         final Task t = Task.getCurrentTask();
         final long end = System.currentTimeMillis() + timeoutMillis;
 
@@ -323,8 +323,7 @@ public class MailboxMPSC<T> implements PauseReason, EventPublisher {
                 }
             }
             Task t = Task.getCurrentTask();
-            EmptySet_MsgAvListenerMpSc pauseReason = new EmptySet_MsgAvListenerMpSc(
-                    t, mboxes);
+            EmptySet_MsgAvListenerMpSc pauseReason = new EmptySet_MsgAvListenerMpSc(t, mboxes);
             for (int i = 0; i < mboxes.length; i++) {
                 mboxes[i].addMsgAvailableListener(pauseReason);
             }
@@ -346,9 +345,8 @@ public class MailboxMPSC<T> implements PauseReason, EventPublisher {
     public synchronized void addMsgAvailableListener(EventSubscriber msgSub) {
         EventSubscriber sink1 = sink.get();
         if (sink1 != null && sink1 != msgSub) {
-            throw new AssertionError(
-                    "Error: A mailbox can not be shared by two consumers.  New = "
-                            + msgSub + ", Old = " + sink1);
+            throw new AssertionError("Error: A mailbox can not be shared by two consumers.  New = "
+                    + msgSub + ", Old = " + sink1);
         }
         sink.set(msgSub);
     }
@@ -477,7 +475,7 @@ public class MailboxMPSC<T> implements PauseReason, EventPublisher {
      * retrieve a msg, and block the Java thread for the time given.
      * 
      * @param millis
-     *            . max wait time
+     * . max wait time
      * @return null if timed out.
      */
     public T getb(final long timeoutMillis) {
@@ -520,7 +518,7 @@ public class MailboxMPSC<T> implements PauseReason, EventPublisher {
 }
 
 class EmptySet_MsgAvListenerMpSc implements PauseReason, EventSubscriber {
-    final Task task;
+    final Task             task;
     final MailboxMPSC<?>[] mbxs;
 
     EmptySet_MsgAvListenerMpSc(Task t, MailboxMPSC<?>[] mbs) {
@@ -552,22 +550,28 @@ class EmptySet_MsgAvListenerMpSc implements PauseReason, EventSubscriber {
             mb.removeMsgAvailableListener(this);
         }
     }
-  
+
 }
 
-//Referred Nitasan work
+// Referred Nitasan work
 abstract class MPSCQueueL0Pad {
     public long p00, p01, p02, p03, p04, p05, p06, p07;
     public long p30, p31, p32, p33, p34, p35, p36, p37;
 }
 
 abstract class MPSCQueueColdFields<E> extends MPSCQueueL0Pad {
-    protected static final int BUFFER_PAD = 64; //to pad queue ends
-    protected static final int SPARSE_SHIFT = Integer.getInteger(
-            "sparse.shift", 0);  //pad each element of queue
-    protected final int capacity;
-    protected final long mask;
-    protected final E[] buffer;
+    protected static final int BUFFER_PAD   = 64;                                   // to
+                                                                                     // pad
+                                                                                     // queue
+                                                                                     // ends
+    protected static final int SPARSE_SHIFT = Integer.getInteger("sparse.shift", 0); // pad
+                                                                                     // each
+                                                                                     // element
+                                                                                     // of
+                                                                                     // queue
+    protected final int        capacity;
+    protected final long       mask;
+    protected final E[]        buffer;
 
     @SuppressWarnings("unchecked")
     public MPSCQueueColdFields(int capacity) {
@@ -581,13 +585,16 @@ abstract class MPSCQueueColdFields<E> extends MPSCQueueL0Pad {
         buffer = (E[]) new Object[(this.capacity << SPARSE_SHIFT) + BUFFER_PAD
                 * 2];
     }
+
     public static int findNextPositivePowerOfTwo(final int value) {
         return 1 << (32 - Integer.numberOfLeadingZeros(value - 1));
     }
-    public static boolean isPowerOf2(final int value){
-        return (value & (value-1)) == 0;
+
+    public static boolean isPowerOf2(final int value) {
+        return (value & (value - 1)) == 0;
     }
 }
+
 abstract class MPSCQueueL1Pad<E> extends MPSCQueueColdFields<E> {
     public long p10, p11, p12, p13, p14, p15, p16;
     public long p30, p31, p32, p33, p34, p35, p36, p37;
@@ -626,17 +633,12 @@ abstract class MPSCQueueL3Pad<E> extends MPSCQueueHeadField<E> {
     protected final static long TAIL_OFFSET;
     protected final static long HEAD_OFFSET;
     protected static final long ARRAY_BASE;
-    protected static final int ELEMENT_SHIFT;
+    protected static final int  ELEMENT_SHIFT;
     static {
         try {
-            TAIL_OFFSET = UnsafeAccess.UNSAFE
-                    .objectFieldOffset(MPSCQueueTailField.class
-                            .getDeclaredField("tail"));
-            HEAD_OFFSET = UnsafeAccess.UNSAFE
-                    .objectFieldOffset(MPSCQueueHeadField.class
-                            .getDeclaredField("head"));
-            final int scale = UnsafeAccess.UNSAFE
-                    .arrayIndexScale(Object[].class);
+            TAIL_OFFSET = UnsafeAccess.UNSAFE.objectFieldOffset(MPSCQueueTailField.class.getDeclaredField("tail"));
+            HEAD_OFFSET = UnsafeAccess.UNSAFE.objectFieldOffset(MPSCQueueHeadField.class.getDeclaredField("head"));
+            final int scale = UnsafeAccess.UNSAFE.arrayIndexScale(Object[].class);
             if (4 == scale) {
                 ELEMENT_SHIFT = 2 + SPARSE_SHIFT;
             } else if (8 == scale) {
@@ -651,8 +653,8 @@ abstract class MPSCQueueL3Pad<E> extends MPSCQueueHeadField<E> {
             throw new RuntimeException(e);
         }
     }
-    public long p40, p41, p42, p43, p44, p45, p46;
-    public long p30, p31, p32, p33, p34, p35, p36, p37;
+    public long                 p40, p41, p42, p43, p44, p45, p46;
+    public long                 p30, p31, p32, p33, p34, p35, p36, p37;
 
     public MPSCQueueL3Pad(int capacity) {
         super(capacity);
@@ -660,8 +662,12 @@ abstract class MPSCQueueL3Pad<E> extends MPSCQueueHeadField<E> {
 }
 
 class MPSCQueue<E> extends MPSCQueueL3Pad<E> {
-    private static final BackOffStrategy CAS_BACKOFF = BackOffStrategy
-            .getStrategy("cas.backoff", BackOffStrategy.SPIN); //set property to change backoff strategy
+    private static final BackOffStrategy CAS_BACKOFF = BackOffStrategy.getStrategy("cas.backoff", BackOffStrategy.SPIN); // set
+                                                                                                                         // property
+                                                                                                                         // to
+                                                                                                                         // change
+                                                                                                                         // backoff
+                                                                                                                         // strategy
 
     public MPSCQueue(final int capacity) {
         super(capacity);
@@ -680,8 +686,7 @@ class MPSCQueue<E> extends MPSCQueueL3Pad<E> {
     }
 
     private boolean casTail(long expect, long newValue) {
-        return UnsafeAccess.UNSAFE.compareAndSwapLong(this, TAIL_OFFSET,
-                expect, newValue);
+        return UnsafeAccess.UNSAFE.compareAndSwapLong(this, TAIL_OFFSET, expect, newValue);
     }
 
     public boolean add(final E e) {
@@ -715,8 +720,7 @@ class MPSCQueue<E> extends MPSCQueueL3Pad<E> {
             }
         }
 
-        UnsafeAccess.UNSAFE.putOrderedObject(buffer,
-                elementOffsetInBuffer(currentTail), e);
+        UnsafeAccess.UNSAFE.putOrderedObject(buffer, elementOffsetInBuffer(currentTail), e);
         return true;
     }
 
@@ -724,8 +728,7 @@ class MPSCQueue<E> extends MPSCQueueL3Pad<E> {
         long currentTail;
         currentTail = getTail();
         @SuppressWarnings("unchecked")
-        final E e = (E) UnsafeAccess.UNSAFE.getObjectVolatile(buffer,
-                elementOffsetInBuffer(currentTail));
+        final E e = (E) UnsafeAccess.UNSAFE.getObjectVolatile(buffer, elementOffsetInBuffer(currentTail));
         if (e == null) {
             return true;
         } else {
@@ -771,8 +774,7 @@ class MPSCQueue<E> extends MPSCQueueL3Pad<E> {
 
     @SuppressWarnings("unchecked")
     private E getElement(long index) {
-        return (E) kilim.UnsafeAccess.UNSAFE.getObject(buffer,
-                elementOffsetInBuffer(index));
+        return (E) kilim.UnsafeAccess.UNSAFE.getObject(buffer, elementOffsetInBuffer(index));
     }
 
     public int size() {
@@ -789,42 +791,44 @@ class MPSCQueue<E> extends MPSCQueueL3Pad<E> {
         return (int) (currentProducerIndex - currentConsumerIndexBefore);
 
     }
+
     public enum BackOffStrategy {
         SPIN {
             public int backoff(int called) {
                 return ++called;
             }
         },
-        YIELD{
+        YIELD {
             public int backoff(int called) {
                 Thread.yield();
                 return called++;
             }
         },
-        PARK{
+        PARK {
             public int backoff(int called) {
                 LockSupport.parkNanos(1);
-                
+
                 return called++;
             }
         },
         SPIN_YIELD {
             public int backoff(int called) {
-                if(called>1000)
+                if (called > 1000)
                     Thread.yield();
                 return called++;
-                
+
             }
         };
         public abstract int backoff(int called);
-        public static BackOffStrategy getStrategy(String propertyName, BackOffStrategy defaultS){
-            try{
+
+        public static BackOffStrategy getStrategy(String propertyName,
+                BackOffStrategy defaultS) {
+            try {
                 return BackOffStrategy.valueOf(System.getProperty(propertyName));
-            }
-            catch(Exception e){
+            } catch (Exception e) {
                 return defaultS;
             }
         }
     }
-    
+
 }

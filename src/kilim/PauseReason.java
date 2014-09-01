@@ -11,7 +11,7 @@ package kilim;
  */
 public interface PauseReason {
     /**
-     * True if the given task's reason for pausing is still valid. 
+     * True if the given task's reason for pausing is still valid.
      */
     boolean isValid(Task t);
 }

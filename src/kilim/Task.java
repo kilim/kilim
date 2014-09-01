@@ -21,20 +21,20 @@ import java.util.concurrent.atomic.AtomicInteger;
  * 
  */
 public abstract class Task implements Runnable, EventSubscriber {
-    public volatile int currentThread;
+    public volatile int                  currentThread;
 
-    static PauseReason yieldReason = new YieldReason();
+    static PauseReason                   yieldReason           = new YieldReason();
     /**
      * Task id, automatically generated
      */
-    public final int id;
-    static final AtomicInteger idSource = new AtomicInteger();
+    public final int                     id;
+    static final AtomicInteger           idSource              = new AtomicInteger();
 
     /**
      * The stack manager in charge of rewinding and unwinding the stack when
      * Task.pause() is called.
      */
-    protected Fiber fiber;
+    protected Fiber                      fiber;
 
     /**
      * The reason for pausing (duh) and performs the role of a await condition
@@ -42,7 +42,7 @@ public abstract class Task implements Runnable, EventSubscriber {
      * 
      * @see kilim.PauseReason
      */
-    protected PauseReason pauseReason;
+    protected PauseReason                pauseReason;
 
     /**
      * running = true when it is put on the schdulers run Q (by Task.resume()).
@@ -50,8 +50,8 @@ public abstract class Task implements Runnable, EventSubscriber {
      * true until the end of runExecute (where it is reset), at which point a
      * fresh decision is made whether the task needs to continue running.
      */
-    protected AtomicBoolean running = new AtomicBoolean(false);
-    protected volatile boolean done = false;
+    protected AtomicBoolean              running               = new AtomicBoolean(false);
+    protected volatile boolean           done                  = false;
 
     /**
      * The thread in which to resume this task. Ideally, we shouldn't have any
@@ -60,13 +60,13 @@ public abstract class Task implements Runnable, EventSubscriber {
      * 
      * @see kilim.ReentrantLock
      */
-    volatile int preferredResumeThread = -1;
+    volatile int                         preferredResumeThread = -1;
 
-    private int tid;
+    private int                          tid;
     /**
      * @see Task#preferredResumeThread
      */
-    int numActivePins;
+    int                                  numActivePins;
 
     /**
      * @see #informOnExit(Mailbox)
@@ -77,15 +77,15 @@ public abstract class Task implements Runnable, EventSubscriber {
      * The object responsible for handing this task to a thread when the task is
      * runnable.
      */
-    protected Scheduler scheduler;
+    protected Scheduler                  scheduler;
 
-    public Object exitResult = "OK";
+    public Object                        exitResult            = "OK";
 
     // TODO: move into a separate timer service or into the schduler.
-    public final static Timer timer = new Timer(true);
+    public final static Timer            timer                 = new Timer(true);
 
     // new timer service
-    public kilim.timerhelper.Timer timer_new = new kilim.timerhelper.Timer(this);
+    public kilim.timerhelper.Timer       timer_new             = new kilim.timerhelper.Timer(this);
 
     public Task() {
         id = idSource.incrementAndGet();
@@ -136,7 +136,7 @@ public abstract class Task implements Runnable, EventSubscriber {
      * out where the current method is w.r.t the closest _runExecute method.
      * 
      * @return the number of stack frames above _runExecute(), not including
-     *         this method
+     * this method
      */
     public int getStackDepth() {
         StackTraceElement[] stes;
@@ -237,30 +237,25 @@ public abstract class Task implements Runnable, EventSubscriber {
     }
 
     public static void errNotWoven() {
-        System.err
-                .println("############################################################");
-        System.err
-                .println("Task has either not been woven or the classpath is incorrect");
-        System.err
-                .println("############################################################");
+        System.err.println("############################################################");
+        System.err.println("Task has either not been woven or the classpath is incorrect");
+        System.err.println("############################################################");
         Thread.dumpStack();
         System.exit(0);
     }
 
     public static void errNotWoven(Task t) {
-        System.err
-                .println("############################################################");
+        System.err.println("############################################################");
         System.err.println("Task " + t.getClass()
                 + " has either not been woven or the classpath is incorrect");
-        System.err
-                .println("############################################################");
+        System.err.println("############################################################");
         Thread.dumpStack();
         System.exit(0);
     }
 
     static class ArgState extends kilim.State {
-        Object mthd;
-        Object obj;
+        Object   mthd;
+        Object   obj;
         Object[] fargs;
     }
 
@@ -268,13 +263,13 @@ public abstract class Task implements Runnable, EventSubscriber {
      * Invoke a pausable method via reflection. Equivalent to Method.invoke().
      * 
      * @param mthd
-     *            : The method to be invoked. (Implementation note: the
-     *            corresponding woven method is invoked instead).
+     * : The method to be invoked. (Implementation note: the corresponding woven
+     * method is invoked instead).
      * @param target
-     *            : The object on which the method is invoked. Can be null if
-     *            the method is static.
+     * : The object on which the method is invoked. Can be null if the method is
+     * static.
      * @param args
-     *            : Arguments to the method
+     * : Arguments to the method
      * @return
      * @throws Pausable
      * @throws IllegalAccessException
@@ -282,8 +277,10 @@ public abstract class Task implements Runnable, EventSubscriber {
      * @throws InvocationTargetException
      */
     public static Object invoke(Method mthd, Object target, Object... args)
-            throws Pausable, IllegalAccessException, IllegalArgumentException,
-            InvocationTargetException {
+                                                                           throws Pausable,
+                                                                           IllegalAccessException,
+                                                                           IllegalArgumentException,
+                                                                           InvocationTargetException {
         Fiber f = getCurrentTask().fiber;
         Object[] fargs;
         if (f.pc == 0) {
@@ -306,19 +303,19 @@ public abstract class Task implements Runnable, EventSubscriber {
         f.down();
         Object ret = mthd.invoke(target, fargs);
         switch (f.up()) {
-        case Fiber.NOT_PAUSING__NO_STATE:
-        case Fiber.NOT_PAUSING__HAS_STATE:
-            return ret;
-        case Fiber.PAUSING__NO_STATE:
-            ArgState as = new ArgState();
-            as.obj = target;
-            as.fargs = fargs;
-            as.pc = 1;
-            as.mthd = mthd;
-            f.setState(as);
-            return null;
-        case Fiber.PAUSING__HAS_STATE:
-            return null;
+            case Fiber.NOT_PAUSING__NO_STATE:
+            case Fiber.NOT_PAUSING__HAS_STATE:
+                return ret;
+            case Fiber.PAUSING__NO_STATE:
+                ArgState as = new ArgState();
+                as.obj = target;
+                as.fargs = fargs;
+                as.pc = 1;
+                as.mthd = mthd;
+                f.setState(as);
+                return null;
+            case Fiber.PAUSING__HAS_STATE:
+                return null;
         }
         throw new IllegalAccessException("Internal Error");
     }
@@ -327,8 +324,7 @@ public abstract class Task implements Runnable, EventSubscriber {
     // for "f(int, kilim.Fiber)"
     private static Method getWovenMethod(Method m) {
         Class<?>[] ptypes = m.getParameterTypes();
-        if (!(ptypes.length > 0 && ptypes[ptypes.length - 1].getName().equals(
-                "kilim.Fiber"))) {
+        if (!(ptypes.length > 0 && ptypes[ptypes.length - 1].getName().equals("kilim.Fiber"))) {
             // The last param is not "Fiber", so m is not woven.
             // Get the woven method corresponding to m(..., Fiber)
             boolean found = false;
@@ -338,8 +334,7 @@ public abstract class Task implements Runnable, EventSubscriber {
                     // types as m, plus a fiber.
                     Class<?>[] wptypes = wm.getParameterTypes();
                     if (wptypes.length != ptypes.length + 1
-                            || !(wptypes[wptypes.length - 1].getName()
-                                    .equals("kilim.Fiber")))
+                            || !(wptypes[wptypes.length - 1].getName().equals("kilim.Fiber")))
                         continue LOOP;
                     for (int i = 0; i < ptypes.length; i++) {
                         if (ptypes[i] != wptypes[i])
@@ -351,9 +346,8 @@ public abstract class Task implements Runnable, EventSubscriber {
                 }
             }
             if (!found) {
-                throw new IllegalArgumentException(
-                        "Found no pausable method corresponding to supplied method: "
-                                + m);
+                throw new IllegalArgumentException("Found no pausable method corresponding to supplied method: "
+                        + m);
             }
         }
         return m;
@@ -361,8 +355,8 @@ public abstract class Task implements Runnable, EventSubscriber {
 
     /**
      * @param millis
-     *            to sleep. Like thread.sleep, except it doesn't throw an
-     *            interrupt, and it doesn't hog the java thread.
+     * to sleep. Like thread.sleep, except it doesn't throw an interrupt, and it
+     * doesn't hog the java thread.
      */
     public static void sleep(final long millis) throws Pausable {
         // create a temp mailbox, and wait on it.
@@ -404,7 +398,7 @@ public abstract class Task implements Runnable, EventSubscriber {
      * more.
      * 
      * @param pauseReason
-     *            the reason
+     * the reason
      */
     public static void pause(PauseReason pauseReason) throws Pausable {
         errNotWoven();
@@ -569,16 +563,16 @@ public abstract class Task implements Runnable, EventSubscriber {
     public void checkKill() {
     }
 
-    public boolean getState(){
+    public boolean getState() {
         return running.get();
     }
-    
-//    public void cancle() {
-//        //boolean result = false;
-//       // result = (timer_new.state.get() == kilim.timerhelper.Timer.SCHEDULED);
-//        // timer_new.nextExecutionTimeLong.MAX_VALUE);
-//        timer_new.setState(kilim.timerhelper.Timer.CANCELLED);
-//
-//        //return result;
-//    }
+
+    // public void cancle() {
+    // //boolean result = false;
+    // // result = (timer_new.state.get() == kilim.timerhelper.Timer.SCHEDULED);
+    // // timer_new.nextExecutionTimeLong.MAX_VALUE);
+    // timer_new.setState(kilim.timerhelper.Timer.CANCELLED);
+    //
+    // //return result;
+    // }
 }
