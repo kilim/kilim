@@ -423,7 +423,7 @@ public class CallWeaver {
             ClassMirror cm = det.classForName(mi.owner);
             for (MethodMirror m: cm.getDeclaredMethods()) {
                 if (m.getMethodDescriptor().indexOf(D_FIBER_LAST_ARG) == -1) {
-                    if ((m.getModifiers() | ACC_ABSTRACT) > 0) {
+                    if ((m.getModifiers() & ACC_ABSTRACT) > 0) {
                         count++;
                         if (m.getName().equals(mi.name) && m.getMethodDescriptor().equals(mi.desc)) {
                             match = true;
