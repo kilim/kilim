@@ -25,32 +25,38 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class MailboxSPSC<T> implements PauseReason, EventPublisher {
     // TODO. Give mbox a config name and id and make monitorable
-    T[]                                    msgs;
+    T[] buffer;
 
-    VolatileReferenceCell<EventSubscriber> sink = new VolatileReferenceCell<EventSubscriber>();
-    Deque<EventSubscriber>                 srcs = new ConcurrentLinkedDeque<EventSubscriber>();
+    final PaddedEventSubscriber sink = new PaddedEventSubscriber();
+    final PaddedEventSubscriber srcs = new PaddedEventSubscriber();
 
-    public final VolatileLongCell          tail = new VolatileLongCell(0L);
-    public final VolatileLongCell          head = new VolatileLongCell(0L);
+    // Deque<EventSubscriber> srcs = new
+    // ConcurrentLinkedDeque<EventSubscriber>();
 
-    public static class PaddedLong {
-        public long value = 0;
-    }
+    public final VolatileLongCell tail = new VolatileLongCell(0L);
+    public final VolatileLongCell head = new VolatileLongCell(0L);
 
-    private final PaddedLong  tailCache        = new PaddedLong();
-    private final PaddedLong  headCache        = new PaddedLong();
-    private final int         mask;
+    private final int mask;
 
     // FIX: I don't like this event design. The only good thing is that
     // we don't create new event objects every time we signal a client
     // (subscriber) that's blocked on this mailbox.
-    public static final int   SPACE_AVAILABLE  = 1;
-    public static final int   MSG_AVAILABLE    = 2;
-    public static final int   TIMED_OUT        = 3;
+    public static final int SPACE_AVAILABLE = 1;
+    public static final int MSG_AVAILABLE = 2;
+    public static final int TIMED_OUT = 3;
 
-    public static final Event spaceAvailble    = new Event(MSG_AVAILABLE);
+    public static final Event spaceAvailble = new Event(MSG_AVAILABLE);
     public static final Event messageAvailable = new Event(SPACE_AVAILABLE);
-    public static final Event timedOut         = new Event(TIMED_OUT);
+    public static final Event timedOut = new Event(TIMED_OUT);
+
+    public static class PaddedLong {
+        public volatile long p11, p21, p31, p41, p51, p61;
+        public long value = 0;
+        public volatile long p1, p2, p3, p4, p5, p6;
+    }
+
+    private final PaddedLong tailCache = new PaddedLong();
+    private final PaddedLong headCache = new PaddedLong();
 
     // DEBUG steuuff
     // To do: move into monitorable stat object
@@ -70,7 +76,7 @@ public class MailboxSPSC<T> implements PauseReason, EventPublisher {
         initialSize = findNextPositivePowerOfTwo(initialSize); // Convert
                                                                // mailbox size
                                                                // to power of 2
-        msgs = (T[]) new Object[initialSize];
+        buffer = (T[]) new Object[initialSize];
         mask = initialSize - 1;
     }
 
@@ -82,10 +88,10 @@ public class MailboxSPSC<T> implements PauseReason, EventPublisher {
      * Non-blocking, nonpausing fill.
      * 
      * @param eo
-     * . If non-null, registers this observer and calls it with a
-     * MessageAvailable event when a put() is done.
+     *            . If non-null, registers this observer and calls it with a
+     *            MessageAvailable event when a put() is done.
      * @return buffered true if there's one, or up to burst size messages else
-     * false
+     *         false
      */
     public boolean fill(EventSubscriber eo, T[] msg) {
         int n = msg.length;
@@ -102,15 +108,14 @@ public class MailboxSPSC<T> implements PauseReason, EventPublisher {
         EventSubscriber producer = null;
         do {
             final int index = (int) (currentHead++) & mask;
-            msg[i++] = msgs[index];
-            msgs[index] = null;
+            msg[i++] = buffer[index];
+            buffer[index] = null;
+
         } while (0 != --n);
-        head.set(currentHead);
-        while (srcs.size() > 0) {
-            producer = srcs.poll();
-            if (producer != null) {
-                producer.onEvent(this, spaceAvailble);
-            }
+        head.lazySet(currentHead);
+        producer = srcs.value;
+        if (producer != null) {
+            producer.onEvent(this, spaceAvailble);
         }
 
         return true;
@@ -135,8 +140,8 @@ public class MailboxSPSC<T> implements PauseReason, EventPublisher {
      * Non-blocking, nonpausing get.
      * 
      * @param eo
-     * . If non-null, registers this observer and calls it with a
-     * MessageAvailable event when a put() is done.
+     *            . If non-null, registers this observer and calls it with a
+     *            MessageAvailable event when a put() is done.
      * @return buffered message if there's one, or null
      */
     public T get(EventSubscriber eo) {
@@ -147,7 +152,6 @@ public class MailboxSPSC<T> implements PauseReason, EventPublisher {
         if (currentHead >= tailCache.value) {
             tailCache.value = tail.get();
             if (currentHead >= tailCache.value) {
-                msg = null;
                 if (eo != null) {
                     addMsgAvailableListener(eo);
                 }
@@ -156,18 +160,22 @@ public class MailboxSPSC<T> implements PauseReason, EventPublisher {
         }
         if (!flag) {
             final int index = (int) currentHead & mask;
-            msg = msgs[index];
-            msgs[index] = null;
+            msg = buffer[index];
+            buffer[index] = null;
             head.lazySet(currentHead + 1);
         }
-        // if (msg == null) {
-        if (srcs.size() > 0) {
-            producer = srcs.poll();
-        }
+
+        // if (srcs.size() > 0) {
+        // producer = srcs.poll();
+        // if (producer != null) {
+        // producer.onEvent(this, spaceAvailble);
+        // }
+        // }
+        producer = srcs.value;
         if (producer != null) {
+            srcs.value = null;
             producer.onEvent(this, spaceAvailble);
         }
-        // }
         return msg;
     }
 
@@ -187,8 +195,9 @@ public class MailboxSPSC<T> implements PauseReason, EventPublisher {
         Task t = Task.getCurrentTask();
         boolean available = false;
         EventSubscriber subscriber;
+        int m = buffer.length;
         while (n != count) {
-            long wrapPoint = currentTail - msgs.length;
+            long wrapPoint = currentTail - m;
             while (headCache.value <= wrapPoint) {
                 headCache.value = head.get();
                 if (headCache.value <= wrapPoint) {
@@ -196,29 +205,28 @@ public class MailboxSPSC<T> implements PauseReason, EventPublisher {
                         // we have put atleast one new message so we should wake
                         // up if someone is waiting for message
                         tail.lazySet(currentTail);
-                        subscriber = sink.get();
+                        subscriber = sink.value;
                         if (subscriber != null) {
                             removeMsgAvailableListener(subscriber);
                             subscriber.onEvent(this, messageAvailable);
                         }
                     }
-                    srcs.offer(t);
+                    srcs.value = t;
                     Task.pause(this);
                     removeSpaceAvailableListener(t);
                     available = false;
-
                 }
             }
-            msgs[(int) (currentTail++) & mask] = buf[count++];
+            buffer[(int) (currentTail++) & mask] = buf[count++];
             available = true;
+
         }
-        tail.set(currentTail);
+        tail.lazySet(currentTail);
         // wake up if anybody is waiting for message
-        subscriber = sink.get();
+        subscriber = sink.value;
         if (subscriber != null) {
-            if (sink.compareAndSet(subscriber, null)) {
-                subscriber.onEvent(this, messageAvailable);
-            }
+            sink.value = null;
+            subscriber.onEvent(this, messageAvailable);
         }
     }
 
@@ -228,30 +236,30 @@ public class MailboxSPSC<T> implements PauseReason, EventPublisher {
         }
         EventSubscriber subscriber;
         final long currentTail = tail.get();
-        final long wrapPoint = currentTail - msgs.length;
+        final long wrapPoint = currentTail - buffer.length;
         if (headCache.value <= wrapPoint) {
             headCache.value = head.get();
             if (headCache.value <= wrapPoint) {
+                subscriber = sink.value;
+                if (subscriber != null) {
+                    sink.value = null;
+                    subscriber.onEvent(this, messageAvailable);
+
+                }
                 if (eo != null) {
-                    subscriber = sink.get();
-                    if (subscriber != null) {
-                        if (sink.compareAndSet(subscriber, null)) {
-                            subscriber.onEvent(this, messageAvailable);
-                        }
-                    }
-                    srcs.add(eo);
+                    srcs.value = eo;
                 }
                 return false;
             }
         }
-        msgs[(int) currentTail & mask] = msg;
+        buffer[(int) currentTail & mask] = msg;
         tail.lazySet(currentTail + 1);
-        subscriber = sink.get();
+        subscriber = sink.value;
 
         if (subscriber != null) {
-            if (sink.compareAndSet(subscriber, null)) {
-                subscriber.onEvent(this, messageAvailable);
-            }
+            sink.value = null;
+            subscriber.onEvent(this, messageAvailable);
+
         }
         return true;
     }
@@ -373,7 +381,7 @@ public class MailboxSPSC<T> implements PauseReason, EventPublisher {
      * @throws Pausable
      */
     public boolean untilHasMessages(int num, long timeoutMillis)
-                                                                throws Pausable {
+            throws Pausable {
         final Task t = Task.getCurrentTask();
         final long end = System.currentTimeMillis() + timeoutMillis;
 
@@ -443,7 +451,8 @@ public class MailboxSPSC<T> implements PauseReason, EventPublisher {
                 }
             }
             Task t = Task.getCurrentTask();
-            EmptySet_MsgAvListenerSpSc pauseReason = new EmptySet_MsgAvListenerSpSc(t, mboxes);
+            EmptySet_MsgAvListenerSpSc pauseReason = new EmptySet_MsgAvListenerSpSc(
+                    t, mboxes);
             for (int i = 0; i < mboxes.length; i++) {
                 mboxes[i].addMsgAvailableListener(pauseReason);
             }
@@ -455,24 +464,30 @@ public class MailboxSPSC<T> implements PauseReason, EventPublisher {
     }
 
     public void addSpaceAvailableListener(EventSubscriber spcSub) {
-        srcs.offer(spcSub);
+        srcs.value = spcSub;
     }
 
     public void removeSpaceAvailableListener(EventSubscriber spcSub) {
-        srcs.remove(spcSub);
+        if (srcs.value == spcSub) {
+            srcs.value = null;
+        }
     }
 
     public void addMsgAvailableListener(EventSubscriber msgSub) {
-        EventSubscriber sink1 = sink.get();
+        EventSubscriber sink1 = sink.value;
         if (sink1 != null && sink1 != msgSub) {
-            throw new AssertionError("Error: A mailbox can not be shared by two consumers.  New = "
-                    + msgSub + ", Old = " + sink1);
+            throw new AssertionError(
+                    "Error: A mailbox can not be shared by two consumers.  New = "
+                            + msgSub + ", Old = " + sink1);
         }
-        sink.set(msgSub);
+        sink.value = msgSub;
     }
 
     public void removeMsgAvailableListener(EventSubscriber msgSub) {
-        sink.compareAndSet(msgSub, null);
+        if (sink.value == msgSub) {
+            sink.value = null;
+        }
+
     }
 
     /**
@@ -571,13 +586,13 @@ public class MailboxSPSC<T> implements PauseReason, EventPublisher {
     // }
 
     public boolean hasMessage() {
-        // headCache.value = head.get();
-        return (msgs[(int) headCache.value & mask] != null);
+        headCache.value = head.get();
+        return (buffer[(int) headCache.value & mask] != null);
     }
 
     public boolean hasSpace() {
         tailCache.value = tail.get();
-        return (msgs[(int) tailCache.value & mask] == null);
+        return (buffer[(int) tailCache.value & mask] == null);
     }
 
     /**
@@ -594,7 +609,7 @@ public class MailboxSPSC<T> implements PauseReason, EventPublisher {
      * retrieve a msg, and block the Java thread for the time given.
      * 
      * @param millis
-     * . max wait time
+     *            . max wait time
      * @return null if timed out.
      */
     public T getb(final long timeoutMillis) {
@@ -632,9 +647,9 @@ public class MailboxSPSC<T> implements PauseReason, EventPublisher {
 
     // Implementation of PauseReason
     public boolean isValid(Task t) {
-        if (t == sink.get()) {
+        if (t == sink.value) {
             return !hasMessage();
-        } else if (srcs.contains(t)) {
+        } else if (srcs.value == t) {
             return !hasSpace();
         } else {
             return false;
@@ -644,7 +659,7 @@ public class MailboxSPSC<T> implements PauseReason, EventPublisher {
 }
 
 class EmptySet_MsgAvListenerSpSc implements PauseReason, EventSubscriber {
-    final Task             task;
+    final Task task;
     final MailboxSPSC<?>[] mbxs;
 
     EmptySet_MsgAvListenerSpSc(Task t, MailboxSPSC<?>[] mbs) {
