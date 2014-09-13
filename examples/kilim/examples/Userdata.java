@@ -5,27 +5,38 @@ import kilim.Pausable;
 import kilim.Task;
 
 /*
-this class fails with:
-java.lang.IncompatibleClassChangeError: Found class kilim.examples.Userdata$Eats1, but interface was expected
-	at kilim.examples.Userdata.$shim$1(Userdata.java)
-	at kilim.examples.Userdata.execute(Userdata.java:27)
-	at kilim.Task._runExecute(Task.java:435)
-	at kilim.WorkerThread.run(WorkerThread.java:32)
+    test of a number of ways of invoking a method that are or look similar to SAMs
+    added for: https://github.com/kilim/kilim/issues/38
 */
 public class Userdata extends Task {
-    Eats1 eats1 = new Eats1();
+    Eats1 eats1 = new Eats1Impl();
     Eats2 eats2 = new Eats2();
     
-    public static class Eats1 {
-        public void insert(int kfood) throws Pausable {}
+    public interface Eats1 {
+        public void insert1(int kfood) throws Pausable;
+    }
+    public static class Eats1Impl implements Eats1 {
+        public void insert1(int kfood) throws Pausable { System.out.println("gah"); }
     }
     public static class Eats2 {
-        public void insert(int kfood) throws Pausable {}
+        public void insert1(int kfood) throws Pausable { System.out.println("foo"); }
         public void insert2(int kfood) throws Pausable {}
     }
+    public static class Eats3 {
+        public void insert1(int kfood) throws Pausable { System.out.println("bar"); }
+    }
+    public interface Eats4 {
+        public void insert1(int kfood) throws Pausable;
+    }
+    public static void eater(Eats4 eat,int kfood) throws Pausable {
+        eat.insert1(kfood);
+    }
+    
     public void execute() throws kilim.Pausable {
-        eats2.insert(0);
-        eats1.insert(0); // gets converted to $shim$1 (i'm guessing this is a lambda)
+        eats1.insert1(0);
+        eats2.insert1(0);
+        new Eats3().insert1(0);
+        eater(kfood -> System.out.println("lam"), 0);
     }
 
     public static void main(String [] args) {
