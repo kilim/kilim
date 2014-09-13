@@ -8,7 +8,9 @@ package kilim;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executors;
 import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -40,7 +42,7 @@ public class Scheduler {
     public final MailboxMPSC<Timer>                     timerQueue        = new MailboxMPSC<Timer>(Integer.getInteger("kilim.maxpendingtimers", 10000)); // set
                                                                                                                                                          // system
     public final TimerPriorityHeap                      timerHeap         = new TimerPriorityHeap();
-
+    private  ScheduledExecutorService timer;
     static {
         String s = System.getProperty("kilim.Scheduler.numThreads");
         if (s != null) {
@@ -72,7 +74,8 @@ public class Scheduler {
     public Scheduler(int numThreads, int queueSize, String name) {
         name_ = name;
         nameGenerator_.putIfAbsent(name_, new AtomicInteger());
-        affinePool_ = new AffineThreadPool(numThreads, queueSize, name, timerHeap, timerQueue);
+        timer = Executors.newSingleThreadScheduledExecutor();
+        affinePool_ = new AffineThreadPool(numThreads, queueSize, name, timerHeap, timerQueue,timer);
     }
 
     public long getTaskCount() {
