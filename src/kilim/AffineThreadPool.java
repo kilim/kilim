@@ -129,6 +129,7 @@ class KilimThreadPoolExecutor extends ThreadPoolExecutor {
         long max = -1;
         Timer t = null;
         if (timerHeap.lock.tryLock()) {
+        	try{
             while ((t = timerHeap.peek()) != null && t.nextExecutionTime == -1) {
                 timerHeap.poll();
             }
@@ -195,9 +196,10 @@ class KilimThreadPoolExecutor extends ThreadPoolExecutor {
                 };
 
                 timer.schedule(tt, max, TimeUnit.MILLISECONDS);
-            }
-
-            timerHeap.lock.unlock();
+				}
+			} finally {
+				timerHeap.lock.unlock();
+			}
         }
        
     }

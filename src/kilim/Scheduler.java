@@ -27,7 +27,7 @@ import kilim.timerhelper.TimerPriorityHeap;
  */
 public class Scheduler {
     private static final String                         defaultName_      = "KilimWorker";
-    private static final int                            defaultQueueSize_ = 65536;
+    private static final int                            defaultQueueSize_ = Integer.MAX_VALUE;
     public static volatile Scheduler                    defaultScheduler  = null;
     public static int                                   defaultNumberThreads;
     private static final String                         dash_             = "-";
@@ -55,6 +55,11 @@ public class Scheduler {
             defaultNumberThreads = Runtime.getRuntime().availableProcessors();
         }
     }
+
+    
+    
+
+	
 
     protected static Task getCurrentTask() {
         return taskMgr_.get();
