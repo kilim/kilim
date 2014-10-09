@@ -9,6 +9,8 @@ package kilim;
 import java.util.Deque;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
+import kilim.concurrent.VolatileReferenceCell;
+
 /**
  * A cell is a single-space buffer that supports multiple producers and a single
  * consumer, functionally identical to Mailbox bounded to a size of 1 (and hence
@@ -133,20 +135,9 @@ public class Cell<T> implements PauseReason, EventPublisher {
         long time = timeoutMillis;
         while (msg == null) {
             t.timer_new.setTimer(time);
-            if (t.timer_new.onQueue.compareAndSet(false, true)) {
-                if (!t.scheduler.timerQueue.putnb(t.timer_new)) {
-                    try {
-                        throw new Exception("Maximum pending timers limit:"
-                                + Integer.getInteger("kilim.maxpendingtimers", 10000)
-                                + " exceeded, set kilim.maxpendingtimers property");
-                    } catch (Exception e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
-                }
-            }
+            t.scheduler.scheduleTimer(t.timer_new);
             Task.pause(this);
-            t.timer_new.nextExecutionTime = -1;
+            t.timer_new.cancel();
             removeMsgAvailableListener(t);
             time = timeoutMillis - (System.currentTimeMillis() - begin);
             if (time <= 0) {
@@ -195,20 +186,9 @@ public class Cell<T> implements PauseReason, EventPublisher {
         long time = timeoutMillis;
         while (!put(msg, t)) {
             t.timer_new.setTimer(time);
-            if (t.timer_new.onQueue.compareAndSet(false, true)) {
-                if (!t.scheduler.timerQueue.putnb(t.timer_new)) {
-                    try {
-                        throw new Exception("Maximum pending timers limit:"
-                                + Integer.getInteger("kilim.maxpendingtimers", 10000)
-                                + " exceeded, set kilim.maxpendingtimers property");
-                    } catch (Exception e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
-                }
-            }
+            t.scheduler.scheduleTimer(t.timer_new);
             Task.pause(this);
-            t.timer_new.nextExecutionTime = -1;
+            t.timer_new.cancel();
             removeSpaceAvailableListener(t);
             time = timeoutMillis - (System.currentTimeMillis() - begin);
             if (time <= 0) {

@@ -1,6 +1,6 @@
-package kilim;
+package kilim.concurrent;
 
-import static kilim.UnsafeAccess.UNSAFE;
+import static kilim.concurrent.UnsafeAccess.UNSAFE;
 
 abstract class VolatileBooleanPrePad {
     // long p0, p1, p2, p3, p4, p5, p6;
