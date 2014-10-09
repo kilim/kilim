@@ -5,215 +5,122 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import kilim.timerhelper.Timer;
-import kilim.timerhelper.TimerPriorityHeap;
+import kilim.timerservice.TimerService;
 
 public class AffineThreadPool {
-    private static final int MAX_QUEUE_SIZE = 4096;
-    private static final String colon_ = ":";
+	private static final int MAX_QUEUE_SIZE = 4096;
+	private static final String colon_ = ":";
 
-    protected static int getCurrentThreadId() {
-        String name = Thread.currentThread().getName();
-        int sIndex = name.indexOf(colon_);
-        return Integer.parseInt(name.substring(sIndex + 1, name.length()));
-    }
+	protected static int getCurrentThreadId() {
+		String name = Thread.currentThread().getName();
+		int sIndex = name.indexOf(colon_);
+		return Integer.parseInt(name.substring(sIndex + 1, name.length()));
+	}
 
-    private int nThreads_;
-    private String poolName_;
-    private AtomicInteger currentIndex_ = new AtomicInteger(0);
-    private List<BlockingQueue<Runnable>> queues_ = new ArrayList<BlockingQueue<Runnable>>();
-    private List<KilimStats> queueStats_ = new ArrayList<KilimStats>();
-    private List<KilimThreadPoolExecutor> executorService_ = new ArrayList<KilimThreadPoolExecutor>();
-    
+	private int nThreads_;
+	private String poolName_;
+	private AtomicInteger currentIndex_ = new AtomicInteger(0);
+	private List<BlockingQueue<Runnable>> queues_ = new ArrayList<BlockingQueue<Runnable>>();
+	private List<KilimStats> queueStats_ = new ArrayList<KilimStats>();
+	private List<KilimThreadPoolExecutor> executorService_ = new ArrayList<KilimThreadPoolExecutor>();
 
-    public AffineThreadPool(int nThreads, String name,
-            TimerPriorityHeap timerHeap, MailboxMPSC<Timer> timerQueue, ScheduledExecutorService timer) {
-        this(nThreads, MAX_QUEUE_SIZE, name, timerHeap, timerQueue,timer);
-    }
+	public AffineThreadPool(int nThreads, String name, TimerService timerService) {
+		this(nThreads, MAX_QUEUE_SIZE, name, timerService);
+	}
 
-    public AffineThreadPool(int nThreads, int queueSize, String name,
-            TimerPriorityHeap timerHeap, MailboxMPSC<Timer> timerQueue, ScheduledExecutorService timer) {
-        nThreads_ = nThreads;
-        poolName_ = name;
-        
-        for (int i = 0; i < nThreads; ++i) {
-            String threadName = name + colon_ + i;
-            BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(
-                    queueSize);
-            queues_.add(queue);
+	public AffineThreadPool(int nThreads, int queueSize, String name,
+			TimerService timerservice) {
+		nThreads_ = nThreads;
+		poolName_ = name;
 
-            KilimThreadPoolExecutor executorService = new KilimThreadPoolExecutor(
-                    i, 1, queue, new ThreadFactoryImpl(threadName), timerHeap,
-                    timerQueue, timer);
-            executorService_.add(executorService);
+		for (int i = 0; i < nThreads; ++i) {
+			String threadName = name + colon_ + i;
+			BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(
+					queueSize);
+			queues_.add(queue);
 
-            queueStats_.add(new KilimStats(12, "num"));
-        }
-    }
+			KilimThreadPoolExecutor executorService = new KilimThreadPoolExecutor(
+					i, 1, queue, new ThreadFactoryImpl(threadName),
+					timerservice);
+			executorService_.add(executorService);
 
-    public long getTaskCount() {
-        long totalRemainingCapacity = 0L;
-        for (BlockingQueue<Runnable> queue : queues_) {
-            totalRemainingCapacity += queue.size();
-        }
-        return totalRemainingCapacity;
-    }
+			queueStats_.add(new KilimStats(12, "num"));
+		}
+	}
 
-    private int getNextIndex() {
-        int value = 0, newValue = 0;
-        do {
-            value = currentIndex_.get();
-            newValue = ((value != Integer.MAX_VALUE) ? (value + 1) : 0);
-        } while (!currentIndex_.compareAndSet(value, newValue));
-        return (newValue) % nThreads_;
-    }
+	public long getTaskCount() {
+		long totalRemainingCapacity = 0L;
+		for (BlockingQueue<Runnable> queue : queues_) {
+			totalRemainingCapacity += queue.size();
+		}
+		return totalRemainingCapacity;
+	}
 
-    public int publish(Task task) {
-        int index = getNextIndex();
-        task.setTid(index);
-        return publish(index, task);
-    }
+	private int getNextIndex() {
+		int value = 0, newValue = 0;
+		do {
+			value = currentIndex_.get();
+			newValue = ((value != Integer.MAX_VALUE) ? (value + 1) : 0);
+		} while (!currentIndex_.compareAndSet(value, newValue));
+		return (newValue) % nThreads_;
+	}
 
-    public int publish(int index, Task task) {
-        KilimThreadPoolExecutor executorService = executorService_.get(index);
-        executorService.submit(task);
-        queueStats_.get(index).record(executorService.getQueueSize());
-        return index;
-    }
+	public int publish(Task task) {
+		int index = getNextIndex();
+		task.setTid(index);
+		return publish(index, task);
+	}
 
-    public String getQueueStats() {
-        String statsStr = "";
-        for (int i = 0; i < queueStats_.size(); ++i) {
-            statsStr += queueStats_.get(i).dumpStatistics(
-                    poolName_ + ":QUEUE-SZ-" + i);
-        }
-        return statsStr;
-    }
+	public int publish(int index, Task task) {
+		KilimThreadPoolExecutor executorService = executorService_.get(index);
+		executorService.submit(task);
+		queueStats_.get(index).record(executorService.getQueueSize());
+		return index;
+	}
 
-    public void shutdown() {
-        for (ExecutorService executorService : executorService_) {
-            executorService.shutdown();
-        }
-    }
+	public String getQueueStats() {
+		String statsStr = "";
+		for (int i = 0; i < queueStats_.size(); ++i) {
+			statsStr += queueStats_.get(i).dumpStatistics(
+					poolName_ + ":QUEUE-SZ-" + i);
+		}
+		return statsStr;
+	}
+
+	public void shutdown() {
+		for (ExecutorService executorService : executorService_) {
+			executorService.shutdown();
+		}
+	}
 }
 
 class KilimThreadPoolExecutor extends ThreadPoolExecutor {
-    final private TimerPriorityHeap timerHeap;
-    final private MailboxMPSC<Timer> timerQueue;
-    int id = 0;
-    final BlockingQueue<Runnable> queue;
-    final private ScheduledExecutorService timer;
-    private Timer[] buf = new Timer[100];
+	int id = 0;
+	private TimerService timerService;
+	private BlockingQueue<Runnable> queue;
 
-    KilimThreadPoolExecutor(int id, int nThreads,
-            BlockingQueue<Runnable> queue, ThreadFactory tFactory,
-            TimerPriorityHeap timerHeap, MailboxMPSC<Timer> timerQueue,
-            ScheduledExecutorService timer) {
-        super(nThreads, nThreads, Integer.MAX_VALUE, TimeUnit.MILLISECONDS,
-                queue, tFactory);
-        this.id = id;
-        this.timerHeap = timerHeap;
-        this.queue = queue;
-        this.timerQueue = timerQueue;
-        this.timer = timer;
-    }
+	KilimThreadPoolExecutor(int id, int nThreads,
+			BlockingQueue<Runnable> queue, ThreadFactory tFactory,
+			TimerService timerService) {
+		super(nThreads, nThreads, Integer.MAX_VALUE, TimeUnit.MILLISECONDS,
+				queue, tFactory);
+		this.id = id;
+		this.queue = queue;
+		this.timerService = timerService;
+	}
 
-    protected void afterExecute(Runnable r, Throwable th) {
-        super.afterExecute(r, th);
-        long max = -1;
-        Timer t = null;
-        if (timerHeap.lock.tryLock()) {
-        	try{
-            while ((t = timerHeap.peek()) != null && t.nextExecutionTime == -1) {
-                timerHeap.poll();
-            }
-            t = null;
-            int i = 0;
-            timerQueue.fill(buf);
+	protected void afterExecute(Runnable r, Throwable th) {
+		super.afterExecute(r, th);
+		timerService.trigger(this);
+	}
 
-            for (i = 0; i < buf.length; i++) {
-                if (buf[i] != null) {
-                    buf[i].onQueue.set(false);
-                    if (buf[i].nextExecutionTime < 0) {
-                        buf[i] = null;
-                        continue;
-                    }
-                    long currentTime = System.currentTimeMillis();
-                    long executionTime = buf[i].nextExecutionTime;
-                    if (executionTime <= currentTime) {
-                        buf[i].es.onEvent(null, Cell.timedOut);
-                    } else {
-                        if (!buf[i].onHeap) {
-                            timerHeap.add(buf[i]);
-                            buf[i].onHeap = true;
-                        } else {
-                            timerHeap.heapifyUp(buf[i].index);
-                            timerHeap.heapifyDown(buf[i].index);
-                        }
-                    }
-                    buf[i] = null;
-                } else {
-                    break;
-                }
-            }
-
-            while (!timerHeap.isEmpty()) {
-                t = timerHeap.peek();
-                if (t.nextExecutionTime < 0) {
-                    t.onHeap = false;
-                    timerHeap.poll();
-                    continue; // No action required, poll queue
-                              // again
-                }
-                long currentTime = System.currentTimeMillis();
-                long executionTime = t.nextExecutionTime;
-                if (executionTime <= currentTime) {
-                    t.onHeap = false;
-                    timerHeap.poll();
-                    t.es.onEvent(null, Cell.timedOut);
-                } else {
-                    max = executionTime - currentTime;
-                    break;
-                }
-            }
-
-            if ((max > 0)
-                    && (Scheduler.getDefaultScheduler().getTaskCount() == 0)
-                    && (timerHeap.size() != 0 || timerQueue.size() != 0)) {
-                Runnable tt = new Runnable() {
-                    @Override
-                    public void run() {
-                        if (queue.size() == 0) {
-                            queue.add(new WatchdogTask());
-                        }
-                    }
-                };
-
-                timer.schedule(tt, max, TimeUnit.MILLISECONDS);
-				}
-			} finally {
-				timerHeap.lock.unlock();
-			}
-        }
-       
-    }
-
-    protected int getQueueSize() {
-        return super.getQueue().size();
-    }
-
-    private class WatchdogTask implements Runnable {
-
-        @Override
-        public void run() {
-        }
-
-    }
+	protected int getQueueSize() {
+		return super.getQueue().size();
+	}
 
 }

@@ -1,4 +1,4 @@
-package kilim;
+package kilim.concurrent;
 
 import java.lang.reflect.Field;
 
