@@ -135,14 +135,21 @@ public abstract class Task implements EventSubscriber {
      * this method
      */
     public int getStackDepth() {
-        StackTraceElement[] stes;
+    	StackTraceElement[] stes;
         stes = new Exception().getStackTrace();
         int len = stes.length;
+        int fix = 0;
         for (int i = 0; i < len; i++) {
             StackTraceElement ste = stes[i];
+            String str = ste.getClassName()+"."+ste.getMethodName();
+            if(str.startsWith("sun.reflect.")
+            		||"java.lang.reflect.Method.invoke".equals(str)) {
+            	fix++;
+            	continue;
+            }
             if (ste.getMethodName().equals("_runExecute")){
                 // discounting WorkerThread.run, Task._runExecute, and Scheduler.getStackDepth
-                return i - 1;
+                return i - 1 - fix;
             }
         }
         throw new AssertionError("Expected task to be run by WorkerThread");
