@@ -135,14 +135,41 @@ public abstract class Task implements EventSubscriber {
      * this method
      */
     public int getStackDepth() {
-        StackTraceElement[] stes;
+    	StackTraceElement[] stes;
         stes = new Exception().getStackTrace();
         int len = stes.length;
+        int fix = 0;
+        StringBuilder builder = new StringBuilder();
         for (int i = 0; i < len; i++) {
             StackTraceElement ste = stes[i];
+            /* 
+             * When we called a Pausable-Method(such as ExCatch.pausableInvokeCatch() -> ExCatch.pausableInvokeCatch0()) by Task.invoke().
+             * The stack will like: 
+             *      at kilim.test.ex.ExCatch.pausableInvokeCatch0(ExCatch.java:178)
+             *      at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+             *      at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
+             *      at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+             *      at java.lang.reflect.Method.invoke(Method.java:606)at kilim.Task.invoke(Task.java:285)
+             *      at kilim.test.ex.ExCatch.pausableInvokeCatch(ExCatch.java:166)
+             *      at kilim.test.ex.ExCatch.test(ExCatch.java:36)
+             *      at kilim.test.ex.ExCatch.execute(ExCatch.java:26)
+             *      at kilim.Task._runExecute(Task.java:442)
+             *      at kilim.WorkerThread.run(WorkerThread.java:32)
+             * If method pausableInvokeCatch0 try-catch a exception, we will call Fiber.upEx() to re-calculate
+             * the stack size by this method. But we should discount "sun.reflect.*" and "java.lang.reflect.Method.invoke"
+             */
+            builder.setLength(0);
+            builder.append(ste.getClassName()).append('.').append(ste.getMethodName());
+            String str = builder.toString();
+            if(str.startsWith("sun.reflect.")
+            		||"java.lang.reflect.Method.invoke".equals(str)) {
+            	fix++;
+            	continue;
+            }
+            //----
             if (ste.getMethodName().equals("_runExecute")){
                 // discounting WorkerThread.run, Task._runExecute, and Scheduler.getStackDepth
-                return i - 1;
+                return i - 1 - fix;
             }
         }
         throw new AssertionError("Expected task to be run by WorkerThread");
