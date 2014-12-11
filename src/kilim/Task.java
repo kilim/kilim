@@ -134,6 +134,34 @@ public abstract class Task<TT> implements Runnable, EventSubscriber, Fiber.Worke
     Fiber.MethodRef getRunnerInfo() {
         return runnerInfo;
     }
+
+
+    /* 
+     * fix https://github.com/kilim/kilim/issues/40
+     * ie, merge https://github.com/hyleeon/kilim/tree/fix-invoke
+     * specifically https://github.com/hyleeon/kilim/commit/3e14940a59c1df1e07a6a56f060b012866f20b57
+     * which is also https://github.com/kilim/kilim/pull/42
+     *
+     * When we called a Pausable-Method
+     *   such as ExCatch.pausableInvokeCatch() -> ExCatch.pausableInvokeCatch0()) by Task.invoke()
+     * The stack will like: 
+     *      at kilim.test.ex.ExCatch.pausableInvokeCatch0(ExCatch.java:178)
+     *      at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+     *      at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:57)
+     *      at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+     *      at java.lang.reflect.Method.invoke(Method.java:606)at kilim.Task.invoke(Task.java:285)
+     *      at kilim.test.ex.ExCatch.pausableInvokeCatch(ExCatch.java:166)
+     *      at kilim.test.ex.ExCatch.test(ExCatch.java:36)
+     *      at kilim.test.ex.ExCatch.execute(ExCatch.java:26)
+     *      at kilim.Task._runExecute(Task.java:442)
+     *      at kilim.WorkerThread.run(WorkerThread.java:32)
+     * If method pausableInvokeCatch0 try-catch a exception, we will call Fiber.upEx() to re-calculate
+     * the stack size by this method. But we should discount "sun.reflect.*" and "java.lang.reflect.Method.invoke"
+     */
+    private static boolean skipInvoke(String klass,String name) {
+        return klass.startsWith("sun.reflect.")
+                | ("java.lang.reflect.Method".equals(klass) & "invoke".equals(name));
+    }
     
     /**
      * The generated code calls Fiber.upEx, which in turn calls this to find out
@@ -156,6 +184,8 @@ public abstract class Task<TT> implements Runnable, EventSubscriber, Fiber.Worke
             // fixme: should any other synthetic methods be skipped ?
             // fixme: could other vendors be using the same name for synthetic methods that shouldn't be skipped ?
             if (ste.getLineNumber() < 0 & Constants.Util.isSamShim(name))
+                continue;
+            if (skipInvoke(klass,name))
                 continue;
             num++;
             if (name.equals(mr.methodname) & klass.equals(mr.classname)) {

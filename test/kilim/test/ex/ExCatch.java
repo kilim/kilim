@@ -1,6 +1,7 @@
 package kilim.test.ex;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import kilim.Fiber;
 import kilim.Pausable;
 import kilim.Continuation;
@@ -40,6 +41,7 @@ public class ExCatch extends ExYieldBase {
             case 6: whileCatch(); break;
             case 7: restoreArgument(fd); break;
             case 8: correctException(); break;
+            case 9: pausableInvokeCatch(); break;
             default: throw new IllegalStateException("Unknown test case: " + testCase);
         }
     }
@@ -404,4 +406,40 @@ public class ExCatch extends ExYieldBase {
         }
         verify(val);
     }
+
+
+    // merged from https://github.com/hyleeon/kilim/tree/fix-invoke
+    void pausableInvokeCatch() throws Pausable {
+        String[][] sa = fa;
+        long l = fl;
+        try {
+            Method mthd = ExCatch.class.getDeclaredMethod("pausableInvokeCatch0",new Class[0]);
+            Task.invoke(mthd,this);
+        } catch (Exception eye) {
+            eye.printStackTrace();
+        }
+        verify(sa);
+        verify(l);
+    }
+    
+    public void pausableInvokeCatch0() throws Pausable {
+        double d = fd;
+        String s = fs;
+        try {
+            pausable(d);
+        }
+        catch (Exception eye) {
+            if (eye instanceof java.lang.reflect.InvocationTargetException)
+                eye = (Exception) eye.getCause();
+            String es = eye.getMessage();
+            if (doPause)
+                Task.sleep(50);
+            verify(es);
+            s = es;
+        }
+        verify(d);
+        verify(s);
+    }
+
+
 }

@@ -61,4 +61,7 @@ public class TestYieldExceptions extends TestCase {
     public void testPureCatch()  throws Exception {
         TestYield.runPure(new kilim.test.ex.ExCatch.Pure());
     }
+    public void testPausableInvokeCatch() throws Exception {
+        TestYield.runTask(new kilim.test.ex.ExCatch(9));
+    }
 }
