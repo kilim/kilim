@@ -1,5 +1,7 @@
 package kilim.test.ex;
 
+import java.lang.reflect.Method;
+
 import kilim.Pausable;
 import kilim.Task;
 
@@ -31,6 +33,7 @@ public class ExCatch extends ExYieldBase {
             case 2: nestedPausableCatch(); break;
             case 3: tryCatchFinally(); break;
             case 4: pausableBeforeCatch(); break;
+            case 5: pausableInvokeCatch(); break;
             default: throw new IllegalStateException("Unknown test case: " + testCase);
         }
     }
@@ -153,6 +156,39 @@ public class ExCatch extends ExYieldBase {
         verify(sa);
         verify(s);
         verify(l);
+    }
+    
+    void pausableInvokeCatch() throws Pausable {
+        String[][] sa = fa;
+        long   l = fl;
+        try {
+        	Method mthd = ExCatch.class.getDeclaredMethod("pausableInvokeCatch0", new Class[0]);
+        	Task.invoke(mthd, this);
+        } catch (Exception eye) {
+        	eye.printStackTrace();
+        }
+        verify(sa);
+        verify(l);
+    }
+    
+    public void pausableInvokeCatch0() throws Pausable {
+    	double d = fd;
+    	String  s = fs;
+    	try {
+    		pausable(d);
+        } catch (Exception eye) {
+        	if(eye instanceof java.lang.reflect.InvocationTargetException) {
+        		eye = (Exception) eye.getCause();
+        	}
+            String es = eye.getMessage();
+            if (doPause) {
+                Task.sleep(50);
+            }
+            verify(es);
+            s = es;
+        }
+    	verify(d);
+        verify(s);
     }
 
 
