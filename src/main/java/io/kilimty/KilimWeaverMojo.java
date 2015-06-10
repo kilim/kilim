@@ -47,8 +47,11 @@ public class KilimWeaverMojo extends AbstractMojo {
 
     public void execute() throws MojoExecutionException {
         try {
-            Weaver.outputDir = outputDirectory.getAbsolutePath();
-            Weaver.main(new String[]{inputDirectory.getAbsolutePath()});
+            //Weaver.outputDir = outputDirectory.getAbsolutePath();
+            String classDir = outputDirectory.getAbsolutePath() + "/classes";
+            getLog().info("kilim weaver output dir is " + classDir);
+            Weaver.main(new String[]{"-d", classDir, classDir});
+            getLog().info("kilim weaver done");
         } catch (Exception e) {
             throw new MojoExecutionException("Error while weaving the classes", e);
         }
