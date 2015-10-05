@@ -506,15 +506,18 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
     /**
      * put a non-null message in the mailbox, and block the calling thread  for timeoutMillis
      * if the mailbox is full. 
+     * @return true if msg is successfully put, otherwise false.
      */
-    public void putb(T msg, final long timeoutMillis) {
+    public boolean putb(T msg, final long timeoutMillis) {
         BlockingSubscriber evs = new BlockingSubscriber();
-        if (!put(msg, evs)) {
+        final boolean ret = put(msg, evs);
+        if (!ret) {
             evs.blockingWait(timeoutMillis);
         }
         if (!evs.eventRcvd) {
             removeSpaceAvailableListener(evs);
         }
+        return ret;
     }
 
     public synchronized int size() {
