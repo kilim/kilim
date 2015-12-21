@@ -51,7 +51,8 @@ public class SimpleHttpServer {
                 HttpResponse resp = new HttpResponse();
                 while (true) {
                     super.readRequest(req);
-                    System.out.println("Received: " + req);
+                    if (req.keepAlive())
+                        resp.addField("Connection", "Keep-Alive");
                     if (req.method.equals("GET") || req.method.equals("HEAD")) {
                         resp.setContentType("text/html");
                         PrintWriter pw = new PrintWriter(resp.getOutputStream());
@@ -72,7 +73,6 @@ public class SimpleHttpServer {
                     
                     if (!req.keepAlive()) 
                         break;
-                    break;
                 }
             } catch (EOFException e) {
                 System.out.println("[" + this.id + "] Connection Terminated");
