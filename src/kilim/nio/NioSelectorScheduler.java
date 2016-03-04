@@ -1,4 +1,4 @@
-/* Copyright (c) 2006, Sriram Srinivasan
+/* Copyright (c) 2006, Sriram Srinivasan, seth lytle 2016
  *
  * You may distribute this software under the terms of the license 
  * specified in the file "License"
@@ -70,9 +70,18 @@ public class NioSelectorScheduler extends Scheduler {
         t.start();
     }
 
+    public int listen(int port,SessionFactory factory, Scheduler sockTaskScheduler)
+            throws IOException {
+        ListenTask t = new ListenTask(port, this, factory);
+        return listen(t,sockTaskScheduler);
+    }
+
     public int listen(int port, Class<? extends SessionTask> sockTaskClass, Scheduler sockTaskScheduler)
             throws IOException {
         ListenTask t = new ListenTask(port, this, sockTaskClass);
+        return listen(t,sockTaskScheduler);
+    }
+    public int listen(ListenTask t,Scheduler sockTaskScheduler) {
         t.setScheduler(sockTaskScheduler);
         t.start();
         return t.port(); 
@@ -187,15 +196,37 @@ public class NioSelectorScheduler extends Scheduler {
         return runnableTasks.size();
     }
 
+    public interface SessionFactory {
+        public SessionTask get() throws Exception;
+    }
+    public static class SessionDefault {
+        Class<? extends SessionTask> sessionClass;
+        public SessionDefault(Class<? extends SessionTask> sessionClass) {
+            this.sessionClass = sessionClass;
+        }
+        public SessionTask get() throws Exception { return sessionClass.newInstance(); }
+    }
     public static class ListenTask extends SessionTask {
         Class<? extends SessionTask> sessionClass;
+        SessionFactory               factory;
         ServerSocketChannel          ssc;
         int                          port;
 
+        public ListenTask(int port,NioSelectorScheduler selScheduler,SessionFactory factory)
+                throws IOException {
+            this.port = port;
+            this.factory = factory;
+            init(selScheduler);
+        }
+
+        
         public ListenTask(int port, NioSelectorScheduler selScheduler, Class<? extends SessionTask> sessionClass)
                 throws IOException {
             this.port = port;
             this.sessionClass = sessionClass;
+            init(selScheduler);
+        }
+        private void init(NioSelectorScheduler selScheduler) throws IOException {
             this.ssc = ServerSocketChannel.open();
             ssc.socket().setReuseAddress(true);
             ssc.socket().bind(new InetSocketAddress(port), LISTEN_BACKLOG); //
@@ -230,7 +261,7 @@ public class NioSelectorScheduler extends Scheduler {
                 } else {
                     ch.socket().setTcpNoDelay(true);
                     ch.configureBlocking(false);
-                    SessionTask task = sessionClass.newInstance();
+                    SessionTask task = (factory==null) ? sessionClass.newInstance() : factory.get();
                     try {
                         EndPoint ep = new EndPoint(this.endpoint.sockEvMbx, ch);
                         task.setEndPoint(ep);

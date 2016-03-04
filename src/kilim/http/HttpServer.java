@@ -1,4 +1,4 @@
-/* Copyright (c) 2006, Sriram Srinivasan
+/* Copyright (c) 2006, Sriram Srinivasan, 2016 seth lytle
  *
  * You may distribute this software under the terms of the license 
  * specified in the file "License"
@@ -10,6 +10,8 @@ import java.io.IOException;
 
 import kilim.Scheduler;
 import kilim.nio.NioSelectorScheduler;
+import kilim.nio.NioSelectorScheduler.SessionFactory;
+import kilim.nio.SessionTask;
 
 /**
  * A very rudimentary HTTP server bound to a specific given port. 
@@ -32,6 +34,25 @@ public class HttpServer {
     nio = new NioSelectorScheduler();
     listen(port, httpSessionClass, Scheduler.getDefaultScheduler());
   }
+  public HttpServer(int port,SessionFactory factory) throws IOException {
+    nio = new NioSelectorScheduler();
+    listen(port, factory, Scheduler.getDefaultScheduler());
+  }
+  public HttpServer(int port,HttpSession.StringRouter handler) throws IOException {
+    nio = new NioSelectorScheduler();
+    listen(port, new Factory(handler), Scheduler.getDefaultScheduler());
+  }
+  public static class Factory implements SessionFactory {
+      HttpSession.StringRouter handler;
+
+      public Factory(HttpSession.StringRouter handler) {
+          this.handler = handler;
+      }
+      
+      public SessionTask get() throws Exception {
+          return new HttpSession.StringSession(handler);
+      }
+  }
   
   /**
    * Sets up a listener on the supplied port, and when a fresh connection comes in, it creates
@@ -45,5 +66,8 @@ public class HttpServer {
    */
   public void listen(int port, Class<? extends HttpSession> httpSessionClass, Scheduler httpSessionScheduler) throws IOException {
     nio.listen(port, httpSessionClass, httpSessionScheduler);
+  }
+  public void listen(int port,SessionFactory factory,Scheduler httpSessionScheduler) throws IOException {
+    nio.listen(port, factory, httpSessionScheduler);
   }
 }
