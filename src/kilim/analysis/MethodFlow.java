@@ -102,7 +102,7 @@ public class MethodFlow extends MethodNode {
             final String signature,
             final String[] exceptions,
             final Detector detector) {
-        super(Opcodes.ASM4, access, name, desc, signature, exceptions);
+        super(Opcodes.ASM5, access, name, desc, signature, exceptions);
         this.classFlow = classFlow;
         this.detector = detector;
         posToLabelMap = new ArrayList<LabelNode>();
@@ -210,8 +210,8 @@ public class MethodFlow extends MethodNode {
     
     
     @Override
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
-        super.visitMethodInsn(opcode, owner, name, desc);
+    public void visitMethodInsn(int opcode, String owner, String name, String desc,boolean itf) {
+        super.visitMethodInsn(opcode, owner, name, desc, itf);
         // The only reason for adding to pausableMethods is to create a BB for pausable
         // method call sites. If the class is already woven, we don't need this 
         // functionality.

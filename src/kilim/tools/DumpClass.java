@@ -66,13 +66,13 @@ public class DumpClass extends ClassVisitor implements Opcodes {
     
 
     public DumpClass(InputStream is) throws IOException {
-        super(ASM4);
+        super(ASM5);
         ClassReader cr = new ClassReader(is);
         cr.accept(this, /*flags*/ 0);
     }
 
     public DumpClass(String className) throws IOException {
-        super(ASM4);
+        super(ASM5);
         ClassReader cr;
         if (className.endsWith(".class")) {
             FileInputStream fis = new FileInputStream(className);
@@ -161,7 +161,7 @@ public class DumpClass extends ClassVisitor implements Opcodes {
 
 class DummyAnnotationVisitor extends AnnotationVisitor {
     public DummyAnnotationVisitor() {
-        super(Opcodes.ASM4);
+        super(Opcodes.ASM5);
         // TODO Auto-generated constructor stub
     }
     public void visit(String name, Object value) {
@@ -189,7 +189,7 @@ class DummyAnnotationVisitor extends AnnotationVisitor {
 class DumpMethodVisitor extends MethodVisitor implements Opcodes {
 
     public DumpMethodVisitor() {
-        super(Opcodes.ASM4);
+        super(Opcodes.ASM5);
     }
 
     static String[] os = {
@@ -335,7 +335,7 @@ class DumpMethodVisitor extends MethodVisitor implements Opcodes {
         dedent(4);
     }
 
-    public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+    public void visitMethodInsn(int opcode, String owner, String name, String desc,boolean itf) {
         String str = os[opcode] + " " + owner + "/" + name + desc;
         if (opcode == INVOKEINTERFACE) {
             ppn(str + ", " + (TypeDesc.getNumArgumentTypes(desc)+1));

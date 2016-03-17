@@ -1,6 +1,7 @@
 // copyright 2016 seth lytle
 package kilim.examples;
 
+import java.util.stream.Stream;
 import kilim.Pausable;
 import kilim.Task;
 
@@ -37,6 +38,8 @@ public class Userdata extends Task {
         eats2.insert1(0);
         new Eats3().insert1(0);
         eater(kfood -> System.out.println("lam"), 0);
+        Stream.of(0,1,2,3,4).forEach(System.out::println);
+        System.exit(0);
     }
 
     public static void main(String [] args) {

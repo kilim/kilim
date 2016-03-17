@@ -39,19 +39,19 @@ public class ClassFlow extends ClassNode {
     private Detector      detector;
 
     public ClassFlow(InputStream is, Detector detector) throws IOException {
-        super(Opcodes.ASM4);
+        super(Opcodes.ASM5);
         cr = new ClassReader(is);
         this.detector = detector;
     }
 
     public ClassFlow(String aClassName, Detector detector) throws IOException {
-        super(Opcodes.ASM4);
+        super(Opcodes.ASM5);
         cr = new ClassReader(aClassName);
         this.detector = detector;
     }
 
     public ClassFlow(byte[] data, Detector detector) {
-        super(Opcodes.ASM4);
+        super(Opcodes.ASM5);
         cr = new ClassReader(data);
         this.detector = detector;
     }

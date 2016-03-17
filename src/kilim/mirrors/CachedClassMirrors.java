@@ -74,7 +74,7 @@ class CachedClassMirror extends ClassVisitor implements ClassMirror  {
     private List<CachedMethodMirror> tmpMethodList; //used only while processing bytecode. 
     
     public CachedClassMirror(byte []bytecode) {
-        super(Opcodes.ASM4);
+        super(Opcodes.ASM5);
         ClassReader cr = new ClassReader(bytecode);
         cr.accept(this, /*flags*/0);
     }
@@ -182,7 +182,7 @@ class CachedClassMirror extends ClassVisitor implements ClassMirror  {
     }
     static class DummyAnnotationVisitor extends AnnotationVisitor {
         public DummyAnnotationVisitor() {
-            super(Opcodes.ASM4);
+            super(Opcodes.ASM5);
         }
         static DummyAnnotationVisitor singleton = new DummyAnnotationVisitor();
         public void visit(String name, Object value) {}
