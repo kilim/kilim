@@ -7,7 +7,7 @@ import kilim.WeavingClassLoader;
 
 
 /**
- * Invoke as java -Dkilim.classpath="classDir1:classDir2:jar1.jar:..." Kilim  class args...
+ * Invoke as java -Dkilim.class.path="classDir1:classDir2:jar1.jar:..." kilim.tools.Kilim  class args...
  * 
  * This class dynamically weaves kilim-related classes and runs "class". The classpath
  * specified must not be in the main classpath, otherwise the system class loader will 
