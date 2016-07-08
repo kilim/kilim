@@ -10,5 +10,5 @@ public interface Mirrors {
 		throws ClassMirrorNotFoundException;
 
 	public abstract ClassMirror  mirror(Class<?> clazz);
-    public abstract ClassMirror  mirror(String className, byte[] bytecode);
+    public abstract ClassMirror  mirror(byte[] bytecode);
 }

@@ -1,8 +1,12 @@
+// copyright 2016 seth lytle, 2014 sriram srinivasan
 package kilim.mirrors;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import kilim.KilimClassLoader;
+import kilim.WeavingClassLoader;
 
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Attribute;
@@ -11,6 +15,8 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import kilim.mirrors.RuntimeClassMirrors.RuntimeClassMirror;
+import kilim.mirrors.RuntimeClassMirrors.RuntimeMethodMirror;
 
 
 /**
@@ -21,11 +27,10 @@ import org.objectweb.asm.Opcodes;
 public class CachedClassMirrors implements Mirrors {
     final static String[] EMPTY_SET = new String[0];
     
-    final RuntimeClassMirrors delegate;
     ConcurrentHashMap<String,ClassMirror> cachedClasses = new ConcurrentHashMap<String, ClassMirror>();
+    private final KilimClassLoader loader = new KilimClassLoader();
 
-    public CachedClassMirrors(ClassLoader cl) {
-        delegate = new RuntimeClassMirrors(cl);
+    public CachedClassMirrors() {
     }
     
     @Override
@@ -33,38 +38,50 @@ public class CachedClassMirrors implements Mirrors {
             throws ClassMirrorNotFoundException {
         // defer to loaded class objects first, then to cached class mirrors.
         ClassMirror ret = cachedClasses.get(className);
+        if (ret != null) return ret;
 
-        if (ret == null) {
-            ret = delegate.classForName(className);
+        if (loader.isLoaded(className)) {
+            try {
+                Class clazz = loader.loadClass(className);
+                return mirror(clazz);
+            }
+            catch (ClassNotFoundException ex) {
+                throw new ClassMirrorNotFoundException(className,ex);
+            }
         }
-        if (ret == null) {
-            throw new ClassMirrorNotFoundException(className);
-        }
-        return ret;
+        
+        byte [] code = WeavingClassLoader.findCode(getClass().getClassLoader(),className);
+        if (code != null) return place(new CachedClassMirror(code));
+        
+        throw new ClassMirrorNotFoundException(className);
     }
 
-    @Override
-    public ClassMirror mirror(Class<?> clazz) {
-        // param is already a class; use the delegate to get the appropriate runtime mirror
-        return delegate.mirror(clazz);
+    public ClassMirror mirror(byte[] bytecode) {
+        return place(new CachedClassMirror(bytecode));
+    }
+
+    private ClassMirror place(ClassMirror r1) {
+        ClassMirror r2 = cachedClasses.putIfAbsent(r1.getName(),r1);
+        return r2==null ? r1:r2;
     }
     
     @Override
-    public ClassMirror mirror(String className, byte[] bytecode) {
-        // if it is loaded by the classLoader already, we will
-        // not load the classNode, even if the bytes are different
-        ClassMirror  ret = null;
-        if (!delegate.isLoaded(className)) {
-            ret = new CachedClassMirror(bytecode);
-            String name = ret.getName().replace('/', '.'); // Class.forName format
-            this.cachedClasses.put(name, ret);
-        }
-        return ret;
+    public ClassMirror mirror(Class<?> clazz) {
+        ClassMirror mirror = new CachedClassMirror(clazz);
+        return place(mirror);
     }
-}
+    
+    private static String map(String word) {
+        return word==null ? null : word.replace("/",".");
+    }
+    private static String [] map(String [] words) {
+        if (words==null) return words;
+        String [] mod = new String[words.length];
+        for (int ii = 0; ii < mod.length; ii++) mod[ii] = words[ii].replace("/",".");
+        return mod;
+    }
 
 class CachedClassMirror extends ClassVisitor implements ClassMirror  {
-
     String name;
     boolean isInterface;
     MethodMirror[] declaredMethods;
@@ -72,11 +89,22 @@ class CachedClassMirror extends ClassVisitor implements ClassMirror  {
     String superName;
     
     private List<CachedMethodMirror> tmpMethodList; //used only while processing bytecode. 
+    private RuntimeClassMirror rm;
     
     public CachedClassMirror(byte []bytecode) {
         super(Opcodes.ASM5);
         ClassReader cr = new ClassReader(bytecode);
         cr.accept(this, /*flags*/0);
+    }
+    public CachedClassMirror(Class clazz) {
+        super(Opcodes.ASM5);
+        rm = new RuntimeClassMirror(clazz);
+        name = rm.getName();
+        isInterface = rm.isInterface();
+        superName = rm.getSuperclass();
+        // lazy evaluation for the rest
+        interfaceNames = null;
+        declaredMethods = null;
     }
 
     @Override
@@ -93,7 +121,8 @@ class CachedClassMirror extends ClassVisitor implements ClassMirror  {
     public boolean equals(Object obj) {
         if (obj instanceof CachedClassMirror) {
             CachedClassMirror mirr = (CachedClassMirror) obj;
-            return mirr.name == this.name && mirr.isInterface == this.isInterface;
+            String n1 = name, n2 = mirr.name;
+            return n1.equals(n2) && mirr.isInterface == this.isInterface;
         }
 
         return false;
@@ -106,12 +135,21 @@ class CachedClassMirror extends ClassVisitor implements ClassMirror  {
 
     @Override
     public MethodMirror[] getDeclaredMethods() {
-      return (declaredMethods == null) ? 
-        new MethodMirror[0] : declaredMethods;
+        if (declaredMethods != null)
+            return declaredMethods;
+        if (rm==null)
+            return declaredMethods = new MethodMirror[0];
+        Method[] jms = rm.clazz.getDeclaredMethods();
+        declaredMethods = new MethodMirror[jms.length];
+        for (int i = 0; i < jms.length; i++)
+            declaredMethods[i] = new CachedMethodMirror(jms[i]);
+        return declaredMethods;
     }
 
     @Override
     public String[] getInterfaces() throws ClassMirrorNotFoundException {
+        if (interfaceNames==null && rm != null)
+            interfaceNames = rm.getInterfaces();
         return interfaceNames;
     }
 
@@ -122,13 +160,15 @@ class CachedClassMirror extends ClassVisitor implements ClassMirror  {
 
     @Override
     public boolean isAssignableFrom(ClassMirror c) throws ClassMirrorNotFoundException {
-        Detector d = Detector.getDetector();
+        CachedClassMirrors mirrors = CachedClassMirrors.this;
+        if (c==null) return false;
         if (this.equals(c)) return true;
         
-        ClassMirror supcl = d.classForName(c.getSuperclass());
+        String sname = c.getSuperclass();
+        ClassMirror supcl = sname==null ? null : mirrors.classForName(sname);
         if (isAssignableFrom(supcl)) return true;
         for (String icl: c.getInterfaces()) {
-            supcl = d.classForName(icl);
+            supcl = mirrors.classForName(icl);
             if (isAssignableFrom(supcl))
                 return true;
         }
@@ -139,20 +179,24 @@ class CachedClassMirror extends ClassVisitor implements ClassMirror  {
     // ClassVisitor implementation
     public void visit(int version, int access, String name, String signature, String superName,
             String[] interfaces) {
-        this.name = name;
-        this.superName = superName;
-        this.interfaceNames = interfaces == null ? CachedClassMirrors.EMPTY_SET : interfaces;
+        this.name = map(name);
+        this.superName = map(superName);
+        this.interfaceNames = interfaces == null ? CachedClassMirrors.EMPTY_SET : map(interfaces);
         this.isInterface = (access & Opcodes.ACC_INTERFACE) > 0;
+        if (this.isInterface) this.superName = null;
     }
 
     
     
     public MethodVisitor visitMethod(int access, String name, String desc, String signature,
             String[] exceptions) {
+        if (name.equals("<init>")) return null;
+        if (name.equals("<clinit>")) return null;
         if (tmpMethodList == null) {
             tmpMethodList = new ArrayList<CachedMethodMirror>();
         }
-        tmpMethodList.add(new CachedMethodMirror(access, name, desc, exceptions));
+        CachedMethodMirror mirror = new CachedMethodMirror(access, name, desc, map(exceptions));
+        tmpMethodList.add(mirror);
         return null; // null MethodVisitor to avoid examining the instructions.
     }
     
@@ -180,6 +224,7 @@ class CachedClassMirror extends ClassVisitor implements ClassMirror  {
             Object value) {
         return null;
     }
+}
     static class DummyAnnotationVisitor extends AnnotationVisitor {
         public DummyAnnotationVisitor() {
             super(Opcodes.ASM5);
@@ -192,6 +237,7 @@ class CachedClassMirror extends ClassVisitor implements ClassMirror  {
         public void visitEnum(String name, String desc, String value) {}
     }
 }
+
 
 class CachedMethodMirror implements MethodMirror {
 
@@ -207,6 +253,14 @@ class CachedMethodMirror implements MethodMirror {
         this.desc = desc;
         this.exceptions = (exceptions == null) ? CachedClassMirrors.EMPTY_SET : exceptions;
         isBridge = (modifiers & Opcodes.ACC_BRIDGE) > 0;
+    }
+    public CachedMethodMirror(Method method) {
+        RuntimeMethodMirror rm = new RuntimeMethodMirror(method);
+        this.modifiers = rm.getModifiers();
+        this.name = rm.getName();
+        this.desc = rm.getMethodDescriptor();
+        this.exceptions = rm.getExceptionTypes();
+        isBridge = rm.isBridge();
     }
 
     public String getName() {

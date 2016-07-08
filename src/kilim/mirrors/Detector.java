@@ -26,7 +26,7 @@ public class Detector {
     // Note that we don't have the kilim package itself in the following list.
     static final String[] STANDARD_DONT_CHECK_LIST = { "java.", "javax." };
 
-    public static final Detector DEFAULT = new Detector(new RuntimeClassMirrors());
+    public static final Detector DEFAULT = new Detector(new CachedClassMirrors());
 
     public final Mirrors mirrors;
 
@@ -158,20 +158,6 @@ public class Detector {
         }
     }
 
-    static private final ThreadLocal<Detector> DETECTOR = new ThreadLocal<Detector>();
-
-    public static Detector getDetector() {
-        Detector d = DETECTOR.get();
-        if (d == null)
-            return Detector.DEFAULT;
-        return d;
-    }
-
-    public static Detector setDetector(Detector d) {
-        Detector res = DETECTOR.get();
-        DETECTOR.set(d);
-        return res;
-    }
 
     public String commonSuperType(String oa, String ob) throws ClassMirrorNotFoundException {
         String a = toClassName(oa);

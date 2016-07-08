@@ -24,7 +24,7 @@ import org.objectweb.asm.tree.FieldNode;
  */
 public class ClassFlow extends ClassNode {
     ArrayList<MethodFlow> methodFlows;
-    ClassReader           cr;
+    public ClassReader           cr;
     String                classDesc;
     /**
      * true if any of the methods contained in the class file is pausable. ClassWeaver uses it later to avoid weaving if
@@ -36,25 +36,17 @@ public class ClassFlow extends ClassNode {
      * true if the .class being read is already woven.
      */
     public boolean        isWoven = false;
-    private Detector      detector;
 
-    public ClassFlow(InputStream is, Detector detector) throws IOException {
+    public ClassFlow(InputStream is) throws IOException {
         super(Opcodes.ASM5);
         cr = new ClassReader(is);
-        this.detector = detector;
     }
 
-    public ClassFlow(String aClassName, Detector detector) throws IOException {
+    public ClassFlow(String aClassName) throws IOException {
         super(Opcodes.ASM5);
         cr = new ClassReader(aClassName);
-        this.detector = detector;
     }
 
-    public ClassFlow(byte[] data, Detector detector) {
-        super(Opcodes.ASM5);
-        cr = new ClassReader(data);
-        this.detector = detector;
-    }
 
 
     @Override
@@ -67,7 +59,7 @@ public class ClassFlow extends ClassNode {
             final String[] exceptions)
     {
         MethodFlow mn = new MethodFlow( this, access, name,  desc, signature,
-                exceptions, detector);
+                exceptions, Detector.DEFAULT);
         super.methods.add(mn);
         return mn;
     }
@@ -80,7 +72,6 @@ public class ClassFlow extends ClassNode {
     public ArrayList<MethodFlow> analyze(boolean forceAnalysis) throws KilimException {
         // cr.accept(this, ClassReader.SKIP_DEBUG);
 
-        Detector save = Detector.setDetector(detector);
         try {
             cr.accept(this, /*flags*/ClassReader.SKIP_FRAMES);
             for (Object o : this.fields) {
@@ -124,7 +115,6 @@ public class ClassFlow extends ClassNode {
             return flows;
 
         } finally {
-            Detector.setDetector(save);
         }
     }
 
@@ -162,9 +152,6 @@ public class ClassFlow extends ClassNode {
         return (this.access & Opcodes.ACC_INTERFACE) != 0;
     }
 
-    public Detector detector() {
-        return detector;
-    }
     
     /*
      * If this class is a functional interface, return the one "Single Abstract

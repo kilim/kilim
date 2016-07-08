@@ -53,47 +53,25 @@ public class ClassWeaver {
     	stateClasses_.set(new HashMap<String, ClassInfo>() );
     }
     
-    private final ClassLoader classLoader;
     private Detector detector;
     
-    public ClassWeaver(byte[] data) {
-        this(data, Detector.DEFAULT, Thread.currentThread().getContextClassLoader());
+    
+    
+    
+    
+    
+    public ClassWeaver(InputStream is) throws IOException {
+        this.detector = null;
+        classFlow = new ClassFlow(is);
     }
     
-    public ClassWeaver(byte[] data, Detector detector) {
-    	this(data, detector, Thread.currentThread().getContextClassLoader());
-    }
-    
-    public ClassWeaver(InputStream is, Detector detector) throws IOException {
-    	this(is, detector, Thread.currentThread().getContextClassLoader());
-    }
-    
-    public ClassWeaver(String className, Detector detector) throws IOException {
-        this(className, detector, Thread.currentThread().getContextClassLoader());
-    }
-    
-    public ClassWeaver(byte[] data, Detector detector, ClassLoader classLoader) {
-        classFlow = new ClassFlow(data, detector);
-        this.detector = detector;
-        this.classLoader = classLoader;
-    }
-    
-    public ClassWeaver(InputStream is, Detector detector, ClassLoader classLoader) throws IOException {
-        this.detector = detector;
-        this.classLoader = classLoader;
-        classFlow = new ClassFlow(is, detector);
-    }
-    
-    public ClassWeaver(String className, Detector detector, ClassLoader classLoader) throws IOException {
-        classFlow = new ClassFlow(className, detector);
-        this.classLoader = classLoader;
-    }
     
     public void weave() throws KilimException {
         classFlow.analyze(false);
         if (needsWeaving() && classFlow.isPausable()) {
             boolean computeFrames = (classFlow.version & 0x00FF) >= 50;
-            ClassWriter cw = new kilim.analysis.ClassWriter(computeFrames ? ClassWriter.COMPUTE_FRAMES : 0, classFlow.detector());
+            ClassWriter cw = new kilim.analysis.ClassWriter(
+                    computeFrames ? ClassWriter.COMPUTE_FRAMES : 0, Detector.DEFAULT);
             accept(cw);
             addClassInfo(new ClassInfo(classFlow.getClassName(), cw.toByteArray()));
         }
@@ -165,7 +143,7 @@ public class ClassWeaver {
                 // of the method with the body of the lambda expression. 
                 
                 boolean isSAM = (sam == m);
-                MethodWeaver mw = new MethodWeaver(this, detector, m, isSAM);
+                MethodWeaver mw = new MethodWeaver(this, Detector.DEFAULT, m, isSAM);
                 mw.accept(cv);
                 if (m.isPausable())
                     mw.makeNotWovenMethod(cv, m, isSAM);
@@ -254,7 +232,7 @@ public class ClassWeaver {
         ClassInfo classInfo= null;
             classInfo= stateClasses_.get().get(className);
             if (classInfo == null) {
-                ClassWriter cw = new kilim.analysis.ClassWriter(ClassWriter.COMPUTE_FRAMES, classFlow.detector());
+                ClassWriter cw = new kilim.analysis.ClassWriter(ClassWriter.COMPUTE_FRAMES, Detector.DEFAULT);
                 cw.visit(V1_1, ACC_PUBLIC | ACC_FINAL, className, null, "kilim/State", null);
 
                 // Create default constructor

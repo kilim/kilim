@@ -20,7 +20,7 @@ public class Kilim {
         }
         String className = args[0];
         args = processArgs(args);
-        WeavingClassLoader wcl = new WeavingClassLoader(Thread.currentThread().getContextClassLoader());
+        WeavingClassLoader wcl = new WeavingClassLoader();
         Class<?> mainClass = wcl.loadClass(className);
         Method mainMethod = mainClass.getMethod("main", new Class[]{String[].class});
         mainMethod.invoke(null,new Object[] {args});

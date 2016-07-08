@@ -19,17 +19,10 @@ public class RuntimeClassMirrors implements Mirrors {
     Map<String, RuntimeClassMirror> cachedClasses = Collections
             .synchronizedMap(new WeakHashMap<String, RuntimeClassMirror>());
 
-    public final KilimClassLoader classLoader;
+    private final KilimClassLoader classLoader;
 
     public RuntimeClassMirrors() {
-        this(Thread.currentThread().getContextClassLoader());
-    }
-
-    public RuntimeClassMirrors(ClassLoader cl) {
-        if (!(cl instanceof KilimClassLoader)) {
-            cl = new KilimClassLoader(cl);
-        }
-        this.classLoader = (KilimClassLoader) cl;
+        this.classLoader = new KilimClassLoader();
     }
 
     @Override
@@ -52,30 +45,10 @@ public class RuntimeClassMirrors implements Mirrors {
         return make(clazz);
     }
 
-    @Override
-    public ClassMirror mirror(String className, byte[] bytecode) {
-        try {
-            return classForName(className);
-        } catch (ClassMirrorNotFoundException ignore) {}
+    public ClassMirror mirror(byte[] bytecode) {
         return null;
     }
 
-    /**
-     * Like classForName, but only if the class is already loaded. This does not force loading of a
-     * class.
-     * 
-     * @param className
-     * @return null if className not loaded, else a RuntimeClassMirror to represent the loaded
-     *         class.
-     */
-    public ClassMirror loadedClassForName(String className) {
-        Class<?> c = classLoader.getLoadedClass(className);
-        return (c == null) ? null : make(c);
-    }
-
-    public Class<?> getLoadedClass(String className) {
-        return classLoader.getLoadedClass(className);
-    }
 
     public boolean isLoaded(String className) {
         return classLoader.isLoaded(className);
@@ -89,9 +62,8 @@ public class RuntimeClassMirrors implements Mirrors {
         cachedClasses.put(c.getName(), ret);
         return ret;
     }
-}
 
-class RuntimeMethodMirror implements MethodMirror {
+static class RuntimeMethodMirror implements MethodMirror {
 
     private final Method method;
 
@@ -125,9 +97,9 @@ class RuntimeMethodMirror implements MethodMirror {
     }
 }
 
-class RuntimeClassMirror implements ClassMirror {
+static class RuntimeClassMirror implements ClassMirror {
 
-    private final Class<?> clazz;
+    final Class<?> clazz;
     private MethodMirror[] methods; 
     
     public RuntimeClassMirror(Class<?> clazz) {
@@ -196,3 +168,6 @@ class RuntimeClassMirror implements ClassMirror {
     }
 
 }
+
+}
+

@@ -534,9 +534,6 @@ public class MethodFlow extends MethodNode {
         return ((this.access & ACC_VOLATILE) != 0);
     }
 
-    public Detector detector() {
-        return this.classFlow.detector();
-    }
 
     public void resetLabels() {
         for (int i = 0; i < posToLabelMap.size(); i++) {

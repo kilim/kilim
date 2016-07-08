@@ -223,9 +223,6 @@ public class BasicBlock implements Comparable<BasicBlock> {
         successors = new ArrayList<BasicBlock>(2);
     }
 
-    Detector detector() {
-    	return flow.detector();
-    }
     
     /**
      * Absorb as many instructions until the next label or the next transfer of

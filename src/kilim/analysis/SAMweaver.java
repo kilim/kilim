@@ -1,3 +1,4 @@
+// copyright 2016 seth lytle, 2014 sriram srinivasan
 package kilim.analysis;
 
 import kilim.Constants;
@@ -8,8 +9,6 @@ import kilim.mirrors.MethodMirror;
 
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.MethodInsnNode;
 
 /**
  * {@code SAMweaver} generates code to support functional interfaces (also known
@@ -168,20 +167,23 @@ public class SAMweaver implements Constants {
         mv.visitEnd();
     }
 
+    static String [] internalName(String [] words) {
+        if (words==null) return words;
+        String [] mod = new String[words.length];
+        for (int ii = 0; ii < mod.length; ii++) mod[ii] = words[ii].replace('.','/');
+        return mod;
+    }
+
     private String[] getExceptions() {
         try {
-            ClassMirror cm = Detector.getDetector().classForName(interfaceName);
+            ClassMirror cm = Detector.DEFAULT.classForName(interfaceName);
             for (MethodMirror m : cm.getDeclaredMethods()) {
                 if (m.getName().equals(this.methodName)
                         && m.getMethodDescriptor().equals(this.desc)) {
                     // Convert dots to slashes. 
                     String[] ret = m.getExceptionTypes();
-                    if (ret != null) {
-                        for (int i = 0; i < ret.length; i++) {
-                            ret[i] = ret[i].replace('.', '/');
-                        }
-                        return ret;
-                    }
+                    if (ret != null) 
+                        return internalName(ret);
                     break;
                 }
             }

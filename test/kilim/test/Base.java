@@ -23,7 +23,8 @@ public class Base extends TestCase {
 
     protected void cache(String className) throws Exception {
         if (lastClassName != className) {
-            ClassFlow cf = new ClassFlow(className, Detector.DEFAULT);
+            ClassFlow cf = new ClassFlow(
+                    ClassLoader.getSystemResourceAsStream(className.replace('.', '/')+".class"));
             stflows = cf.analyze(/* forceAnalysis = */true);
             lastClassName = className;
         }
