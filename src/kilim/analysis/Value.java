@@ -9,6 +9,7 @@ import static kilim.Constants.D_UNDEFINED;
 import static kilim.Constants.D_NULL;
 
 import java.util.Arrays;
+import kilim.mirrors.Detector;
 
 /**
  * A SSA value that represents all objects produced at a particular 
@@ -73,13 +74,13 @@ public class Value {
      * @param vb
      * @return this if the result of the merge is no different, or the new value
      */
-    public Value merge(Value other) {
+    public Value merge(Detector det,Value other) {
         int[] newSites = new int[this.numSites + other.numSites];
         for (int i = 0; i < newSites.length; i++) newSites[i] = -1;
         int newNumSites = mergeSites(newSites, other);
         String newType;
         try {
-            newType = TypeDesc.mergeType(this.typeDesc, other.typeDesc);
+            newType = TypeDesc.mergeType(det, this.typeDesc, other.typeDesc);
         } catch (IncompatibleTypesException e) {
             newType = D_UNDEFINED;
         }

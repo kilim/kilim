@@ -25,6 +25,7 @@ import java.util.zip.ZipEntry;
 import kilim.analysis.BasicBlock;
 import kilim.analysis.ClassFlow;
 import kilim.analysis.Frame;
+import kilim.analysis.KilimContext;
 import kilim.analysis.MethodFlow;
 import kilim.analysis.TypeDesc;
 import kilim.analysis.Usage;
@@ -38,6 +39,7 @@ import org.objectweb.asm.tree.MethodInsnNode;
  * @author ram
  */
 public class FlowAnalyzer {
+    
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             System.err.println("Usage <class name | jar file name> [methodName]");
@@ -61,13 +63,13 @@ public class FlowAnalyzer {
                 FileInputStream fis = null;
                 try {
                     fis = new FileInputStream(className);
-                    cf = new ClassFlow(fis);
+                    cf = new ClassFlow(KilimContext.DEFAULT,fis);
                 } finally {
                     if (fis != null) {fis.close();}
                 }
             }
             if (cf == null) {
-                cf = new ClassFlow(className);
+                cf = new ClassFlow(KilimContext.DEFAULT,className);
             }
             ArrayList<MethodFlow> flows = cf.analyze(true);
             for (MethodFlow flow: flows) {

@@ -36,14 +36,17 @@ public class ClassFlow extends ClassNode {
      * true if the .class being read is already woven.
      */
     public boolean        isWoven = false;
+    public KilimContext context;
 
-    public ClassFlow(InputStream is) throws IOException {
+    public ClassFlow(KilimContext context,InputStream is) throws IOException {
         super(Opcodes.ASM5);
+        this.context = context;
         cr = new ClassReader(is);
     }
 
-    public ClassFlow(String aClassName) throws IOException {
+    public ClassFlow(KilimContext context,String aClassName) throws IOException {
         super(Opcodes.ASM5);
+        this.context = context;
         cr = new ClassReader(aClassName);
     }
 
@@ -59,7 +62,7 @@ public class ClassFlow extends ClassNode {
             final String[] exceptions)
     {
         MethodFlow mn = new MethodFlow( this, access, name,  desc, signature,
-                exceptions, Detector.DEFAULT);
+                exceptions, context.detector);
         super.methods.add(mn);
         return mn;
     }

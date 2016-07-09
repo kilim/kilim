@@ -236,7 +236,6 @@ public class MethodWeaver {
         // Is it a lambda conversion
         if (indy.bsm.getOwner().equals("java/lang/invoke/LambdaMetafactory")) {
             Handle lambdaBody = (Handle)bsmArgs[1];
-            Detector detector = Detector.DEFAULT;
             String desc = lambdaBody.getDesc();
             if (detector.isPausable(lambdaBody.getOwner(), lambdaBody.getName(), desc)) {
                 bsmArgs[0] = addFiberType((Type)bsmArgs[0]);

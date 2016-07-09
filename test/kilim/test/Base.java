@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import junit.framework.TestCase;
 import kilim.analysis.BasicBlock;
 import kilim.analysis.ClassFlow;
+import kilim.analysis.KilimContext;
 import kilim.analysis.MethodFlow;
 import kilim.mirrors.Detector;
 
@@ -20,10 +21,12 @@ import org.objectweb.asm.tree.MethodInsnNode;
 public class Base extends TestCase {
     private static ArrayList<MethodFlow> stflows;
     private static String                lastClassName = null;
+    KilimContext context = KilimContext.DEFAULT;
 
     protected void cache(String className) throws Exception {
         if (lastClassName != className) {
             ClassFlow cf = new ClassFlow(
+                    context,
                     ClassLoader.getSystemResourceAsStream(className.replace('.', '/')+".class"));
             stflows = cf.analyze(/* forceAnalysis = */true);
             lastClassName = className;

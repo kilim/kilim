@@ -53,16 +53,16 @@ public class ClassWeaver {
     	stateClasses_.set(new HashMap<String, ClassInfo>() );
     }
     
-    private Detector detector;
+
+    public KilimContext context;
     
     
     
     
     
-    
-    public ClassWeaver(InputStream is) throws IOException {
-        this.detector = null;
-        classFlow = new ClassFlow(is);
+    public ClassWeaver(KilimContext context,InputStream is) throws IOException {
+        this.context = context;
+        classFlow = new ClassFlow(context,is);
     }
     
     
@@ -71,7 +71,7 @@ public class ClassWeaver {
         if (needsWeaving() && classFlow.isPausable()) {
             boolean computeFrames = (classFlow.version & 0x00FF) >= 50;
             ClassWriter cw = new kilim.analysis.ClassWriter(
-                    computeFrames ? ClassWriter.COMPUTE_FRAMES : 0, Detector.DEFAULT);
+                    computeFrames ? ClassWriter.COMPUTE_FRAMES : 0, context.detector);
             accept(cw);
             addClassInfo(new ClassInfo(classFlow.getClassName(), cw.toByteArray()));
         }
@@ -143,7 +143,7 @@ public class ClassWeaver {
                 // of the method with the body of the lambda expression. 
                 
                 boolean isSAM = (sam == m);
-                MethodWeaver mw = new MethodWeaver(this, Detector.DEFAULT, m, isSAM);
+                MethodWeaver mw = new MethodWeaver(this, context.detector, m, isSAM);
                 mw.accept(cv);
                 if (m.isPausable())
                     mw.makeNotWovenMethod(cv, m, isSAM);
@@ -232,7 +232,7 @@ public class ClassWeaver {
         ClassInfo classInfo= null;
             classInfo= stateClasses_.get().get(className);
             if (classInfo == null) {
-                ClassWriter cw = new kilim.analysis.ClassWriter(ClassWriter.COMPUTE_FRAMES, Detector.DEFAULT);
+                ClassWriter cw = new kilim.analysis.ClassWriter(ClassWriter.COMPUTE_FRAMES, context.detector);
                 cw.visit(V1_1, ACC_PUBLIC | ACC_FINAL, className, null, "kilim/State", null);
 
                 // Create default constructor
@@ -279,7 +279,7 @@ public class ClassWeaver {
     
     ArrayList<SAMweaver> samWeavers = new ArrayList<SAMweaver>();
     SAMweaver getSAMWeaver(String owner, String methodName, String desc, boolean itf) {
-        SAMweaver sw = new SAMweaver(owner, methodName, desc, itf);
+        SAMweaver sw = new SAMweaver(context,owner, methodName, desc, itf);
         // intern
         for (SAMweaver s: samWeavers) {
             if (s.equals(sw)) {

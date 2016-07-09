@@ -46,7 +46,7 @@ public class RuntimeClassMirrors implements Mirrors {
     }
 
     public ClassMirror mirror(byte[] bytecode) {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
 

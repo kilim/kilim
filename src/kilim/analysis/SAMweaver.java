@@ -77,13 +77,15 @@ public class SAMweaver implements Constants {
     String  desc;
     boolean itf;
     int     index = -1;
+    KilimContext context;
 
-    public SAMweaver(String interfaceName, String methodName, String desc,
+    public SAMweaver(KilimContext context,String interfaceName, String methodName, String desc,
             boolean itf) {
         this.interfaceName = interfaceName;
         this.methodName = methodName;
         this.desc = desc;
         this.itf = itf;
+        this.context = context;
     }
 
     public void setIndex(int index) {
@@ -176,7 +178,7 @@ public class SAMweaver implements Constants {
 
     private String[] getExceptions() {
         try {
-            ClassMirror cm = Detector.DEFAULT.classForName(interfaceName);
+            ClassMirror cm = context.detector.classForName(interfaceName);
             for (MethodMirror m : cm.getDeclaredMethods()) {
                 if (m.getName().equals(this.methodName)
                         && m.getMethodDescriptor().equals(this.desc)) {

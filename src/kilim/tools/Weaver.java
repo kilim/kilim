@@ -6,6 +6,7 @@
 
 package kilim.tools;
 
+import kilim.analysis.KilimContext;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -21,6 +22,7 @@ import kilim.KilimException;
 import kilim.analysis.ClassInfo;
 import kilim.analysis.ClassWeaver;
 import kilim.analysis.FileLister;
+import kilim.mirrors.CachedClassMirrors;
 import kilim.mirrors.Detector;
 
 /**
@@ -50,6 +52,7 @@ public class Weaver implements WeaverBase {
      * @see #weave(List) for run-time weaving.
      */
     public static void main(String[] args) throws IOException {
+        Weaver weaver = new Weaver();
 
         String currentName = null;
         for (String name : parseArgs(args)) {
@@ -58,7 +61,7 @@ public class Weaver implements WeaverBase {
                     if (exclude(name))
                         continue;
                     currentName = name;
-                    weaveFile(name, new BufferedInputStream(new FileInputStream(name)));
+                    weaver.weaveFile(name, new BufferedInputStream(new FileInputStream(name)));
                 } else if (name.endsWith(".jar")) {
                     for (FileLister.Entry fe : new FileLister(name)) {
                         currentName = fe.getFileName();
@@ -67,7 +70,7 @@ public class Weaver implements WeaverBase {
                                     .replace('/', '.');
                             if (exclude(currentName))
                                 continue;
-                            weaveFile(currentName, fe.getInputStream());
+                            weaver.weaveFile(currentName, fe.getInputStream());
                         }
                     }
                 } else if (new File(name).isDirectory()) {
@@ -76,7 +79,7 @@ public class Weaver implements WeaverBase {
                         if (currentName.endsWith(".class")) {
                             if (exclude(currentName))
                                 continue;
-                            weaveFile(currentName, fe.getInputStream());
+                            weaver.weaveFile(currentName, fe.getInputStream());
                         }
                     }
                 } else {
@@ -104,14 +107,14 @@ public class Weaver implements WeaverBase {
 
     // non-static to allow easy usage from alternative classloaders
     public List<ClassInfo> weave(InputStream is) throws IOException {
-        ClassWeaver cw = new ClassWeaver(is);
+        ClassWeaver cw = new ClassWeaver(context,is);
         cw.weave();
         return cw.getClassInfos();
     }
 
-    static void weaveFile(String name, InputStream is) throws IOException {
+    public void weaveFile(String name, InputStream is) throws IOException {
         try {
-            ClassWeaver cw = new ClassWeaver(is);
+            ClassWeaver cw = new ClassWeaver(context,is);
             cw.weave();
             writeClasses(cw);
         } catch (KilimException ke) {
@@ -240,13 +243,13 @@ public class Weaver implements WeaverBase {
             // First cache all the method signatures from the supplied classes to allow
             // the weaver to lookup method signatures from mutually recursive classes.
             for (ClassInfo cl : classes) {
-                Detector.DEFAULT.mirrors.mirror(cl.bytes);
+                context.detector.mirrors.mirror(cl.bytes);
             }
 
             // Now weave them individually
             for (ClassInfo cl : classes) {
                 InputStream is = new ByteArrayInputStream(cl.bytes);
-                ClassWeaver cw = new ClassWeaver(is);
+                ClassWeaver cw = new ClassWeaver(context,is);
                 cw.weave();
                 ret.addAll(cw.getClassInfos()); // one class file can result in multiple classes
             }
@@ -255,5 +258,8 @@ public class Weaver implements WeaverBase {
         }
     }
 
+    KilimContext context = new KilimContext();
+    
+    
 
 }

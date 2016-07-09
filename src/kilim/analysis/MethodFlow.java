@@ -86,7 +86,7 @@ public class MethodFlow extends MethodNode {
 
     private List<MethodInsnNode> pausableMethods = new LinkedList<MethodInsnNode>();
     
-	private final Detector detector;
+    final Detector detector;
 
     private TreeMap<Integer, LineNumberNode> lineNumberNodes = new TreeMap<Integer, LineNumberNode>();
 

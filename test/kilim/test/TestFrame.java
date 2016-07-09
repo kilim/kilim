@@ -18,15 +18,18 @@ import static kilim.Constants.D_THROWABLE;
 import static kilim.Constants.D_UNDEFINED;
 import kilim.analysis.BasicBlock;
 import kilim.analysis.Frame;
+import kilim.analysis.KilimContext;
 import kilim.analysis.MethodFlow;
 import kilim.analysis.Usage;
 import kilim.analysis.Value;
+import kilim.mirrors.Detector;
 
 public class TestFrame extends Base {
     protected void setUp() throws Exception {
         cache("kilim.test.ex.ExFrame");
     }
 
+    
     public void testMethodFrame() {
         MethodFlow flow = getFlow("kitchensink");
         if (flow == null)
@@ -84,7 +87,7 @@ public class TestFrame extends Base {
         usage.setLiveIn(1);
         usage.setLiveIn(2);
         usage.setLiveIn(3);
-        assertEquals(f, f.merge(g, /* localsOnly= */false, usage));
+        assertEquals(f, merge(f, g, /* localsOnly= */false, usage));
     }
 
     public void testMergeChangedTypes() {
@@ -103,7 +106,7 @@ public class TestFrame extends Base {
         Usage usage = new Usage(4);
         for (int i = 0; i < 4; i++)
             usage.setLiveIn(i);
-        Frame h = f.merge(g, /* localsOnly= */false, usage);
+        Frame h = merge(f, g, /* localsOnly= */false, usage);
         assertNotSame(f, h);
         for (int i = 0; i < 4; i++) {
             assertEquals(g.getLocal(i), h.getLocal(i));
@@ -122,12 +125,12 @@ public class TestFrame extends Base {
         g.setLocal(3, Value.make(0, D_THROWABLE));
 
         Usage noUsage = new Usage(4); // default, everything is untouched.
-        assertSame(f, f.merge(g, /* localsOnly= */true, noUsage));
+        assertSame(f, merge(f, g, /* localsOnly= */true, noUsage));
 
         for (int i = 0; i < 4; i++) {
             noUsage.write(i); // set everything to OVERWRITTEN
         }
-        assertSame(f, f.merge(g, /* localsOnly= */true, noUsage));
+        assertSame(f, merge(f, g, /* localsOnly= */true, noUsage));
     }
 
     public void testIncompatibleMerge() {
@@ -140,7 +143,11 @@ public class TestFrame extends Base {
         for (int i = 0; i < 4; i++) {
             usage.setLiveIn(i); // set everything to READ
         }
-        f = f.merge(g, true, usage);
+        f = merge(f, g, true, usage);
         assertTrue(f.getLocal(0).getTypeDesc() == D_UNDEFINED);
+    }
+    
+    private Frame merge(Frame f,Frame g,boolean local,Usage usage) {
+        return f.merge(context.detector, g, local, usage);
     }
 }

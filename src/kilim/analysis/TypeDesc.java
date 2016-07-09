@@ -166,8 +166,7 @@ public class TypeDesc {
      * least common super type. If one of them is an interface, the result is D_OBJECT 3) All other
      * types must match exactly in order to not raise an error.
      */
-
-    public static String mergeType(String a, String b) throws IncompatibleTypesException {
+    public static String mergeType(Detector det,String a, String b) throws IncompatibleTypesException {
         // given: a and b are different.
         if (a == D_UNDEFINED)
             return b;
@@ -194,7 +193,7 @@ public class TypeDesc {
             break;
         case 'L':
             if (bc == 'L') {
-                return commonSuperType(a, b);
+                return commonSuperType(det,a, b);
             } else if (bc == 'N') {
                 return a;
             } else if (bc == '[') {
@@ -205,7 +204,7 @@ public class TypeDesc {
             if (bc == '[') {
                 try {
                     return "["
-                            + mergeType(TypeDesc.getComponentType(a), TypeDesc.getComponentType(b));
+                            + mergeType(det, TypeDesc.getComponentType(a), TypeDesc.getComponentType(b));
                 } catch (IncompatibleTypesException ite) {
                     // The component types are incompatible, but two disparate arrays still
                     // inherit from Object
@@ -236,15 +235,16 @@ public class TypeDesc {
 
     static String JAVA_LANG_OBJECT = "java.lang.Object";
 
+
     // public for testing purposes
-    public static String commonSuperType(String oa, String ob) {
+    public static String commonSuperType(Detector det,String oa, String ob) {
         try {
             if (oa == D_OBJECT || ob == D_OBJECT)
                 return D_OBJECT;
             if (oa.equals(ob))
                 return oa;
 
-            String lub = Detector.DEFAULT.commonSuperType(getInternalName(oa),getInternalName(ob));
+            String lub = det.commonSuperType(getInternalName(oa),getInternalName(ob));
 
             if (lub.equals("java/lang/Object"))
             	return D_OBJECT;

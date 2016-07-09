@@ -1133,7 +1133,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
         } else {
             Frame ret;
             // Absorb only those local vars dictacted by usage.in.
-            ret = startFrame.merge(inframe, localsOnly, usage);
+            ret = startFrame.merge(flow.detector, inframe, localsOnly, usage);
             if (ret == startFrame) { // no change
                 enqueue = false;
             } else {
