@@ -85,7 +85,7 @@ public abstract class Task implements Runnable, EventSubscriber {
     public final static Timer            timer                 = new Timer(true);
 
     // new timer service
-    public kilim.timerhelper.Timer       timer_new             = new kilim.timerhelper.Timer(this);
+    public kilim.timerservice.Timer       timer_new             = new kilim.timerservice.Timer(this);
 
     public Task() {
         id = idSource.incrementAndGet();
