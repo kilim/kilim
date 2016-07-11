@@ -18,8 +18,13 @@ public class AffineThreadPool {
 
 	protected static int getCurrentThreadId() {
 		String name = Thread.currentThread().getName();
+                
 		int sIndex = name.indexOf(colon_);
-		return Integer.parseInt(name.substring(sIndex + 1, name.length()));
+		try { 
+                    return Integer.parseInt(name.substring(sIndex + 1, name.length()));
+                }
+                catch (Exception ex) {}
+                return name.hashCode();
 	}
 
 	private int nThreads_;
