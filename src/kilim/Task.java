@@ -52,7 +52,7 @@ public abstract class Task implements Runnable, EventSubscriber
 	 * fresh decision is made whether the task needs to continue running.
 	 */
 	protected AtomicBoolean running = new AtomicBoolean(false);
-	protected boolean done = false;
+	protected volatile boolean done = false;
 
 	/**
 	 * The thread in which to resume this task. Ideally, we shouldn't have any
@@ -186,7 +186,7 @@ public abstract class Task implements Runnable, EventSubscriber
 		if (done || running.get()) 
         	return false;
 		doSchedule = true;
-		running.set(true);
+		running.compareAndSet(false, true);
 				
 		if (doSchedule)
 		{					
