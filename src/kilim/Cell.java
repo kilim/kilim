@@ -8,6 +8,9 @@ package kilim;
 
 import java.util.LinkedList;
 import java.util.TimerTask;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A cell is a single-space buffer that supports multiple producers and a single
@@ -15,17 +18,18 @@ import java.util.TimerTask;
  * optimized for this size)
  */
 
-public class Cell<T> implements PauseReason, EventPublisher {
-    T message;
-    EventSubscriber sink;
-    
+public class Cell<T> implements PauseReason, EventPublisher {        
     public static final int SPACE_AVAILABLE = 1;
     public static final int MSG_AVAILABLE = 2;
     public static final int TIMED_OUT = 3;
     public static final Event spaceAvailble = new Event(MSG_AVAILABLE);
     public static final Event messageAvailable = new Event(SPACE_AVAILABLE);
     public static final Event timedOut = new Event(TIMED_OUT);
+    private static final String defaultName_ = "DEFAULT-CELL";    
     
+    private String name_;
+    T message;
+    EventSubscriber sink;
     LinkedList<EventSubscriber> srcs = new LinkedList<EventSubscriber>();
 
     // DEBUG stuff
@@ -35,6 +39,12 @@ public class Cell<T> implements PauseReason, EventPublisher {
      * public int nWastedGets = 0;
      */
     public Cell() {
+        this(defaultName_);
+    }
+
+    public Cell(String name)
+    {
+        name_ = name;
     }
 
     /**
@@ -132,15 +142,16 @@ public class Cell<T> implements PauseReason, EventPublisher {
         T msg = get(t);
         long begin = System.currentTimeMillis();
         while (msg == null) {
-            TimerTask tt = new TimerTask() {
-                    public void run() {
-                        Cell.this.removeMsgAvailableListener(t);
-                        t.onEvent(Cell.this, timedOut);
-                    }
-                };
-            Task.timer.schedule(tt, timeoutMillis);
-            Task.pause(this);
-            tt.cancel();
+        	Runnable tt = new Runnable() {
+                public void run() {
+                    Cell.this.removeMsgAvailableListener(t);
+                    t.onEvent(Cell.this, timedOut);
+                }
+            };
+	        ScheduledExecutorService scheduledExecutor = TimerManager.instance().getTimer(name_);
+	        ScheduledFuture<?> future = scheduledExecutor.schedule(tt, timeoutMillis, TimeUnit.MILLISECONDS);            
+	        Task.pause(this);   
+	        future.cancel(true);            
             if (System.currentTimeMillis() - begin > timeoutMillis) {
                 break;
             }

@@ -7,6 +7,9 @@
 package kilim;
 
 import java.util.LinkedList;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /** 
  * This is a basic FIFO Executor. It maintains a list of
@@ -18,13 +21,18 @@ import java.util.LinkedList;
  * 
  */
 public class Scheduler {
+    private static final String defaultName_ = "KilimWorker";
+    private static final int defaultQueueSize_ = 4096;
     public static volatile Scheduler defaultScheduler = null;
     public static int defaultNumberThreads;
+    private static final String dash_ = "-";
+    private static ConcurrentMap<String, AtomicInteger> nameGenerator_ = new ConcurrentHashMap<String, AtomicInteger>();
     
+    private String name_;
     public LinkedList<WorkerThread> allThreads = new LinkedList<WorkerThread>();
     public RingQueue<WorkerThread> waitingThreads = new RingQueue<WorkerThread>(10);
     protected volatile boolean shutdown = false;
-    public RingQueue<Task> runnableTasks = new RingQueue<Task>(100);
+    public RingQueue<Task> runnableTasks;
 
     static {
         String s = System.getProperty("kilim.Scheduler.numThreads");
@@ -39,13 +47,31 @@ public class Scheduler {
     }
     protected Scheduler() {}
     
-    public Scheduler(int numThreads) {
+    public Scheduler(int numThreads) {    	
+        this(numThreads, defaultQueueSize_, defaultName_);
+    }
+
+    public Scheduler(int numThreads, int queueSize, String name) {
+    	name_ = name;
+    	nameGenerator_.putIfAbsent(name_, new AtomicInteger());
+    	runnableTasks = new RingQueue<Task>(queueSize);
         for (int i = 0; i < numThreads; i++) {
             WorkerThread wt = new WorkerThread(this);
             allThreads.add(wt);
             addWaitingThread(wt);
             wt.start();
         }
+    }
+    
+    protected String getName()
+    {
+    	return name_;
+    }
+    
+    protected String getNextName()
+    {
+    	AtomicInteger counter = Scheduler.nameGenerator_.get(name_);
+    	return name_ + dash_ + counter.incrementAndGet();
     }
     
     void addWaitingThread(WorkerThread wt) {
