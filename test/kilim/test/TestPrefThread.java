@@ -10,7 +10,7 @@ import kilim.Task;
 public class TestPrefThread extends TestCase {
 
     public void testPreferredThread() throws Exception {
-        int NUM_TASKS = 500 * 1000;
+        int NUM_TASKS = 5 * 1000;
         Scheduler s = new Scheduler(10);
         Mailbox<ExitMsg> exitMB = new Mailbox<ExitMsg>();
         Task t[] = new Task[NUM_TASKS];
@@ -49,6 +49,7 @@ public class TestPrefThread extends TestCase {
                     System.out.println("Task " + taskId
                             + "not resumed on preferred thread " + prefId
                             + "but on thread" + threadId);
+                    Task.exit(1);
                 }
             }
             Task.exit(0);

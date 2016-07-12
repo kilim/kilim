@@ -12,9 +12,6 @@ import java.util.TimerTask;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.locks.LockSupport;
 
-import org.objectweb.asm.tree.IntInsnNode;
-
-
 /**
  * This is a typed buffer that supports single producers and a single consumer.
  * It is the basic construct used for tasks to interact and synchronize with
@@ -59,7 +56,6 @@ public class MailboxMPSC<T> implements PauseReason, EventPublisher {
         if (initialSize < 1)
             throw new IllegalArgumentException("initialSize: " + initialSize
                     + " cannot be less then 1");
-        System.out.println(initialSize);
         msgs = new MPSCQueue<T>(initialSize);
 
     }
@@ -380,7 +376,6 @@ public class MailboxMPSC<T> implements PauseReason, EventPublisher {
         Task t = Task.getCurrentTask();
         while (!put(msg, t)) {
             Task.pause(this);
-            System.out.println("paused");
             removeSpaceAvailableListener(t);
         }
     }
