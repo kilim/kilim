@@ -421,6 +421,9 @@ public class CallWeaver {
         boolean match = false; 
         try {
             ClassMirror cm = det.classForName(mi.owner);
+            // java7 can't call java8, but java8 can call java7 - only check the callee
+            if (cm.version() < 52)
+                return false;
             for (MethodMirror m: cm.getDeclaredMethods()) {
                 if (m.getMethodDescriptor().indexOf(D_FIBER_LAST_ARG) == -1) {
                     if ((m.getModifiers() & ACC_ABSTRACT) > 0) {

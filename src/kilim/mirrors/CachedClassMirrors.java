@@ -87,6 +87,7 @@ class CachedClassMirror extends ClassVisitor implements ClassMirror  {
     MethodMirror[] declaredMethods;
     String[] interfaceNames;
     String superName;
+    int version;
     
     private List<CachedMethodMirror> tmpMethodList; //used only while processing bytecode. 
     private RuntimeClassMirror rm;
@@ -158,6 +159,10 @@ class CachedClassMirror extends ClassVisitor implements ClassMirror  {
         return superName;
     }
 
+    public int version() {
+        return (version & 0x00FF);
+    }
+    
     @Override
     public boolean isAssignableFrom(ClassMirror c) throws ClassMirrorNotFoundException {
         CachedClassMirrors mirrors = CachedClassMirrors.this;
@@ -179,6 +184,7 @@ class CachedClassMirror extends ClassVisitor implements ClassMirror  {
     // ClassVisitor implementation
     public void visit(int version, int access, String name, String signature, String superName,
             String[] interfaces) {
+        this.version = version;
         this.name = map(name);
         this.superName = map(superName);
         this.interfaceNames = interfaces == null ? CachedClassMirrors.EMPTY_SET : map(interfaces);

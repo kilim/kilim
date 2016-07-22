@@ -155,6 +155,9 @@ public class ClassFlow extends ClassNode {
         return (this.access & Opcodes.ACC_INTERFACE) != 0;
     }
 
+    boolean isJava7() {
+        return (version & 0x00FF) < 52;
+    }
     
     /*
      * If this class is a functional interface, return the one "Single Abstract
@@ -162,7 +165,7 @@ public class ClassFlow extends ClassNode {
      * SAM methods are given special treatment 
      */
     public MethodFlow getSAM() {
-        if (!isInterface()) {
+        if (!isInterface() || isJava7()) {
             return null;
         }
         MethodFlow sam = null;

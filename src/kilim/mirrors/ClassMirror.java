@@ -13,5 +13,7 @@ public interface ClassMirror {
 	public abstract boolean isInterface();
 	
 	public abstract String getName();
+
+        public abstract int version();
 	
 }

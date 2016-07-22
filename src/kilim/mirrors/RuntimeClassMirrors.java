@@ -157,6 +157,11 @@ static class RuntimeClassMirror implements ClassMirror {
         return supcl != null ? supcl.getName() : null;
     }
 
+    // fixme - can we get this info from a class ?
+    public int version() {
+        return 0;
+    }
+    
     @Override
     public boolean isAssignableFrom(ClassMirror c) {
         if (c instanceof RuntimeClassMirror) {
