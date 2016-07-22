@@ -2,10 +2,9 @@
 package kilim.analysis;
 
 import kilim.Constants;
-import kilim.mirrors.ClassMirror;
+import kilim.mirrors.CachedClassMirrors.ClassMirror;
+import kilim.mirrors.CachedClassMirrors.MethodMirror;
 import kilim.mirrors.ClassMirrorNotFoundException;
-import kilim.mirrors.Detector;
-import kilim.mirrors.MethodMirror;
 
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;

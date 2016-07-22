@@ -84,10 +84,10 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
 
-import kilim.mirrors.ClassMirror;
+import kilim.mirrors.CachedClassMirrors.ClassMirror;
+import kilim.mirrors.CachedClassMirrors.MethodMirror;
 import kilim.mirrors.ClassMirrorNotFoundException;
 import kilim.mirrors.Detector;
-import kilim.mirrors.MethodMirror;
 
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.TableSwitchInsnNode;

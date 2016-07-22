@@ -15,8 +15,7 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
-import kilim.mirrors.RuntimeClassMirrors.RuntimeClassMirror;
-import kilim.mirrors.RuntimeClassMirrors.RuntimeMethodMirror;
+import org.objectweb.asm.Type;
 
 
 /**
@@ -24,7 +23,7 @@ import kilim.mirrors.RuntimeClassMirrors.RuntimeMethodMirror;
  * are not already loaded by the classloader
  **/
 
-public class CachedClassMirrors implements Mirrors {
+public class CachedClassMirrors {
     final static String[] EMPTY_SET = new String[0];
     
     ConcurrentHashMap<String,ClassMirror> cachedClasses = new ConcurrentHashMap<String, ClassMirror>();
@@ -33,7 +32,6 @@ public class CachedClassMirrors implements Mirrors {
     public CachedClassMirrors() {
     }
     
-    @Override
     public ClassMirror classForName(String className)
             throws ClassMirrorNotFoundException {
         // defer to loaded class objects first, then to cached class mirrors.
@@ -51,13 +49,13 @@ public class CachedClassMirrors implements Mirrors {
         }
         
         byte [] code = WeavingClassLoader.findCode(getClass().getClassLoader(),className);
-        if (code != null) return place(new CachedClassMirror(code));
+        if (code != null) return place(new ClassMirror(code));
         
         throw new ClassMirrorNotFoundException(className);
     }
 
     public ClassMirror mirror(byte[] bytecode) {
-        return place(new CachedClassMirror(bytecode));
+        return place(new ClassMirror(bytecode));
     }
 
     private ClassMirror place(ClassMirror r1) {
@@ -65,9 +63,8 @@ public class CachedClassMirrors implements Mirrors {
         return r2==null ? r1:r2;
     }
     
-    @Override
     public ClassMirror mirror(Class<?> clazz) {
-        ClassMirror mirror = new CachedClassMirror(clazz);
+        ClassMirror mirror = new ClassMirror(clazz);
         return place(mirror);
     }
     
@@ -81,7 +78,7 @@ public class CachedClassMirrors implements Mirrors {
         return mod;
     }
 
-class CachedClassMirror extends ClassVisitor implements ClassMirror  {
+public class ClassMirror extends ClassVisitor {
     String name;
     boolean isInterface;
     MethodMirror[] declaredMethods;
@@ -89,15 +86,15 @@ class CachedClassMirror extends ClassVisitor implements ClassMirror  {
     String superName;
     int version;
     
-    private List<CachedMethodMirror> tmpMethodList; //used only while processing bytecode. 
+    private List<MethodMirror> tmpMethodList; //used only while processing bytecode. 
     private RuntimeClassMirror rm;
     
-    public CachedClassMirror(byte []bytecode) {
+    public ClassMirror(byte []bytecode) {
         super(Opcodes.ASM5);
         ClassReader cr = new ClassReader(bytecode);
         cr.accept(this, /*flags*/0);
     }
-    public CachedClassMirror(Class clazz) {
+    public ClassMirror(Class clazz) {
         super(Opcodes.ASM5);
         rm = new RuntimeClassMirror(clazz);
         name = rm.getName();
@@ -108,20 +105,18 @@ class CachedClassMirror extends ClassVisitor implements ClassMirror  {
         declaredMethods = null;
     }
 
-    @Override
     public String getName() {
         return name;
     }
     
-    @Override
     public boolean isInterface() {
         return isInterface;
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof CachedClassMirror) {
-            CachedClassMirror mirr = (CachedClassMirror) obj;
+        if (obj instanceof ClassMirror) {
+            ClassMirror mirr = (ClassMirror) obj;
             String n1 = name, n2 = mirr.name;
             return n1.equals(n2) && mirr.isInterface == this.isInterface;
         }
@@ -134,7 +129,6 @@ class CachedClassMirror extends ClassVisitor implements ClassMirror  {
         return this.name.hashCode();
     }
 
-    @Override
     public MethodMirror[] getDeclaredMethods() {
         if (declaredMethods != null)
             return declaredMethods;
@@ -143,18 +137,16 @@ class CachedClassMirror extends ClassVisitor implements ClassMirror  {
         Method[] jms = rm.clazz.getDeclaredMethods();
         declaredMethods = new MethodMirror[jms.length];
         for (int i = 0; i < jms.length; i++)
-            declaredMethods[i] = new CachedMethodMirror(jms[i]);
+            declaredMethods[i] = new MethodMirror(jms[i]);
         return declaredMethods;
     }
 
-    @Override
     public String[] getInterfaces() throws ClassMirrorNotFoundException {
         if (interfaceNames==null && rm != null)
             interfaceNames = rm.getInterfaces();
         return interfaceNames;
     }
 
-    @Override
     public String getSuperclass() throws ClassMirrorNotFoundException {
         return superName;
     }
@@ -163,7 +155,6 @@ class CachedClassMirror extends ClassVisitor implements ClassMirror  {
         return (version & 0x00FF);
     }
     
-    @Override
     public boolean isAssignableFrom(ClassMirror c) throws ClassMirrorNotFoundException {
         CachedClassMirrors mirrors = CachedClassMirrors.this;
         if (c==null) return false;
@@ -199,9 +190,9 @@ class CachedClassMirror extends ClassVisitor implements ClassMirror  {
         if (name.equals("<init>")) return null;
         if (name.equals("<clinit>")) return null;
         if (tmpMethodList == null) {
-            tmpMethodList = new ArrayList<CachedMethodMirror>();
+            tmpMethodList = new ArrayList<MethodMirror>();
         }
-        CachedMethodMirror mirror = new CachedMethodMirror(access, name, desc, map(exceptions));
+        MethodMirror mirror = new MethodMirror(access, name, desc, map(exceptions));
         tmpMethodList.add(mirror);
         return null; // null MethodVisitor to avoid examining the instructions.
     }
@@ -230,7 +221,7 @@ class CachedClassMirror extends ClassVisitor implements ClassMirror  {
             Object value) {
         return null;
     }
-}
+    }
     static class DummyAnnotationVisitor extends AnnotationVisitor {
         public DummyAnnotationVisitor() {
             super(Opcodes.ASM5);
@@ -242,10 +233,9 @@ class CachedClassMirror extends ClassVisitor implements ClassMirror  {
         public void visitEnd() {}
         public void visitEnum(String name, String desc, String value) {}
     }
-}
 
 
-class CachedMethodMirror implements MethodMirror {
+public static class MethodMirror {
 
     private String[] exceptions;
     private String desc;
@@ -253,14 +243,14 @@ class CachedMethodMirror implements MethodMirror {
     private int    modifiers;
     private boolean isBridge;
     
-    public CachedMethodMirror(int modifiers, String name, String desc, String[] exceptions) {
+    public MethodMirror(int modifiers, String name, String desc, String[] exceptions) {
         this.modifiers = modifiers;
         this.name = name;
         this.desc = desc;
         this.exceptions = (exceptions == null) ? CachedClassMirrors.EMPTY_SET : exceptions;
         isBridge = (modifiers & Opcodes.ACC_BRIDGE) > 0;
     }
-    public CachedMethodMirror(Method method) {
+    public MethodMirror(Method method) {
         RuntimeMethodMirror rm = new RuntimeMethodMirror(method);
         this.modifiers = rm.getModifiers();
         this.name = rm.getName();
@@ -288,6 +278,72 @@ class CachedMethodMirror implements MethodMirror {
     public int getModifiers() {
         return modifiers;
     }
+    }
 }
 
 
+class RuntimeMethodMirror {
+    private final Method method;
+
+    public RuntimeMethodMirror(Method method) {
+        this.method = method;
+    }
+
+    public String getName() {
+        return method.getName();
+    }
+    
+    public int getModifiers() {
+        return method.getModifiers();
+    }
+
+    public String[] getExceptionTypes() {
+        String[] ret = new String[method.getExceptionTypes().length];
+        int i = 0;
+        for (Class<?> excl : method.getExceptionTypes()) {
+            ret[i++] = excl.getName();
+        }
+        return ret;
+    }
+
+    public String getMethodDescriptor() {
+        return Type.getMethodDescriptor(method);
+    }
+
+    public boolean isBridge() {
+        return method.isBridge();
+    }
+}
+
+class RuntimeClassMirror {
+    final Class<?> clazz;
+    
+    public RuntimeClassMirror(Class<?> clazz) {
+        this.clazz = clazz;
+    }
+
+    public String getName() {
+        return clazz.getName();
+    }
+
+    public boolean isInterface() {
+        return clazz.isInterface();
+    }
+
+    public String[] getInterfaces() {
+        Class<?>[] ifs = clazz.getInterfaces(); 
+        String[] result = new String[ifs.length];
+        for (int i = 0; i < result.length; i++) {
+            result[i] = ifs[i].getName();
+        }
+        return result;
+    }
+
+    public String getSuperclass() {
+        Class<?> supcl = clazz.getSuperclass();
+        return supcl != null ? supcl.getName() : null;
+    }
+
+    
+
+}

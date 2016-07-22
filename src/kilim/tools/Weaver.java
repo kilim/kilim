@@ -22,8 +22,6 @@ import kilim.KilimException;
 import kilim.analysis.ClassInfo;
 import kilim.analysis.ClassWeaver;
 import kilim.analysis.FileLister;
-import kilim.mirrors.CachedClassMirrors;
-import kilim.mirrors.Detector;
 
 /**
  * This class supports both command-line and run time weaving of Kilim bytecode. 

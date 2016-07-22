@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import kilim.NotPausable;
 import kilim.Pausable;
 import kilim.analysis.AsmDetector;
+import kilim.mirrors.CachedClassMirrors.ClassMirror;
+import kilim.mirrors.CachedClassMirrors.MethodMirror;
 
 /**
  * Utility class to check if a method has been marked pausable
@@ -26,9 +28,9 @@ public class Detector {
     // Note that we don't have the kilim package itself in the following list.
     static final String[] STANDARD_DONT_CHECK_LIST = { "java.", "javax." };
 
-    public final Mirrors mirrors;
+    public final CachedClassMirrors mirrors;
 
-    public Detector(Mirrors mirrors) {
+    public Detector(CachedClassMirrors mirrors) {
         this.mirrors = mirrors;
 
         NOT_PAUSABLE = mirrors.mirror(NotPausable.class);

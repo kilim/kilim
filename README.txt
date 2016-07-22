@@ -1,5 +1,5 @@
 Kilim v1.0
-Copyright (c) 2006 Sriram Srinivasan.
+Copyright (c) 2006 Sriram Srinivasan, 2016 seth lytle
 (kilim _at_ malhar.net)
 ======================================================================
 
