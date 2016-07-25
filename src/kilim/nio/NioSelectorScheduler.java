@@ -59,19 +59,17 @@ public class NioSelectorScheduler {
     final Mailbox<SockEvent> regbox = new Mailbox<SockEvent>(1000);
     AtomicBoolean update = new AtomicBoolean();
     final private Task regtask;
-    
-    NioSched sched = new NioSched();
+    volatile boolean running = true;
     
     /**
      * @throws IOException
      */
     public NioSelectorScheduler() throws IOException {
-        this.sel = Selector.open();
+        sel = Selector.open();
         selectorThread = new SelectorThread();
         selectorThread.start();
-        Task t = regtask = new RegistrationTask();
-        t.setScheduler(sched);
-        t.start();
+        regtask = new RegistrationTask();
+        regtask.start();
     }
 
     public int listen(int port,SessionFactory factory, Scheduler sockTaskScheduler) throws IOException {
@@ -91,24 +89,7 @@ public class NioSelectorScheduler {
         return t.port;
     }
 
-    public void shutdown() { sched.shutdown(); }
-    
-    
-    // fixme - does the schedule leak, eg thru the mailboxes - we don't implement the full api, eg schedule timer
-    class NioSched extends Scheduler {
-
-        public void schedule(int index,Task t) { schedule(t); }
-        public void schedule(Task t) {
-            update.set(true);
-            if (Thread.currentThread() != selectorThread) {
-                sel.wakeup();
-            }
-        }
-        public void shutdown() {
-            super.shutdown();
-            sel.wakeup();
-        }
-    }
+    public void shutdown() { running = false; sel.wakeup(); }
     
     class SelectorThread extends Thread {
         public SelectorThread() {
@@ -120,7 +101,7 @@ public class NioSelectorScheduler {
             while (true) {
                 int n;
                 try {
-                    if (sched.isShutdown()) {
+                    if (!running) {
                         Iterator<SelectionKey> it = sel.keys().iterator();
                         while (it.hasNext()) {
                             SelectionKey sk = it.next();
@@ -208,7 +189,13 @@ public class NioSelectorScheduler {
         }
     }
 
-    class RegistrationTask extends Task {
+    public class RegistrationTask extends Task {
+        private RegistrationTask() {}
+        public void wake() {
+            update.set(true);
+            if (Thread.currentThread() != selectorThread)
+                sel.wakeup();
+        }
         public void execute() throws Pausable, Exception {
             while (true) {
                 SockEvent ev = regbox.get();

@@ -16,6 +16,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import kilim.concurrent.MPSCQueue;
+import kilim.nio.NioSelectorScheduler;
+import kilim.nio.NioSelectorScheduler.RegistrationTask;
 import kilim.timerservice.Timer;
 import kilim.timerservice.TimerPriorityHeap;
 import kilim.timerservice.TimerService;
@@ -98,11 +100,17 @@ public class Scheduler {
 	 * scheduled when it is runnable.
 	 */
 	public void schedule(Task t) {
+            if (t instanceof RegistrationTask)
+                ((RegistrationTask) t).wake();
+            else
 		affinePool_.publish(t);
 	}
 
 	public void schedule(int index, Task t) {
-		affinePool_.publish(index, t);
+            if (t instanceof RegistrationTask)
+                assert(false);
+            else
+                affinePool_.publish(index, t);
 	}
     
 	public void scheduleTimer(Timer t){
