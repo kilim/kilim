@@ -15,7 +15,11 @@ public class AllWoven extends TestSuite {
         ret.addTestSuite(TestPrefThread.class);
         ret.addTestSuite(TestYield.class);
         ret.addTestSuite(TestInterface.class);
-        ret.addTestSuite(TestLambda.class);
+        try {
+            Class klass = AllWoven.class.getClassLoader().loadClass("kilim.test.TestLambda");
+            ret.addTestSuite(klass);
+        }
+        catch (ClassNotFoundException ex) {}
         ret.addTestSuite(TestYieldExceptions.class);
         ret.addTestSuite(TestYieldJSR.class);
         ret.addTestSuite(TestMailbox.class);

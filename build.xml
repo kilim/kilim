@@ -16,6 +16,14 @@
     <pathelement path="${java.class.path}" />
   </path>
 
+  <condition property="exclude8" value="kilim/examples/Userdata.java,kilim/examples/Spawn.java,kilim/test/TestLambda.java" else="">
+      <not>
+          <equals arg1="${ant.java.version}" arg2="1.8"/>
+      </not>
+  </condition>
+
+
+
   <target name="all" depends="clean,weave" />
   <target name="test" depends="testnotwoven,testwoven" />
   
@@ -24,7 +32,8 @@
     <javac includeantruntime="false" debug="on" srcdir="src" destdir="classes" 
            classpathref="kilim.classpath"/>
     <echo message="Compiling examples ===================" />
-    <javac includeantruntime="false" debug="on" srcdir="examples" destdir="classes" 
+    <javac includeantruntime="false" debug="on" srcdir="examples" destdir="classes"
+           excludes="${exclude8}"
            classpathref="kilim.classpath"/>
     <echo message="Compiling benchmarks ===================" />
     <javac includeantruntime="false" debug="on" srcdir="bench" destdir="classes" 
@@ -49,6 +58,7 @@
   <target name="testcompile" depends="asm">
     <echo message="Compiling test ===================" />
     <javac includeantruntime="false" debug="on" srcdir="test" destdir="classes" 
+           excludes="${exclude8}"
            classpathref="kilim.classpath"/>
   </target>
   
