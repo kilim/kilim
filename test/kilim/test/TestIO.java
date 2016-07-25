@@ -18,7 +18,6 @@ import java.nio.channels.SocketChannel;
 import junit.framework.TestCase;
 import kilim.Pausable;
 import kilim.Scheduler;
-import kilim.nio.EndPoint;
 import kilim.nio.NioSelectorScheduler;
 import kilim.nio.SessionTask;
 
@@ -27,6 +26,7 @@ public class TestIO extends TestCase {
     static final int NCLIENTS = 100;
     NioSelectorScheduler nio;
     int port;
+    private static boolean dbg = false;
     
     @Override
     protected void setUp() throws Exception {
@@ -40,6 +40,16 @@ public class TestIO extends TestCase {
         Thread.sleep(500); // Allow the socket to be closed
     }
     
+    public static void main(String [] args) throws Exception {
+        dbg = true;
+        TestIO test = new TestIO();
+        test.setUp();
+        test.testParallelEchoes();
+        test.testDelay();
+        test.tearDown();
+        Scheduler.defaultScheduler.shutdown();
+    }
+
     /**
      * Launch many ping clients, each of which is paired with its own instance of {@link EchoServer}.
      * @throws IOException
@@ -47,6 +57,7 @@ public class TestIO extends TestCase {
     public void testParallelEchoes() throws IOException {
         try {
             for (int i = 0; i < NCLIENTS; i++) {
+                if (dbg) System.out.println(i);
                 client(port);
             }
         } catch (IOException e) {
@@ -148,22 +159,21 @@ public class TestIO extends TestCase {
         @Override
         public void execute() throws Pausable, Exception {
             ByteBuffer buf = ByteBuffer.allocate(100);
-            EndPoint ep = getEndPoint();
             while (true) {
                 buf.clear();
-                buf = ep.fillMessage(buf, 4, /*lengthIncludesItself*/ false);
+                buf = endpoint.fillMessage(buf, 4, /*lengthIncludesItself*/ false);
                 buf.flip();
                 int strlen = buf.getInt();
                 String s= new String(buf.array(), 4, strlen);
                 //System.out.println ("Rcvd: " + s);
                 if (!s.startsWith("Iteration #")) {
-                    ep.close();
+                    endpoint.close();
                     break;
                 } 
                 buf.position(0); // reset read pos
-                ep.write(buf); // echo.
+                endpoint.write(buf); // echo.
                 if (s.endsWith("DONE")) {
-                    ep.close();
+                    endpoint.close();
                     break;
                 }
             }

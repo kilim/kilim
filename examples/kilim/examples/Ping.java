@@ -67,12 +67,11 @@ public class Ping {
             System.out.println("[" + this.id + "] Connection rcvd"); 
             try {
                 while (true) {
-                    EndPoint ep = getEndPoint();
                     ByteBuffer buf = ByteBuffer.allocate(PACKET_LEN);
-                    buf = ep.fill(buf, PACKET_LEN); // Pauses until at least PACKET_LEN bytes have been rcvd in buf.
+                    buf = endpoint.fill(buf, PACKET_LEN); // Pauses until at least PACKET_LEN bytes have been rcvd in buf.
                     System.out.println("[" + this.id + "] Received pkt"); 
                     buf.flip();
-                    ep.write(buf);
+                    endpoint.write(buf);
                     System.out.println("[" + this.id + "] Echoed pkt"); 
                 }
             } catch (EOFException eofe) {

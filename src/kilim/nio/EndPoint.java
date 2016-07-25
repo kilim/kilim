@@ -33,7 +33,7 @@ import kilim.Task;
  * This scheme is adaptive to load, in that the delay between retries is proportional to the number of runnable tasks.
  * Busy sockets tend to get serviced more often as the socket is always ready.
  */
-public class EndPoint extends Mailbox<SockEvent> { // Mailbox for receiving socket ready events.
+public class EndPoint { // Mailbox for receiving socket ready events.
 
     // TODO: This too must be made adaptive.
     static final int                 YIELD_COUNT = Integer.parseInt(System.getProperty("kilim.nio.yieldCount", "4"));
@@ -43,19 +43,13 @@ public class EndPoint extends Mailbox<SockEvent> { // Mailbox for receiving sock
      */
     public AbstractSelectableChannel sockch;
 
-    /**
-     * The NioSelectorScheduler's mailbox to which to send registration events.
-     */
-    public Mailbox<SockEvent>        sockEvMbx;
+    private Mailbox<SockEvent> box = new Mailbox<SockEvent>();
+    private NioSelectorScheduler sched;
 
-    public EndPoint() {
-        super(2, 2); // Expecting only one event, but don't want the NioSelectorScheduler to
-        // pause for lack of space (due to unforeseen bugs).
-    }
 
-    public EndPoint(Mailbox<SockEvent> mbx, AbstractSelectableChannel ch) {
+    public EndPoint(NioSelectorScheduler nio,AbstractSelectableChannel ch) {
         this.sockch = ch;
-        this.sockEvMbx = mbx;
+        this.sched = nio;
     }
 
     public SocketChannel dataChannel() {
@@ -128,7 +122,7 @@ public class EndPoint extends Mailbox<SockEvent> { // Mailbox for receiving sock
                     // check later. Do this at most YIELD_COUNT times before going back to the selector.
                     Task.yield();
                 } else {
-                    pauseUntilReadble();
+                    pauseUntilReadable();
                     yieldCount = 0;
                 }
             }
@@ -176,26 +170,24 @@ public class EndPoint extends Mailbox<SockEvent> { // Mailbox for receiving sock
         } 
         return bb;
     }
-    
-    public void pauseUntilReadble() throws Pausable, IOException {
-        SockEvent ev = new SockEvent(this, sockch, SelectionKey.OP_READ);
-        sockEvMbx.putnb(ev);
-        // TODO. Need to introduce session timeouts
-        super.get(); // wait on self
-    }
 
+    // TODO. Need to introduce session timeouts for read and write
+    public void pauseUntilReadable() throws Pausable, IOException {
+        SockEvent ev = new SockEvent(box, sockch, SelectionKey.OP_READ);
+        sched.regbox.putnb(ev);
+        box.get();
+    }
     public void pauseUntilWritable() throws Pausable, IOException {
-        SockEvent ev = new SockEvent(this, sockch, SelectionKey.OP_WRITE);
-        sockEvMbx.putnb(ev);
-        // TODO. Need to introduce session timeouts
-        super.get(); // wait on self
+        SockEvent ev = new SockEvent(box, sockch, SelectionKey.OP_WRITE);
+        sched.regbox.putnb(ev);
+        box.get();
+    }
+    public void pauseUntilAcceptable() throws Pausable, IOException {
+        SockEvent ev = new SockEvent(box, sockch, SelectionKey.OP_ACCEPT);
+        sched.regbox.putnb(ev);
+        box.get();
     }
 
-    public void pauseUntilAcceptable() throws Pausable, IOException {
-        SockEvent ev = new SockEvent(this, sockch, SelectionKey.OP_ACCEPT);
-        sockEvMbx.putnb(ev);
-        super.get(); // wait on self
-    }
 
     /**
      * Write a file to the endpoint using {@link FileChannel#transferTo}
