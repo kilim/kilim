@@ -9,7 +9,7 @@ import kilim.RingQueue;
 public class TestRing extends TestCase {
     public void testInfiniteQueue() {
         Integer[] a = mkRandom();
-        RingQueue<Integer> rq = new RingQueue<Integer>();
+        RingQueue<Integer> rq = new RingQueue<Integer>(10);
         for (int i = 0; i < a.length; i++) {
             assertTrue("put returned false", rq.put(a[i]));
         }
@@ -24,7 +24,7 @@ public class TestRing extends TestCase {
 
     public void testBoundedQueue() {
         Integer[] a = mkRandom();
-        RingQueue<Integer>   rq = new RingQueue<Integer>(a.length);
+        RingQueue<Integer>   rq = new RingQueue<Integer>(10, a.length);
         for (int i = 0; i < a.length; i++) {
             assertTrue("put returned false", rq.put(a[i]));
         }
