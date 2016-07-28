@@ -6,8 +6,8 @@
 
 package kilim;
 
-import java.util.Deque;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import kilim.concurrent.MPSCQueue;
 import kilim.concurrent.VolatileReferenceCell;
@@ -27,7 +27,7 @@ import kilim.concurrent.VolatileReferenceCell;
 public class MailboxMPSC<T> extends MPSCQueue<T> implements PauseReason, EventPublisher {
 	// TODO. Give mbox a config name and id and make monitorable
 	VolatileReferenceCell<EventSubscriber> sink = new VolatileReferenceCell<EventSubscriber>();
-	Deque<EventSubscriber> srcs = new ConcurrentLinkedDeque<EventSubscriber>();
+	Queue<EventSubscriber> srcs = new ConcurrentLinkedQueue<EventSubscriber>();
 
 	// FIX: I don't like this event design. The only good thing is that
 	// we don't create new event objects every time we signal a client

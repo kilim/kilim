@@ -15,6 +15,7 @@ import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 import kilim.analysis.ClassInfo;
@@ -35,8 +36,19 @@ public class WeavingClassLoader extends KilimClassLoader {
         definitively to isolate the resulting classes from the application instances of the same classes
     */
     private static class ProxyLoader extends URLClassLoader {
-        ProxyLoader(URL [] urls) { super(urls); }
+        ProxyLoader(URL [] urls) {
+            super(urls);
+        }
+        static {
+            ClassLoader.registerAsParallelCapable();
+        }
 
+        protected Object getClassLoadingLock(String className) {
+            Object newLock = new Object();
+            Object lock = parallelLockMap.putIfAbsent(className, newLock);
+            return lock==null ? newLock : lock;
+        }
+        private final ConcurrentHashMap<String, Object> parallelLockMap = new ConcurrentHashMap<String,Object>();
         
         protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
             Class<?> c = null;
@@ -109,7 +121,7 @@ public class WeavingClassLoader extends KilimClassLoader {
         Class klass;
         if (skip.matcher( name ).matches())
             klass = pcl.loadClass(name);
-        else synchronized (getClassLoadingLock(name)) {
+        else synchronized (this) {
             klass = findLoadedClass(name);
             if (klass==null)
                 try                  { klass = findClass( name ); }

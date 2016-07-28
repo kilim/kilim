@@ -6,8 +6,8 @@
 
 package kilim;
 
-import java.util.Deque;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import kilim.concurrent.VolatileReferenceCell;
 
@@ -18,7 +18,7 @@ import kilim.concurrent.VolatileReferenceCell;
  */
 
 public class Cell<T> implements PauseReason, EventPublisher {
-    Deque<EventSubscriber>                 srcs             = new ConcurrentLinkedDeque<EventSubscriber>();
+    Queue<EventSubscriber>                 srcs             = new ConcurrentLinkedQueue<EventSubscriber>();
     public static final int                SPACE_AVAILABLE  = 1;
     public static final int                MSG_AVAILABLE    = 2;
     public static final int                TIMED_OUT        = 3;
