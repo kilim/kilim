@@ -131,6 +131,11 @@ public abstract class Task implements Runnable, EventSubscriber {
         return this;
     }
 
+    private static Fiber.MethodRef runnerInfo = new Fiber.MethodRef("kilim.Task","run");
+    Fiber.MethodRef getRunnerInfo() {
+        return runnerInfo;
+    }
+    
     /**
      * The generated code calls Fiber.upEx, which in turn calls this to find out
      * out where the current method is w.r.t the closest _runExecute method.
@@ -138,14 +143,15 @@ public abstract class Task implements Runnable, EventSubscriber {
      * @return the number of stack frames above _runExecute(), not including
      * this method
      */
-    public int getStackDepth() {
+    public static int getStackDepth(Task task) {
+        Fiber.MethodRef mr = task.getRunnerInfo();
         StackTraceElement[] stes;
         stes = new Exception().getStackTrace();
         int len = stes.length;
         for (int i = 0; i < len; i++) {
             StackTraceElement ste = stes[i];
-            if (ste.getMethodName().equals("run")
-                    && ste.getClassName().equals("kilim.Task")) {
+            if (ste.getMethodName().equals(mr.methodname)
+                    && ste.getClassName().equals(mr.classname)) {
                 // discounting WorkerThread.run, Task._runExecute, and
                 // Scheduler.getStackDepth
                 return i - 1;

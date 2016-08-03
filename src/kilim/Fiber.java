@@ -88,6 +88,11 @@ public final class Fiber {
     static {
         PAUSE_STATE.pc = 1;
     }
+
+    public static class MethodRef {
+        String classname, methodname;
+        public MethodRef(String cn,String mn) { classname = cn; methodname = mn; }
+    }
     
     public Fiber(Task t) {
         task = t;
@@ -253,7 +258,7 @@ public final class Fiber {
      */
     public int upEx() {
         // compute new iStack. 
-        int is = task.getStackDepth() - 2; // remove upEx and convert to 0-based index. 
+        int is = Task.getStackDepth(task) - 2; // remove upEx and convert to 0-based index. 
         State cs = stateStack[is];
 
         for (int i = iStack; i >= is; i--) {
