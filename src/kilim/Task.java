@@ -374,6 +374,10 @@ public abstract class Task implements Runnable, EventSubscriber {
         sleepmb.get(); // block until a message posted
     }
 
+    public static void shutdown() {
+        timer.cancel();
+    }
+    
     /**
      * Yield cooperatively to the next task waiting to use the thread.
      */
