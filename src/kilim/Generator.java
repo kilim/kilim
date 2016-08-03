@@ -36,14 +36,15 @@ import java.util.NoSuchElementException;
  *  @see kilim.examples.Fib, kilim.examples.Tree
  */
 
-public class Generator<T> extends Task implements Iterator<T>, Iterable<T> {
+public class Generator<T> extends PureFiber implements Iterator<T>, Iterable<T> {
     T nextVal;
+    boolean done = false;
 
     public boolean hasNext() {
         if (nextVal == null) {
-            if (isDone())
+            if (done)
                 return false;
-            run();
+            done = run();
             return nextVal != null;
         } else {
             return true;
@@ -57,10 +58,10 @@ public class Generator<T> extends Task implements Iterator<T>, Iterable<T> {
             nextVal = null;
             return ret;
         }
-        if (isDone()) {
+        if (done) {
             throw new NoSuchElementException();
         }
-        run();
+        done = run();
         ret = nextVal;
         nextVal = null;
         return ret;
@@ -76,6 +77,6 @@ public class Generator<T> extends Task implements Iterator<T>, Iterable<T> {
 
     public void yield(T val) throws Pausable {
         nextVal = val;
-        Task.yield();
+        Fiber.yield();
     }
 }
