@@ -1,6 +1,8 @@
 package kilim.test.ex;
 
+import kilim.Fiber;
 import kilim.Pausable;
+import kilim.PureFiber;
 import kilim.Task;
 
 public class ExCatch extends ExYieldBase {
@@ -162,5 +164,34 @@ public class ExCatch extends ExYieldBase {
         }
         verify(d);
         throw new ExException("10");
+    }
+
+    public static class Pure extends PureFiber {
+        int [] count = new int[11];
+        public void execute() throws Pausable {
+            double d = fd;
+            String[][] sa = fa;
+            String s = fs;
+            try {
+                pausableThrow(0);
+            } catch (Exception kex) {
+                String es = kex.getMessage();
+                verify(es);
+                s = es;
+            }
+            verify(d);
+            verify(sa);
+            verify(s);
+            for (int cc : count)
+                verify(cc,14);
+        }
+        public void pausableThrow(int num) throws Pausable, Exception {
+            count[num]++;
+            Fiber.yield();
+            count[num] += 13;
+            if (num < 10) pausableThrow(num+1);
+            else throw new Exception("10");
+            count[num] += 107;
+        }
     }
 }

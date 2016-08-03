@@ -392,6 +392,7 @@ public abstract class Task implements Runnable, EventSubscriber {
     }
 
     public static void yield(Fiber f) {
+        if (f.task==PureFiber.fakeTask) { f.togglePause(); return; }
         if (f.pc == 0) {
             f.task.setPauseReason(yieldReason);
         } else {

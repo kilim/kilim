@@ -9,6 +9,7 @@ package kilim.test;
 import junit.framework.TestCase;
 import kilim.ExitMsg;
 import kilim.Mailbox;
+import kilim.PureFiber;
 import kilim.Scheduler;
 import kilim.Task;
 import kilim.test.ex.ExYieldBase;
@@ -80,5 +81,12 @@ public class TestYield extends TestCase {
             }
         }
         s.shutdown();
+    }
+    public static void runPure(PureFiber pure) throws Exception {
+        while (!pure.run()) {}
+        if (pure.ex != null) {
+            pure.ex.printStackTrace();
+            fail(pure.ex.toString());
+        }
     }
 }

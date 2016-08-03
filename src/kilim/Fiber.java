@@ -120,6 +120,16 @@ public final class Fiber {
         isDone = false;
     }
     
+    /** yield cooperatively to the next task waiting to use the thread */
+    public static void yield() throws Pausable {
+        Task.errNotWoven();
+    }
+
+    /** yield cooperatively to the next task waiting to use the thread */
+    public static void yield(Fiber f) {
+        f.togglePause();
+    }
+
     /*
      * The user calls pause(), but the weaver changes the
      * call to pause(Fiber), which alternates between
