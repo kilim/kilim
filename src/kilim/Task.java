@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * pausable execute method.
  * 
  */
-public abstract class Task implements Runnable, EventSubscriber {
+public abstract class Task implements Runnable, EventSubscriber, Fiber.Worker {
     public volatile int                  currentThread;
 
     static PauseReason                   yieldReason           = new YieldReason();

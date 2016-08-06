@@ -379,4 +379,8 @@ public final class Fiber {
     void clearPausing() {
         isPausing = false;
     }
+    public interface Worker {
+        public void execute() throws Pausable, Exception;
+        public void execute(kilim.Fiber fiber) throws Exception;
+    }
 }
