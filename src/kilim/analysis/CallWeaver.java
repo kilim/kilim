@@ -356,7 +356,7 @@ public class CallWeaver {
                 mv.visitVarInsn(ALOAD, 0);
             } else {
                 loadVar(mv, TOBJECT, methodWeaver.getFiberVar());
-                mv.visitMethodInsn(INVOKEVIRTUAL, FIBER_CLASS, "getCallee", "()Ljava/lang/Object;");
+                mv.visitMethodInsn(INVOKEVIRTUAL, FIBER_CLASS, "getCallee", "()Ljava/lang/Object;", false);
                 mv.visitTypeInsn(CHECKCAST, getReceiverTypename());
             }
             spos++;
@@ -393,7 +393,7 @@ public class CallWeaver {
     void genCall(MethodVisitor mv) {
         mv.visitLabel(callLabel.getLabel());
         loadVar(mv, TOBJECT, methodWeaver.getFiberVar());
-        mv.visitMethodInsn(INVOKEVIRTUAL, FIBER_CLASS, "down", "()" + D_FIBER);
+        mv.visitMethodInsn(INVOKEVIRTUAL, FIBER_CLASS, "down", "()" + D_FIBER, false);
         MethodInsnNode mi = getMethodInsn();
         if (isSAM(mi)) {
             ClassWeaver cw = methodWeaver.getClassWeaver();
@@ -472,7 +472,7 @@ public class CallWeaver {
      */
     void genPostCall(MethodVisitor mv) {
         loadVar(mv, TOBJECT, methodWeaver.getFiberVar());
-        mv.visitMethodInsn(INVOKEVIRTUAL, FIBER_CLASS, "up", "()I");
+        mv.visitMethodInsn(INVOKEVIRTUAL, FIBER_CLASS, "up", "()I", false);
         LabelNode restoreLabel = new LabelNode();
         LabelNode saveLabel = new LabelNode();
         LabelNode unwindLabel = new LabelNode();
@@ -562,7 +562,7 @@ public class CallWeaver {
         mv.visitTypeInsn(NEW, stateClassName);
         mv.visitInsn(DUP); // 
         // call constructor
-        mv.visitMethodInsn(INVOKESPECIAL, stateClassName, "<init>", "()V");
+        mv.visitMethodInsn(INVOKESPECIAL, stateClassName, "<init>", "()V", false);
         // save state in register
         int stateVar = allocVar(1);
         storeVar(mv, TOBJECT, stateVar);
@@ -621,8 +621,7 @@ public class CallWeaver {
         // Fiber.setState(state);
         loadVar(mv, TOBJECT, methodWeaver.getFiberVar());
         loadVar(mv, TOBJECT, stateVar);
-        mv.visitMethodInsn(INVOKEVIRTUAL, FIBER_CLASS, "setState", "("
-                + D_STATE + ")V");
+        mv.visitMethodInsn(INVOKEVIRTUAL, FIBER_CLASS, "setState", "(" + D_STATE + ")V", false);
         releaseVar(stateVar, 1);
         // Figure out the return type of the calling method and issue the
         // appropriate xRETURN instruction

@@ -241,7 +241,7 @@ public class ClassWeaver {
                 // }
                 MethodVisitor mw = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
                 mw.visitVarInsn(ALOAD, 0);
-                mw.visitMethodInsn(INVOKESPECIAL, STATE_CLASS, "<init>", "()V");
+                mw.visitMethodInsn(INVOKESPECIAL, STATE_CLASS, "<init>", "()V", false);
                 mw.visitInsn(RETURN);
                 // this code uses a maximum of one stack element and one local variable
                 mw.visitMaxs(1, 1);

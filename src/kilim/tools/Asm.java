@@ -19,6 +19,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import kilim.analysis.KilimContext;
+import kilim.mirrors.CachedClassMirrors;
 
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
@@ -531,7 +533,10 @@ public class Asm {
                 String owner = group(1);
                 String name = group(2);
                 String desc = group(3);
-                mv.visitMethodInsn(opcode, owner, name, desc);
+                boolean itf = false;
+                try { itf = KilimContext.DEFAULT.detector.mirrors.classForName(owner).isInterface(); }
+                catch (Exception ex) {}
+                mv.visitMethodInsn(opcode, owner, name, desc, itf);
                 break;
             }
             case TYPE:

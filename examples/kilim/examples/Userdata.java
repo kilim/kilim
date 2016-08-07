@@ -14,6 +14,7 @@ public class Userdata extends Task {
     Eats2 eats2 = new Eats2();
     
     public interface Eats1 {
+        public static String stuff(String foo) { return foo + "-stuff"; }
         public void insert1(int kfood) throws Pausable;
     }
     public static class Eats1Impl implements Eats1 {
@@ -27,7 +28,11 @@ public class Userdata extends Task {
         public void insert1(int kfood) throws Pausable { System.out.println("bar"); }
     }
     public interface Eats4 {
+        public static String fluff(String foo) { return foo + "-fluff"; }
         public void insert1(int kfood) throws Pausable;
+    }
+    public interface Eats5 extends Eats4 {
+        public static void buff(int kfood) throws Pausable { System.out.println(Eats4.fluff("fox-"+kfood)); }
     }
     public static void eater(Eats4 eat,int kfood) throws Pausable {
         eat.insert1(kfood);
@@ -35,9 +40,12 @@ public class Userdata extends Task {
     
     public void execute() throws kilim.Pausable {
         eats1.insert1(0);
+        System.out.println(Eats1.stuff("funky"));
         eats2.insert1(0);
         new Eats3().insert1(0);
         eater(kfood -> System.out.println("lam"), 0);
+        Eats4.fluff("marshmallow");
+        Eats5.buff(5);
         Stream.of(0,1,2,3,4).forEach(System.out::println);
         System.exit(0);
     }

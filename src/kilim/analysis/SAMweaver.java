@@ -148,13 +148,12 @@ public class SAMweaver implements Constants {
 
         // invoke interface
         String fiberDesc = desc.replace(")", Constants.D_FIBER + ")");
-        mv.visitMethodInsn(INVOKEINTERFACE, interfaceName, methodName, fiberDesc);
+        mv.visitMethodInsn(INVOKEINTERFACE, interfaceName, methodName, fiberDesc, true);
 
         // store callee object reference in fiber 
         mv.visitVarInsn(ALOAD, fiberVar);
         mv.visitVarInsn(ALOAD, 0);
-        mv.visitMethodInsn(INVOKEVIRTUAL, FIBER_CLASS, "setCallee", 
-                "(" + D_OBJECT + ")V");
+        mv.visitMethodInsn(INVOKEVIRTUAL, FIBER_CLASS, "setCallee", "(" + D_OBJECT + ")V", false);
 
         // return .. RETURN (if void) or ARETURN, IRETURN, etc.
         String retDesc = TypeDesc.getReturnTypeDesc(shimDesc);

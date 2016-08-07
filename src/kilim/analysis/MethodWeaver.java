@@ -408,7 +408,7 @@ public class MethodWeaver {
         
         errLabel.accept(mv);
         mv.visitVarInsn(ALOAD, getFiberVar());
-        mv.visitMethodInsn(INVOKEVIRTUAL, FIBER_CLASS, "wrongPC", "()V");
+        mv.visitMethodInsn(INVOKEVIRTUAL, FIBER_CLASS, "wrongPC", "()V", false);
         // Generate pass through down code, one for each pausable method
         // invocation
         int last = callWeavers.size() - 1;
@@ -474,7 +474,7 @@ public class MethodWeaver {
         bb.startLabel.accept(mv);
         LabelNode resumeLabel = new LabelNode();
         VMType.loadVar(mv, VMType.TOBJECT, getFiberVar());
-        mv.visitMethodInsn(INVOKEVIRTUAL, FIBER_CLASS, "upEx", "()I");
+        mv.visitMethodInsn(INVOKEVIRTUAL, FIBER_CLASS, "upEx", "()I", false);
         // fiber.pc is on stack
         LabelNode[] labels = new LabelNode[cwList.size()];
         int[] keys = new int[cwList.size()];
@@ -559,7 +559,8 @@ public class MethodWeaver {
                     mf.signature, ClassWeaver.toStringArray(mf.exceptions));
             mv.visitCode();
             visitAttrs(mv);
-            mv.visitMethodInsn(INVOKESTATIC, TASK_CLASS, "errNotWoven", "()V");
+            boolean isInterface = classWeaver.isInterface() && !isSAM;
+            mv.visitMethodInsn(INVOKESTATIC, TASK_CLASS, "errNotWoven", "()V", isInterface);
             
             String rdesc = TypeDesc.getReturnTypeDesc(mf.desc);
             // stack size depends on return type, because we want to load
