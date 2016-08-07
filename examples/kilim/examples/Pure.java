@@ -78,8 +78,14 @@ public class Pure {
     }
     PureDemos pds = new PureDemos();
     public static void main(String [] args) {
-        String name = args.length==0 ? "pure" : args[0];
         int num = 0, repeat = 5; 
+        if (args.length==0) {
+            System.out.println("args  : mode, number of cycles, number of repeats");
+            System.out.println("modes : pure (default), perf, task, mega, java");
+            System.out.println("cycles: 0 (default) implies mode specific default");
+            System.out.format ("using : pure %d %d\n",num,repeat);
+        }
+        String name = args.length==0 ? "pure" : args[0];
         if (args.length > 1) 
             try { num = Integer.parseInt(args[1]); }
             catch (Exception ex) {}
