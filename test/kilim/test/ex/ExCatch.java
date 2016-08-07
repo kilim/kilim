@@ -2,7 +2,7 @@ package kilim.test.ex;
 
 import kilim.Fiber;
 import kilim.Pausable;
-import kilim.PureFiber;
+import kilim.Continuation;
 import kilim.Task;
 
 public class ExCatch extends ExYieldBase {
@@ -166,7 +166,7 @@ public class ExCatch extends ExYieldBase {
         throw new ExException("10");
     }
 
-    public static class Pure extends PureFiber {
+    public static class Pure extends Continuation {
         int [] count = new int[11];
         public void execute() throws Pausable {
             double d = fd;

@@ -36,7 +36,7 @@ import java.util.NoSuchElementException;
  *  @see kilim.examples.Fib, kilim.examples.Tree
  */
 
-public class Generator<T> extends PureFiber implements Iterator<T>, Iterable<T> {
+public class Generator<T> extends Continuation implements Iterator<T>, Iterable<T> {
     T nextVal;
     boolean done = false;
 

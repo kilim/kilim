@@ -10,7 +10,7 @@ package kilim.examples;
 import kilim.Fiber;
 import kilim.Generator;
 import kilim.Pausable;
-import kilim.PureFiber;
+import kilim.Continuation;
 
 /**
  *  a demo and benchmark of kilim generators used to implement the xorshift PRNG
@@ -18,7 +18,7 @@ import kilim.PureFiber;
  *  the value is printed just to ensure that the JIT actually runs all the code
  *  https://en.wikipedia.org/wiki/Xorshift#xorshift.2B
  */
-public class Xorshift2 extends PureFiber {
+public class Xorshift2 extends Continuation {
     long result;
 
     public static void main(String[] args) {

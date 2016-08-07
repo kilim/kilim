@@ -4,8 +4,8 @@ package kilim;
 
 
 
-public abstract class PureFiber implements Fiber.Worker {
-    private static Fiber.MethodRef runnerInfo = new Fiber.MethodRef(PureFiber.class.getName(),"run");
+public abstract class Continuation implements Fiber.Worker {
+    private static Fiber.MethodRef runnerInfo = new Fiber.MethodRef(Continuation.class.getName(),"run");
     static final FakeTask fakeTask = new FakeTask();
     private static class FakeTask extends Task {
         Fiber.MethodRef getRunnerInfo() {
