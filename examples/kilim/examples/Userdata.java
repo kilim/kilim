@@ -8,6 +8,9 @@ import kilim.Task;
 /*
     test of a number of ways of invoking a method that are or look similar to SAMs
     added for: https://github.com/kilim/kilim/issues/38
+
+    also shows off Kilim.trampoline() - ie, this class can be run with or without weaving
+    if it hasn't been woven, it will automatically call the runtime weaver
 */
 public class Userdata extends Task {
     Eats1 eats1 = new Eats1Impl();
@@ -50,7 +53,13 @@ public class Userdata extends Task {
         System.exit(0);
     }
 
+    /**
+     * start the userdata task
+     * this entry point supports automatic runtime weaving
+     * if the code hasn't been woven when invoked, it will trampoline off the WeavingClassLoader
+     */
     public static void main(String [] args) {
+        if (kilim.tools.Kilim.trampoline(true,args)) return;
         new Userdata().start();
     }
     
