@@ -84,9 +84,9 @@ public class TestYield extends TestCase {
     }
     public static void runPure(Continuation pure) throws Exception {
         while (!pure.run()) {}
-        if (pure.ex != null) {
-            pure.ex.printStackTrace();
-            fail(pure.ex.toString());
+        if (pure.ex() != null) {
+            pure.ex().printStackTrace();
+            fail(pure.ex().toString());
         }
     }
 }
