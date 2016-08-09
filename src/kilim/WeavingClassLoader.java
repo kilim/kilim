@@ -73,7 +73,7 @@ public class WeavingClassLoader extends KilimClassLoader {
             return c;
         }
     }
-    ClassLoader proxy;
+    URLClassLoader proxy;
 
     public static byte [] readFully(InputStream is) throws IOException {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
@@ -107,6 +107,7 @@ public class WeavingClassLoader extends KilimClassLoader {
 
         boolean useProxy = paths.length > 0;
         pcl = useProxy ? proxy : getClass().getClassLoader();
+        proxy = useProxy ? proxy : null;
         try {
             if (useProxy)
                 weaver = (WeaverBase) proxy.loadClass("kilim.tools.Weaver").newInstance();
@@ -133,9 +134,12 @@ public class WeavingClassLoader extends KilimClassLoader {
     
     protected Class<?> findClass(String name) throws ClassNotFoundException {
         Class<?> ret = null;
+        String cname = map(name);
+        boolean ignore = proxy==null ? false : proxy.findResource(cname)==null;
         byte [] code = findCode(pcl,name);
         if (code==null)
             throw new ClassNotFoundException();
+        if (ignore) return define(name,code);
         InputStream is = new ByteArrayInputStream(code);
         List<ClassInfo> cis;
         try {
@@ -173,7 +177,7 @@ public class WeavingClassLoader extends KilimClassLoader {
         return pd;
     }
     
-    public Class<?> define(String name,byte [] code) throws ClassNotFoundException {
+    public Class<?> define(String name,byte [] code) {
         return defineClass(name, code, 0, code.length, get(name));
     }
 
