@@ -131,6 +131,16 @@
     </java>
   </target>
 
+  <target name="testjit" >
+    <echo message="Testing Tasks ======================" />
+    <java classname="kilim.tools.Kilim" fork="yes">
+      <classpath refid="kilim.classpath"/>
+      <assertions><enable/></assertions>
+      <arg line="junit.textui.TestRunner kilim.test.AllWoven" />
+    </java>
+  </target>
+
+
   <target name="jar" description="generate the distribution">
     <copy file="License" todir="classes/kilim" />
     <jar jarfile="kilim.jar" basedir="classes">
