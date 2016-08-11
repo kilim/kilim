@@ -8,11 +8,8 @@ public class KilimClassLoader extends ClassLoader {
         super(KilimClassLoader.class.getClassLoader());
     }
 
-    public Class<?> getLoadedClass(String className) {
-        return super.findLoadedClass(className);
-    }
     
     public boolean isLoaded(String className) {
-        return getLoadedClass(className) != null;
+        return super.findLoadedClass(className) != null;
     }
 }

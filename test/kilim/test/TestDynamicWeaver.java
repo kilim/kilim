@@ -56,7 +56,7 @@ public class TestDynamicWeaver extends TestCase {
     public void testWeave() throws Exception {
         List<ClassInfo> classes = compile();
 
-        classes = new Weaver().weave(classes);
+        classes = new Weaver(null).weave(classes);
         
 
         HashSet<String> expectedClasses = new HashSet<String>(

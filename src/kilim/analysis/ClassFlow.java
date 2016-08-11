@@ -38,16 +38,21 @@ public class ClassFlow extends ClassNode {
     public boolean        isWoven = false;
     public KilimContext context;
 
+    /** the original bytecode associated with the class */
+    public byte [] code;
+
     public ClassFlow(KilimContext context,InputStream is) throws IOException {
         super(Opcodes.ASM5);
         this.context = context;
         cr = new ClassReader(is);
+        code = cr.b;
     }
 
     public ClassFlow(KilimContext context,String aClassName) throws IOException {
         super(Opcodes.ASM5);
         this.context = context;
         cr = new ClassReader(aClassName);
+        code = cr.b;
     }
 
 

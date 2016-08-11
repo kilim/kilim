@@ -27,13 +27,21 @@ import kilim.analysis.FileLister;
  * This class supports both command-line and run time weaving of Kilim bytecode. 
  */
 
-public class Weaver implements WeaverBase {
+public class Weaver {
     public static boolean dbg = false;
     public static String outputDir = null;
     public static boolean verbose = true;
     public static Pattern excludePattern = null;
     static int err = 0;
 
+    public KilimContext context;
+    public Weaver(KilimContext $context) {
+        context = $context==null ? new KilimContext() : $context;
+    }
+    
+    
+    
+    
     /**
      * <pre>
      * Usage: java kilim.tools.Weaver -d &lt;output directory&gt; {source classe, jar, directory ...}
@@ -50,7 +58,7 @@ public class Weaver implements WeaverBase {
      * @see #weave(List) for run-time weaving.
      */
     public static void main(String[] args) throws IOException {
-        Weaver weaver = new Weaver();
+        Weaver weaver = new Weaver(null);
 
         String currentName = null;
         for (String name : parseArgs(args)) {
@@ -104,10 +112,15 @@ public class Weaver implements WeaverBase {
     }
 
     // non-static to allow easy usage from alternative classloaders
-    public List<ClassInfo> weave(InputStream is) throws IOException {
-        ClassWeaver cw = new ClassWeaver(context,is);
-        cw.weave();
-        return cw.getClassInfos();
+    public ClassWeaver weave(InputStream is) {
+        ClassWeaver cw = null;
+        if (is==null) return null;
+        try {
+            cw = new ClassWeaver(context,is);
+            cw.weave();
+        }
+        catch (IOException ex) {}
+        return cw;
     }
 
     public void weaveFile(String name, InputStream is) throws IOException {
@@ -256,7 +269,6 @@ public class Weaver implements WeaverBase {
         }
     }
 
-    KilimContext context = new KilimContext();
     
     
 

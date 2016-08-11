@@ -1,6 +1,8 @@
 // copyright 2016 seth lytle, 2014 sriram srinivasan
 package kilim.mirrors;
 
+import java.io.DataInputStream;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,9 +29,16 @@ public class CachedClassMirrors {
     final static String[] EMPTY_SET = new String[0];
     
     ConcurrentHashMap<String,ClassMirror> cachedClasses = new ConcurrentHashMap<String, ClassMirror>();
-    private final KilimClassLoader loader = new KilimClassLoader();
+    private final KilimClassLoader loader;
+    final ClassLoader source;
 
     public CachedClassMirrors() {
+        loader = new KilimClassLoader();
+        source = getClass().getClassLoader();
+    }
+    public CachedClassMirrors(KilimClassLoader $loader,ClassLoader $source) {
+        loader = $loader;
+        source = $source;
     }
     
     public ClassMirror classForName(String className)
@@ -48,19 +57,35 @@ public class CachedClassMirrors {
             }
         }
         
-        byte [] code = WeavingClassLoader.findCode(getClass().getClassLoader(),className);
-        if (code != null) return place(new ClassMirror(code));
+        byte [] code = WeavingClassLoader.findCode(source,className);
+        if (code != null) return mirror(code);
         
         throw new ClassMirrorNotFoundException(className);
     }
 
     public ClassMirror mirror(byte[] bytecode) {
-        return place(new ClassMirror(bytecode));
+        ClassMirror mirror = new ClassMirror(bytecode);
+        return place(mirror);
     }
 
     private ClassMirror place(ClassMirror r1) {
+        r1.mirrors = this;
         ClassMirror r2 = cachedClasses.putIfAbsent(r1.getName(),r1);
         return r2==null ? r1:r2;
+    }
+
+    /** get the major version of klass by loading the bytecode from source */
+    public static int getVersion(ClassLoader source,Class klass) {
+        String cname = WeavingClassLoader.map(klass.getName());
+        DataInputStream in = new DataInputStream(source.getResourceAsStream(cname));
+        try {
+            int magic = in.readInt();
+            int minor = in.readUnsignedShort();
+            int major = in.readUnsignedShort();
+            in.close();
+            return major;
+        }
+        catch (IOException ex) { throw new RuntimeException(ex); }
     }
     
     public ClassMirror mirror(Class<?> clazz) {
@@ -78,13 +103,15 @@ public class CachedClassMirrors {
         return mod;
     }
 
-public class ClassMirror extends ClassVisitor {
-    String name;
-    boolean isInterface;
-    MethodMirror[] declaredMethods;
-    String[] interfaceNames;
-    String superName;
-    int version;
+    
+public static class ClassMirror extends ClassVisitor {
+    private String name;
+    private boolean isInterface;
+    private MethodMirror[] declaredMethods;
+    private String[] interfaceNames;
+    private String superName;
+    private int version = 0;
+    CachedClassMirrors mirrors;
     
     private List<MethodMirror> tmpMethodList; //used only while processing bytecode. 
     private RuntimeClassMirror rm;
@@ -105,6 +132,10 @@ public class ClassMirror extends ClassVisitor {
         declaredMethods = null;
     }
 
+    ClassMirror() {
+        super(Opcodes.ASM5);
+    }
+    
     public String getName() {
         return name;
     }
@@ -113,18 +144,17 @@ public class ClassMirror extends ClassVisitor {
         return isInterface;
     }
 
-    @Override
     public boolean equals(Object obj) {
         if (obj instanceof ClassMirror) {
             ClassMirror mirr = (ClassMirror) obj;
-            String n1 = name, n2 = mirr.name;
-            return n1.equals(n2) && mirr.isInterface == this.isInterface;
+            String n1 = name, n2 = mirr.getName();
+            return n1.equals(n2) && mirr.isInterface() == this.isInterface;
         }
 
+        System.out.println("cm= " + obj);
         return false;
     }
     
-    @Override
     public int hashCode() {
         return this.name.hashCode();
     }
@@ -151,12 +181,15 @@ public class ClassMirror extends ClassVisitor {
         return superName;
     }
 
+    
+    
     public int version() {
+        if (version==0 && rm != null)
+            version = getVersion(mirrors.source,rm.clazz);
         return (version & 0x00FF);
     }
     
     public boolean isAssignableFrom(ClassMirror c) throws ClassMirrorNotFoundException {
-        CachedClassMirrors mirrors = CachedClassMirrors.this;
         if (c==null) return false;
         if (this.equals(c)) return true;
         
@@ -259,6 +292,8 @@ public static class MethodMirror {
         isBridge = rm.isBridge();
     }
 
+    public MethodMirror() {}
+    
     public String getName() {
         return name;
     }
@@ -317,6 +352,7 @@ class RuntimeMethodMirror {
 
 class RuntimeClassMirror {
     final Class<?> clazz;
+    private RuntimeMethodMirror[] methods; 
     
     public RuntimeClassMirror(Class<?> clazz) {
         this.clazz = clazz;
