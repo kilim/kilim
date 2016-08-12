@@ -16,12 +16,9 @@ import kilim.WeavingClassLoader;
  * if -Dkilim.class.path="classDir1:classDir2:jar1.jar:..." is supplied then runtime weaving will be limited
  * to those paths
  * 
- * 
  * otherwise, everything on the classpath will be analyzed and woven if needed
  * 
- * The classpath
- * specified must not be in the main classpath, otherwise the system class loader will 
- * use the raw, unwoven classes. 
+ * a main method can also call the trampoline to trigger automatic weaving if needed
  */
 public class Kilim {
     public static void main(String[] args) throws Exception {
@@ -58,7 +55,6 @@ public class Kilim {
             Class klass = cl.loadClass(ste.getClassName());
             if (check && isWoven(klass))
                 return false;
-            System.out.println("trampoline");
             kilim.tools.Kilim.run(ste.getClassName(), ste.getMethodName(), args);
         }
         catch (RuntimeException ex) { throw ex; }
