@@ -104,7 +104,7 @@ public class CachedClassMirrors {
     }
 
     
-public static class ClassMirror extends ClassVisitor {
+public static class ClassMirror {
     private String name;
     private boolean isInterface;
     private MethodMirror[] declaredMethods;
@@ -112,17 +112,17 @@ public static class ClassMirror extends ClassVisitor {
     private String superName;
     private int version = 0;
     CachedClassMirrors mirrors;
+    private Visitor visitor;
     
     private List<MethodMirror> tmpMethodList; //used only while processing bytecode. 
     private RuntimeClassMirror rm;
     
     public ClassMirror(byte []bytecode) {
-        super(Opcodes.ASM5);
         ClassReader cr = new ClassReader(bytecode);
-        cr.accept(this, /*flags*/0);
+        visitor = new Visitor();
+        cr.accept(visitor, /*flags*/0);
     }
     public ClassMirror(Class clazz) {
-        super(Opcodes.ASM5);
         rm = new RuntimeClassMirror(clazz);
         name = rm.getName();
         isInterface = rm.isInterface();
@@ -132,9 +132,8 @@ public static class ClassMirror extends ClassVisitor {
         declaredMethods = null;
     }
 
-    ClassMirror() {
-        super(Opcodes.ASM5);
-    }
+    // used by DualMirror (external package) for testing the mirrors
+    ClassMirror() {}
     
     public String getName() {
         return name;
@@ -150,8 +149,6 @@ public static class ClassMirror extends ClassVisitor {
             String n1 = name, n2 = mirr.getName();
             return n1.equals(n2) && mirr.isInterface() == this.isInterface;
         }
-
-        System.out.println("cm= " + obj);
         return false;
     }
     
@@ -203,17 +200,21 @@ public static class ClassMirror extends ClassVisitor {
         }
         return false;
     }
-    
+
+    public class Visitor extends ClassVisitor {
+        Visitor() {
+            super(Opcodes.ASM5);
+        }
     
     // ClassVisitor implementation
-    public void visit(int version, int access, String name, String signature, String superName,
-            String[] interfaces) {
-        this.version = version;
-        this.name = map(name);
-        this.superName = map(superName);
-        this.interfaceNames = interfaces == null ? CachedClassMirrors.EMPTY_SET : map(interfaces);
-        this.isInterface = (access & Opcodes.ACC_INTERFACE) > 0;
-        if (this.isInterface) this.superName = null;
+    public void visit(int $version, int access, String $name, String signature, String $superName,
+            String[] $interfaces) {
+        version = $version;
+        name = map($name);
+        superName = map($superName);
+        interfaceNames = $interfaces == null ? CachedClassMirrors.EMPTY_SET : map($interfaces);
+        isInterface = (access & Opcodes.ACC_INTERFACE) > 0;
+        if (isInterface) superName = null;
     }
 
     
@@ -253,6 +254,7 @@ public static class ClassMirror extends ClassVisitor {
     public FieldVisitor visitField(int access, String name, String desc, String signature,
             Object value) {
         return null;
+    }
     }
     }
     static class DummyAnnotationVisitor extends AnnotationVisitor {
@@ -352,7 +354,6 @@ class RuntimeMethodMirror {
 
 class RuntimeClassMirror {
     final Class<?> clazz;
-    private RuntimeMethodMirror[] methods; 
     
     public RuntimeClassMirror(Class<?> clazz) {
         this.clazz = clazz;
