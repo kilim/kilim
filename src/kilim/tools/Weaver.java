@@ -1,4 +1,4 @@
-/* Copyright (c) 2006, Sriram Srinivasan
+/* Copyright (c) 2006, Sriram Srinivasan, 2016 seth lytle
  *
  * You may distribute this software under the terms of the license 
  * specified in the file "License"
@@ -84,6 +84,8 @@ public class Weaver {
                         currentName = fe.getFileName();
                         if (currentName.endsWith(".class")) {
                             if (exclude(currentName))
+                                continue;
+                            if (fe.check(outputDir))
                                 continue;
                             weaver.weaveFile(currentName, fe.getInputStream());
                         }

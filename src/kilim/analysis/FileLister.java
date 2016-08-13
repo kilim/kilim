@@ -1,4 +1,4 @@
-/* Copyright (c) 2006, Sriram Srinivasan
+/* Copyright (c) 2006, Sriram Srinivasan, seth lytle 2016
  *
  * You may distribute this software under the terms of the license 
  * specified in the file "License"
@@ -11,6 +11,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
+import java.nio.file.Paths;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Stack;
@@ -28,6 +29,12 @@ public class FileLister implements Iterable<FileLister.Entry> {
         public abstract String getFileName();
         public abstract long getSize();
         public abstract InputStream getInputStream() throws IOException;
+        /**
+         * check if a newer version of the file exists in an output directory. false negatives are allowed
+         * @param outdir the output directory
+         * @return true if the newer version exists
+         */
+        public boolean check(String outdir) { return false; }
     };
     
     /**
@@ -82,6 +89,19 @@ public class FileLister implements Iterable<FileLister.Entry> {
         } catch (IOException ignore) {}
         return null;
     }
+
+    /**
+     * check if dst is up to date with src, ie at least as new
+     * @param src the source filename
+     * @param dst the destination filename
+     * @return true if dst exists and is at least as new as src
+     */
+    public static boolean check(String src,String dst) {
+        File infile = new File(src), outfile = new File(dst);
+        long dtime = outfile.lastModified();
+        return dtime > 0 & dtime >= infile.lastModified();
+    }
+    
 }
 
 abstract class FileContainer implements Iterator<FileLister.Entry> {
@@ -94,7 +114,8 @@ abstract class FileContainer implements Iterator<FileLister.Entry> {
  */
 class DirIterator extends FileContainer {
     final File root;
-    private static class DirEntry extends FileLister.Entry {
+    String rootpath;
+    private class DirEntry extends FileLister.Entry {
         final File file;
         DirEntry(File f) {file = f;}
         
@@ -114,6 +135,14 @@ class DirIterator extends FileContainer {
         public InputStream getInputStream() throws IOException {
             return new BufferedInputStream(new FileInputStream(file));
         }
+
+        public boolean check(String outdir) {
+            String name = getFileName();
+            if (rootpath==null || ! name.startsWith(rootpath)) return false;
+            String relative = name.substring(rootpath.length());
+            File outfile = Paths.get(outdir,relative).toFile();
+            return !outfile.equals(file) && outfile.lastModified() >= file.lastModified();
+        }
     }
     
     Stack<File> stack = new Stack<File>();
@@ -121,6 +150,8 @@ class DirIterator extends FileContainer {
     
     DirIterator(File f) {
         root = f;
+        try { rootpath = root.getCanonicalPath(); }
+        catch (IOException ex) {}
         stack.push(f);
     }
 

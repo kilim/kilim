@@ -1,5 +1,8 @@
 package kilim.test.ex;
 
+public class ExExpr {}
+
+
 class ExInts {
     int[] intstuff() {
         int i = 10;
