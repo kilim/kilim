@@ -28,14 +28,11 @@
   <target name="test" depends="testnotwoven,testwoven" />
   
   <target name="compile">
-    <echo message="Compiling src ===================" />
     <javac includeantruntime="false" debug="on" srcdir="src" destdir="classes" 
            classpathref="kilim.classpath"/>
-    <echo message="Compiling examples ===================" />
     <javac includeantruntime="false" debug="on" srcdir="examples" destdir="classes"
            excludes="${exclude8}"
            classpathref="kilim.classpath"/>
-    <echo message="Compiling benchmarks ===================" />
     <javac includeantruntime="false" debug="on" srcdir="bench" destdir="classes" 
            classpathref="kilim.classpath"/>
   </target>
@@ -48,7 +45,6 @@
   </pathconvert>
   
   <target name="asm" depends="compile">
-    <echo message="Assembling test .j files ===================" />
     <java classname="kilim.tools.Asm" classpathref="kilim.classpath" fork="yes">
       <arg line="-nf -d ./classes" />
       <arg line="${dotjfiles}" />
@@ -56,7 +52,6 @@
   </target>
   
   <target name="testcompile" depends="asm">
-    <echo message="Compiling test ===================" />
     <javac includeantruntime="false" debug="on" srcdir="test" destdir="classes" 
            excludes="${exclude8}"
            classpathref="kilim.classpath"/>
@@ -64,7 +59,6 @@
   
 
   <target name="weave" depends="testcompile">
-    <echo message="Weaving files ===================" />
     <java classname="kilim.tools.Weaver" fork ="yes">
       <classpath refid="kilim.classpath"/>
       <assertions>
@@ -78,7 +72,6 @@
       <arg value="./classes" />
       <arg line="./classes" />
     </java>
-    <echo message="Weaving test classes ==============" />
     <java classname="kilim.tools.Weaver" fork ="yes">
       <classpath refid="kilim.classpath"/>
       <assertions>
@@ -95,10 +88,10 @@
   </target>
     
   <target name="clean">
-    <echo message="deleting files" />
     <delete>
       <fileset defaultexcludes="no" dir="." includes="*~,#*,foo,bar,x,y" />
     </delete>
+    <delete dir="./dist" />
     <delete dir="./classes" />
     <delete dir="./testclasses" />
     <mkdir dir="./classes" />
@@ -109,7 +102,6 @@
   <!-- This runs those tests that do not depend on generated classes
        present in testclasses. For those, see "testwoven"  -->
   <target name="testnotwoven" >
-    <echo message="Testing =========================" />
     <java classname="junit.textui.TestRunner" fork="yes">
       <classpath refid="kilim.classpath"/>
       <assertions>
@@ -121,7 +113,6 @@
   
   <!-- This runs those tests depend on generated classes in testclasses-->
   <target name="testwoven" >
-    <echo message="Testing Tasks ======================" />
     <java classname="junit.textui.TestRunner" fork="yes">
       <classpath refid="kilim.testwovenclasspath"/>
       <assertions>
@@ -132,7 +123,6 @@
   </target>
 
   <target name="testjit" >
-    <echo message="Testing Tasks ======================" />
     <java classname="kilim.tools.Kilim" fork="yes">
       <classpath refid="kilim.classpath"/>
       <assertions><enable/></assertions>
@@ -141,9 +131,13 @@
   </target>
 
 
-  <target name="jar" description="generate the distribution">
+  <target name="jar-prep">
+    <mkdir dir="dist" />
     <copy file="License" todir="classes/kilim" />
-    <jar jarfile="kilim.jar" basedir="classes">
+  </target>
+
+  <target name="jar-all" depends="jar-prep">
+    <jar jarfile="dist/kilim-all.jar" basedir="classes">
       <zipgroupfileset dir="libs" includes="*.jar">
 		<exclude name="junit.jar" />
       </zipgroupfileset>
@@ -154,22 +148,35 @@
 		<attribute name="Main-Class" value="kilim.tools.Weaver"/>
       </manifest>	
     </jar>
-
-    <jar jarfile="kilim-runtime.jar" basedir="classes">
+    <jar jarfile="dist/kilim-runtime.jar" basedir="classes">
       <exclude name="kilim/test/**" />
       <exclude name="kilim/examples/**" />
       <exclude name="kilim/bench/**" />
       <exclude name="kilim/tools/**" />
       <exclude name="kilim/analysis/**" />
     </jar>
+    <jar jarfile="dist/kilim-demo.jar" basedir="classes">
+      <exclude name="kilim/test/**" />
+      <exclude name="kilim/tools/**" />
+      <exclude name="kilim/analysis/**" />
+    </jar>
   </target>
 
-  <target name="maven" depends="all,test" description="generate the maven jar">
-    <copy file="License" todir="classes/kilim" />
-	<jar jarfile="kilim.jar" basedir="classes">
+  <target name="jar" depends="jar-prep">
+    <jar jarfile="dist/kilim.jar" basedir="classes">
       <exclude name="kilim/test/**" />
       <exclude name="kilim/examples/**" />
       <exclude name="kilim/bench/**" />
+      <manifest><attribute name="Main-Class" value="kilim.tools.Kilim"/></manifest>	
     </jar>
+  </target>
+
+  <target name="maven" depends="all,test,jar,doc" description="generate the maven jar"></target>
+
+  <target name="doc" description="generate documentation">
+    <jar compress="true" destfile="dist/sources.jar" basedir="src" />
+    <javadoc sourcepath="src" destdir="dist/tmp"/>
+    <jar compress="true" destfile="dist/javadoc.jar" basedir="dist/tmp" />
+    <delete dir="dist/tmp" />
   </target>
 </project>

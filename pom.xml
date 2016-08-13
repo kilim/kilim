@@ -61,7 +61,7 @@
 						<configuration>
 							<artifacts>
 								<artifact>
-									<file>kilim.jar</file>
+									<file>dist/kilim.jar</file>
 									<type>jar</type>
 								</artifact>
 							</artifacts>
