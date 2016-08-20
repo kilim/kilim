@@ -3,7 +3,6 @@ package kilim.mirrors;
 
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,7 +16,6 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
 
 
 /**
@@ -41,21 +39,13 @@ public class CachedClassMirrors {
         source = $source;
     }
     
-    public ClassMirror classForName(String className)
-            throws ClassMirrorNotFoundException {
+    public ClassMirror classForName(String className) throws ClassMirrorNotFoundException {
         // defer to loaded class objects first, then to cached class mirrors.
         ClassMirror ret = cachedClasses.get(className);
         if (ret != null) return ret;
 
-        if (loader.isLoaded(className)) {
-            try {
-                Class clazz = loader.loadClass(className);
-                return mirror(clazz);
-            }
-            catch (ClassNotFoundException ex) {
-                throw new ClassMirrorNotFoundException(className,ex);
-            }
-        }
+        // even if a class is loaded, we can't tell if it's resolved, so querying it might trigger
+        // loading of other classes, so use asm for everything
         
         byte [] code = WeavingClassLoader.findCode(source,className);
         if (code != null) return mirror(code);
@@ -89,8 +79,12 @@ public class CachedClassMirrors {
     }
     
     public ClassMirror mirror(Class<?> clazz) {
-        ClassMirror mirror = new ClassMirror(clazz);
-        return place(mirror);
+        try {
+            return classForName(clazz.getName());
+        }
+        catch (ClassMirrorNotFoundException ex) {
+            throw new AssertionError("class-based lookup should never fail",ex);
+        }
     }
     
     private static String map(String word) {
@@ -112,24 +106,13 @@ public class CachedClassMirrors {
         private String superName;
         private int version = 0;
         CachedClassMirrors mirrors;
-        private Visitor visitor;
 
         private List<MethodMirror> tmpMethodList; //used only while processing bytecode. 
-        private RuntimeClassMirror rm;
 
         public ClassMirror(byte []bytecode) {
             ClassReader cr = new ClassReader(bytecode);
-            visitor = new Visitor();
+            Visitor visitor = new Visitor();
             cr.accept(visitor, /*flags*/0);
-        }
-        public ClassMirror(Class clazz) {
-            rm = new RuntimeClassMirror(clazz);
-            name = rm.getName();
-            isInterface = rm.isInterface();
-            superName = rm.getSuperclass();
-            // lazy evaluation for the rest
-            interfaceNames = null;
-            declaredMethods = null;
         }
 
         // used by DualMirror (external package) for testing the mirrors
@@ -159,18 +142,10 @@ public class CachedClassMirrors {
         public MethodMirror[] getDeclaredMethods() {
             if (declaredMethods != null)
                 return declaredMethods;
-            if (rm==null)
-                return declaredMethods = new MethodMirror[0];
-            Method[] jms = rm.clazz.getDeclaredMethods();
-            declaredMethods = new MethodMirror[jms.length];
-            for (int i = 0; i < jms.length; i++)
-                declaredMethods[i] = new MethodMirror(jms[i]);
-            return declaredMethods;
+            return declaredMethods = new MethodMirror[0];
         }
 
         public String[] getInterfaces() throws ClassMirrorNotFoundException {
-            if (interfaceNames==null && rm != null)
-                interfaceNames = rm.getInterfaces();
             return interfaceNames;
         }
 
@@ -181,8 +156,6 @@ public class CachedClassMirrors {
 
 
         public int version() {
-            if (version==0 && rm != null)
-                version = getVersion(mirrors.source,rm.clazz);
             return (version & 0x00FF);
         }
 
@@ -285,16 +258,6 @@ public class CachedClassMirrors {
             this.exceptions = (exceptions == null) ? CachedClassMirrors.EMPTY_SET : exceptions;
             isBridge = (modifiers & Opcodes.ACC_BRIDGE) > 0;
         }
-        public MethodMirror(Method method) {
-            RuntimeMethodMirror rm = new RuntimeMethodMirror(method);
-            this.modifiers = rm.getModifiers();
-            this.name = rm.getName();
-            this.desc = rm.getMethodDescriptor();
-            this.exceptions = rm.getExceptionTypes();
-            isBridge = rm.isBridge();
-        }
-
-        public MethodMirror() {}
 
         public String getName() {
             return name;
@@ -319,68 +282,4 @@ public class CachedClassMirrors {
 }
 
 
-class RuntimeMethodMirror {
-    private final Method method;
 
-    public RuntimeMethodMirror(Method method) {
-        this.method = method;
-    }
-
-    public String getName() {
-        return method.getName();
-    }
-    
-    public int getModifiers() {
-        return method.getModifiers();
-    }
-
-    public String[] getExceptionTypes() {
-        String[] ret = new String[method.getExceptionTypes().length];
-        int i = 0;
-        for (Class<?> excl : method.getExceptionTypes()) {
-            ret[i++] = excl.getName();
-        }
-        return ret;
-    }
-
-    public String getMethodDescriptor() {
-        return Type.getMethodDescriptor(method);
-    }
-
-    public boolean isBridge() {
-        return method.isBridge();
-    }
-}
-
-class RuntimeClassMirror {
-    final Class<?> clazz;
-    
-    public RuntimeClassMirror(Class<?> clazz) {
-        this.clazz = clazz;
-    }
-
-    public String getName() {
-        return clazz.getName();
-    }
-
-    public boolean isInterface() {
-        return clazz.isInterface();
-    }
-
-    public String[] getInterfaces() {
-        Class<?>[] ifs = clazz.getInterfaces(); 
-        String[] result = new String[ifs.length];
-        for (int i = 0; i < result.length; i++) {
-            result[i] = ifs[i].getName();
-        }
-        return result;
-    }
-
-    public String getSuperclass() {
-        Class<?> supcl = clazz.getSuperclass();
-        return supcl != null ? supcl.getName() : null;
-    }
-
-    
-
-}
