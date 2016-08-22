@@ -99,7 +99,7 @@ public class FileLister implements Iterable<FileLister.Entry> {
     public static boolean check(String src,String dst) {
         File infile = new File(src), outfile = new File(dst);
         long dtime = outfile.lastModified();
-        return dtime > 0 & dtime >= infile.lastModified();
+        return dtime > infile.lastModified();
     }
     
 }
@@ -141,7 +141,7 @@ class DirIterator extends FileContainer {
             if (rootpath==null || ! name.startsWith(rootpath)) return false;
             String relative = name.substring(rootpath.length());
             File outfile = Paths.get(outdir,relative).toFile();
-            return !outfile.equals(file) && outfile.lastModified() >= file.lastModified();
+            return outfile.lastModified() > file.lastModified();
         }
     }
     

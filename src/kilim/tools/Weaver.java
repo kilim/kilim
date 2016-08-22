@@ -31,6 +31,7 @@ public class Weaver {
     public static boolean dbg = false;
     public static String outputDir = null;
     public static boolean verbose = true;
+    public static boolean force = false;
     public static Pattern excludePattern = null;
     static int err = 0;
 
@@ -52,6 +53,16 @@ public class Weaver {
      * <pre>
      *    java kilim.tools.Weaver -d ./classes ./classes
      * </pre>
+     * 
+     * arguments:
+     * <ul>
+     * <li>-d directory: write output to directory (required)</li>
+     * <li>-f: force, write output even if output file is newer than source</li>
+     * <li>-h: print help info</li>
+     * <li>-q: quiet</li>
+     * <li>-x regex: exclude, skip classes matching regex</li>
+     * </ul>
+     * 
      * Ensure that all classes to be woven are in the classpath. The output directory does not have to be 
      * in the classpath during weaving.
      *   
@@ -85,7 +96,7 @@ public class Weaver {
                         if (currentName.endsWith(".class")) {
                             if (exclude(currentName))
                                 continue;
-                            if (fe.check(outputDir))
+                            if (!force && fe.check(outputDir))
                                 continue;
                             weaver.weaveFile(currentName, fe.getInputStream());
                         }
@@ -207,6 +218,8 @@ public class Weaver {
                 outputDir = args[++i];
             } else if (arg.equals("-q")) {
                 verbose = false;
+            } else if (arg.equals("-f")) {
+                force = true;
             } else if (arg.equals("-h")) {
                 help();
             } else if (arg.equals("-x")) {

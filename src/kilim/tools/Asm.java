@@ -39,6 +39,7 @@ import org.objectweb.asm.Type;
  * Usage: java kilim.tools.Asm [options] <.j file(s)>
  * Options:
  *      -d <dir> : output directory (default: '.')
+ *      -f       : force            (default: false) write output even if output file is newer than source
  *      -q       : quiet            (default: verbose)
  *      -nf      : no stack frames  (default: compute stack frames)
  * </pre>
@@ -49,6 +50,7 @@ import org.objectweb.asm.Type;
  */
 public class Asm {
     static boolean                  quiet          = false;
+    static boolean                  force          = false;
     static String                   outputDir      = ".";
     static Pattern                  wsPattern      = Pattern.compile("\\s+");
     static Pattern                  commentPattern = Pattern.compile("^;.*$| ;[^\"]*");
@@ -147,7 +149,7 @@ public class Asm {
         
         acc |= parseModifiers(group(2));
         className = group(4);
-        if (check()) {
+        if (!force && check()) {
             skip = true;
             return;
         }
@@ -821,6 +823,8 @@ public class Asm {
                 outputDir = args[++i];
             } else if (arg.equals("-q")) {
                 quiet = true;
+            } else if (arg.equals("-f")) {
+                force = true;
             } else if (arg.equals("-nf")) {
                 computeFrames = false;
             } else {
