@@ -13,25 +13,23 @@ in your pom.xml
 
       <dependencies>
           <dependency>
-              <groupId>kilim</groupId>
+              <groupId>org.db4j</groupId>
               <artifactId>kilim</artifactId>
-              <version>1.0</version>
+              <version>2.0.0-2</version>
           </dependency>
       </dependencies>
 
       <build>
           <plugins>
               <plugin>
-                  <groupId>io.kilimty</groupId>
+                  <groupId>org.db4j</groupId>
                   <artifactId>kilim-maven-plugin</artifactId>
                   <version>1.0-SNAPSHOT</version>
                   <executions>
                       <execution>
                           <id>weave</id>
                           <phase>process-classes</phase>
-                          <goals>
-                              <goal>weave</goal>
-                          </goals>
+                          <goals> <goal>weave</goal> </goals>
                       </execution>
                   </executions>
               </plugin>
