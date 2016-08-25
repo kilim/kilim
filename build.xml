@@ -164,9 +164,13 @@
 
   <target name="jar" depends="jar-prep">
     <jar jarfile="dist/kilim.jar" basedir="classes">
+      <include name="**/**" />
       <exclude name="kilim/test/**" />
       <exclude name="kilim/examples/**" />
       <exclude name="kilim/bench/**" />
+      <fileset dir="classes">
+	<include name="kilim/examples/HttpFileServer.class" />
+      </fileset>
       <manifest><attribute name="Main-Class" value="kilim.tools.Kilim"/></manifest>	
     </jar>
   </target>
