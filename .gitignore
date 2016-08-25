@@ -3,3 +3,4 @@ testclasses/**/*
 .DS_Store
 /classes
 dist
+/plugins/maven/target/
