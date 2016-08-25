@@ -47,11 +47,8 @@ public class WeavingClassLoader extends KilimClassLoader {
 
     boolean useProxy = false;
     ClassLoader pcl;
-    
-    public WeavingClassLoader() {
-        if (Weaver.dbg) Weaver.outputDir = "z1";
-        String classPath = System.getProperty(KILIM_CLASSPATH, "");
-        String[] classPaths = classPath.split(":");
+
+    public static URL [] getURLs(String [] classPaths) {
         ArrayList<URL> urls = new ArrayList<URL>();
         for (String name : classPaths) {
             name = name.trim();
@@ -64,6 +61,15 @@ public class WeavingClassLoader extends KilimClassLoader {
         }
 
         URL [] paths = urls.toArray(new URL[0]);
+        return paths;
+    }
+    
+    public WeavingClassLoader() {
+        if (Weaver.dbg) Weaver.outputDir = "z1";
+        String classPath = System.getProperty(KILIM_CLASSPATH, "");
+        String[] classPaths = classPath.split(":");
+
+        URL [] paths = getURLs(classPaths);
 
         ClassLoader current = getClass().getClassLoader();
         useProxy = paths.length > 0;

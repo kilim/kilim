@@ -14,14 +14,18 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
 import kilim.KilimException;
+import kilim.WeavingClassLoader;
 import kilim.analysis.ClassInfo;
 import kilim.analysis.ClassWeaver;
 import kilim.analysis.FileLister;
+import kilim.mirrors.CachedClassMirrors;
 
 /**
  * This class supports both command-line and run time weaving of Kilim bytecode. 
@@ -32,6 +36,7 @@ public class Weaver {
     public static String outputDir = null;
     public static boolean verbose = true;
     public static boolean force = false;
+    public static boolean proxy = true;
     public static Pattern excludePattern = null;
     static int err = 0;
 
@@ -54,10 +59,13 @@ public class Weaver {
      *    java kilim.tools.Weaver -d ./classes ./classes
      * </pre>
      * 
+     * by default, each element is added to the classpath (use -c to suppress classpath augmentation)
+     * 
      * arguments:
      * <ul>
      * <li>-d directory: write output to directory (required)</li>
      * <li>-f: force, write output even if output file is newer than source</li>
+     * <li>-c: don't add source class list to the classpath</li>
      * <li>-h: print help info</li>
      * <li>-q: quiet</li>
      * <li>-x regex: exclude, skip classes matching regex</li>
@@ -69,10 +77,24 @@ public class Weaver {
      * @see #weave(List) for run-time weaving.
      */
     public static void main(String[] args) throws IOException {
-        Weaver weaver = new Weaver(null);
+        doMain(args);
+        if (err > 0) System.exit(err);
+    }
+    public static int doMain(String ... args) throws IOException {
+
+        ArrayList<String> names = parseArgs(args);
+        Weaver weaver;
+        if (proxy) {
+            ClassLoader current = Weaver.class.getClassLoader();
+            URL [] paths = WeavingClassLoader.getURLs(names.toArray(new String [] {}));
+            CachedClassMirrors ccm = new CachedClassMirrors(null,new URLClassLoader(paths,current));
+            weaver = new Weaver(new KilimContext(ccm));
+        }
+        else
+            weaver = new Weaver(null);
 
         String currentName = null;
-        for (String name : parseArgs(args)) {
+        for (String name : names) {
             try {
                 if (name.endsWith(".class")) {
                     if (exclude(name))
@@ -117,7 +139,7 @@ public class Weaver {
                 System.exit(1);
             }
         }
-        System.exit(err);
+        return err;
     }
 
     static boolean exclude(String name) {
@@ -203,6 +225,8 @@ public class Weaver {
         System.err.println("java kilim.tools.Weaver opts -d <outputDir> (class/directory/jar)+");
         System.err.println("   where opts are   -q : quiet");
         System.err.println("                    -x <regex> : exclude all classes matching regex");
+        System.err.println("                    -f         : weave even if up to date");
+        System.err.println("                    -c         : don't add targets to classpath");
         System.exit(1);
     }
 
@@ -220,6 +244,8 @@ public class Weaver {
                 verbose = false;
             } else if (arg.equals("-f")) {
                 force = true;
+            } else if (arg.equals("-c")) {
+                proxy = false;
             } else if (arg.equals("-h")) {
                 help();
             } else if (arg.equals("-x")) {
