@@ -1,25 +1,48 @@
 <?xml version="1.0"?>
 <project name="kilim" default="all">
-  <path id="kilim.classpath">
-    <pathelement location="target/classes/" />
-    <fileset dir="./libs">
-      <include name="**/*.jar"/>
-    </fileset>
-    <pathelement path="${java.class.path}" />
-  </path>
-  <path id="kilim.testwovenclasspath">
-    <pathelement location="target/test-classes/" />
-    <pathelement location="target/classes/" />
-    <fileset dir="./libs">
-      <include name="**/*.jar"/>
-    </fileset>
-    <pathelement path="${java.class.path}" />
-  </path>
+  <!-- emacs config: (setq nxml-child-indent 2) -->
 
+  <condition property="fail-libs">
+      <resourcecount when="lt" count="2">
+          <fileset dir="." includes="libs/asm-all-5.0.3.jar,libs/junit-3.8.1.jar"/>
+      </resourcecount>
+  </condition>
+
+
+  <target name="check-libs" if="fail-libs">
+      <echo>
+	  dependencies not found (./libs)
+	  
+	  the ant build requires that dependencies be downloaded to ./libs
+	  the simplest way to do this is to use 'mvn initialize'
+      </echo>
+      <fail message="run 'mvn initialize' to copy dependencies to ./libs" />
+  </target>
+  
+  <target name="init" depends="check-libs">
+    <mkdir dir="target/classes"/>
+    <mkdir dir="target/testclasses"/>
+    <path id="kilim.classpath">
+      <pathelement location="target/classes/" />
+      <fileset dir="./libs">
+	<include name="**/*.jar"/>
+      </fileset>
+      <pathelement path="${java.class.path}" />
+    </path>
+    <path id="kilim.testwovenclasspath">
+      <pathelement location="target/test-classes/" />
+      <pathelement location="target/classes/" />
+      <fileset dir="./libs">
+	<include name="**/*.jar"/>
+      </fileset>
+      <pathelement path="${java.class.path}" />
+    </path>
+  </target>
+  
   <condition property="exclude8" value="kilim/examples/Userdata.java,kilim/examples/Spawn.java,kilim/test/TestLambda.java" else="">
-      <not>
-          <equals arg1="${ant.java.version}" arg2="1.8"/>
-      </not>
+    <not>
+      <equals arg1="${ant.java.version}" arg2="1.8"/>
+    </not>
   </condition>
 
 
@@ -27,13 +50,12 @@
   <target name="all" depends="clean,weave" />
   <target name="test" depends="testnotwoven,testwoven" />
   
-  <target name="compile">
+  <target name="compile" depends="init">
     <mkdir dir="target"/>
     <javac includeantruntime="false" debug="on" srcdir="src" destdir="target/classes" 
            classpathref="kilim.classpath"/>
   </target>
   
-  <!-- Glob a list of .j files into a space-separated list -->
   <pathconvert property="dotjfiles" pathsep=" ">
     <path>
       <fileset dir="." includes="**/*.j" />
@@ -85,13 +107,11 @@
     
   <target name="clean">
     <delete>
-      <fileset dir="target" includes="kilim*.jar"/>
+      <fileset dir="." includes="target/kilim*.jar"/>
     </delete>
     <delete dir="./dist" />
     <delete dir="./target/classes" />
     <delete dir="./target/test-classes" />
-    <mkdir dir="./target/classes" />
-    <mkdir dir="./target/test-classes" />
   </target>
   
   

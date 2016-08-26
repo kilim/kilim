@@ -5,3 +5,4 @@ testclasses/**/*
 dist
 /plugins/maven/target/
 /target
+/libs

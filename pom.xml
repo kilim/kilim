@@ -4,17 +4,18 @@
     <artifactId>kilim</artifactId>
     <version>2.0.0-2</version>
     <dependencies>
+        <!-- build.xml:fail-libs must be kept in sync with changes in this list -->
         <dependency>
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm-all</artifactId>
             <version>5.0.3</version>
         </dependency>
-    <dependency>
-        <groupId>junit</groupId>
-        <artifactId>junit</artifactId>
-        <version>3.8.1</version>
-        <scope>test</scope>
-    </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>3.8.1</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     <licenses>
         <license>
@@ -47,6 +48,21 @@
     </developers>
     <build>
         <plugins>
+            <plugin>
+		<groupId>org.apache.maven.plugins</groupId>
+		<artifactId>maven-dependency-plugin</artifactId>
+		<version>2.10</version>
+		<executions>
+                    <execution>
+			<id>copy-dependencies</id>
+			<phase>initialize</phase>
+			<goals> <goal>copy-dependencies</goal> </goals>
+			<configuration>
+			    <outputDirectory>${basedir}/libs</outputDirectory>
+			</configuration>
+                    </execution>
+		</executions>
+            </plugin>
             <plugin>
                 <groupId>org.sonatype.plugins</groupId>
                 <artifactId>nexus-staging-maven-plugin</artifactId>
