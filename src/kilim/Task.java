@@ -9,10 +9,10 @@ package kilim;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.LinkedList;
-import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import kilim.timerservice.Timer;
 
 /**
  * A base class for tasks. A task is a lightweight thread (it contains its own
@@ -81,16 +81,16 @@ public abstract class Task implements Runnable, EventSubscriber, Fiber.Worker {
 
     public    volatile Object           exitResult = "OK";
 
-    // TODO: move into a separate timer service or into the schduler.
-    public final static Timer            timer                 = new Timer(true);
 
     // new timer service
-    public kilim.timerservice.Timer       timer_new             = new kilim.timerservice.Timer(this);
+    public kilim.timerservice.Timer       timer_new;
 
     public Task() {
         id = idSource.incrementAndGet();
         fiber = new Fiber(this);
+        timer_new = new kilim.timerservice.Timer(this);
     }
+    Task(boolean dummy) { id = idSource.incrementAndGet(); }
 
     public int id() {
         return id;
@@ -372,7 +372,7 @@ public abstract class Task implements Runnable, EventSubscriber, Fiber.Worker {
         // for
         // monitoring
         // later on.
-        timer.schedule(new TimerTask() {
+        Timer.timer.schedule(new TimerTask() {
             public void run() {
                 sleepmb.putnb(0);
             }
@@ -381,7 +381,7 @@ public abstract class Task implements Runnable, EventSubscriber, Fiber.Worker {
     }
 
     public static void shutdown() {
-        timer.cancel();
+        Timer.timer.cancel();
     }
     
     /**
