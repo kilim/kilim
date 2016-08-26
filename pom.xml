@@ -11,47 +11,47 @@
         </dependency>
     </dependencies>
     <licenses>
-      <license>
-        <name>MIT License</name>
-        <url>http://www.opensource.org/licenses/mit-license.php</url>
-	<distribution>repo</distribution>
-      </license>
+        <license>
+            <name>MIT License</name>
+            <url>http://www.opensource.org/licenses/mit-license.php</url>
+            <distribution>repo</distribution>
+        </license>
     </licenses>
     <mailingLists>
-      <mailingList>
-	<archive>https://groups.google.com/forum</archive>
-      </mailingList>
+        <mailingList>
+            <archive>https://groups.google.com/forum</archive>
+        </mailingList>
     </mailingLists>
     <scm>
-      <connection>scm:git:git@github.com:nqzero/kilim.git</connection>
-      <developerConnection>scm:git:git@github.com:nqzero/kilim.git</developerConnection>
-      <url>git@github.com:nqzero/kilim.git</url>
-      <tag>fiber</tag>
+        <connection>scm:git:git@github.com:nqzero/kilim.git</connection>
+        <developerConnection>scm:git:git@github.com:nqzero/kilim.git</developerConnection>
+        <url>git@github.com:nqzero/kilim.git</url>
+        <tag>fiber</tag>
     </scm>    
     <name>kilim</name>
     <description>Coroutines, fibers, actors and message passing for the JVM</description>
     <url>https://github.com/nqzero/kilim</url>
     <developers>
-      <developer>
-	<name>nqzero</name>
-	<email>srl.public@nqzero.com</email>
-	<organization>nqzero</organization>
-	<organizationUrl>https://github.com/nqzero</organizationUrl>
-      </developer>
+        <developer>
+            <name>nqzero</name>
+            <email>srl.public@nqzero.com</email>
+            <organization>nqzero</organization>
+            <organizationUrl>https://github.com/nqzero</organizationUrl>
+        </developer>
     </developers>
     <build>
-    <plugins>
-      <plugin>
-	<groupId>org.sonatype.plugins</groupId>
-	<artifactId>nexus-staging-maven-plugin</artifactId>
-	<version>1.6.7</version>
-	<extensions>true</extensions>
-	<configuration>
-          <serverId>ossrh</serverId>
-          <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-          <autoReleaseAfterClose>true</autoReleaseAfterClose>
-	</configuration>
-      </plugin>
-    </plugins>
+        <plugins>
+            <plugin>
+                <groupId>org.sonatype.plugins</groupId>
+                <artifactId>nexus-staging-maven-plugin</artifactId>
+                <version>1.6.7</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <serverId>ossrh</serverId>
+                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 </project>
