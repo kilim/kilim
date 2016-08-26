@@ -4,3 +4,4 @@ testclasses/**/*
 /classes
 dist
 /plugins/maven/target/
+/target
