@@ -3,8 +3,8 @@
   <!-- emacs config: (setq nxml-child-indent 2) -->
 
   <condition property="fail-libs">
-      <resourcecount when="lt" count="2">
-          <fileset dir="." includes="libs/asm-all-5.0.3.jar,libs/junit-3.8.1.jar"/>
+      <resourcecount when="lt" count="1">
+          <fileset dir="." includes="libs/asm-*.jar"/>
       </resourcecount>
   </condition>
 
