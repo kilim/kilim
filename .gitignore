@@ -6,3 +6,4 @@ dist
 /plugins/maven/target/
 /target
 /libs
+/demo/target/
