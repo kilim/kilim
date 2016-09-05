@@ -7,7 +7,6 @@
 package kilim;
 
 import java.util.LinkedList;
-import java.util.TimerTask;
 
 /**
  * This is a typed buffer that supports multiple producers and a single
@@ -566,8 +565,8 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
     // Implementation of PauseReason
     public boolean isValid(Task t) {
         synchronized(this) {
-            return (t == sink) || srcs.contains(t);
-        } 
+            return ((t == sink) || srcs.contains(t)) && ! t.checkTimeout();
+        }
     }
 }
 

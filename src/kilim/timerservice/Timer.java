@@ -5,9 +5,6 @@ import kilim.EventSubscriber;
 import kilim.concurrent.VolatileBoolean;
 
 public class Timer implements Comparable<Timer> {
-    // located outside Task to allow lazy instantiation
-    public static final java.util.Timer timer = new java.util.Timer(true);
-
     private volatile long  nextExecutionTime; 
     public VolatileBoolean onQueue = new VolatileBoolean(false);  //true if timer is already on timerqueue
     public volatile boolean onHeap = false; //true if timer is already on timerHeap
@@ -26,10 +23,19 @@ public class Timer implements Comparable<Timer> {
 				.compareTo((Long) o.nextExecutionTime);
 	}
 
+        // -2: deferred (timer has completed)
+        // -1: cancelled
+        //  0: move to heap before processing
+        //   : process on queue if ready, otherwise move to heap
+        /** set the timer relative to the current time, ie set a delay (in milliseconds) */
 	public void setTimer(long timeoutMillis) {
 		nextExecutionTime = System.currentTimeMillis() + timeoutMillis;
 	}
-	
+        /** set the timer value explicitly, ie not relative to the current time */
+	public void setLiteral(long value) {
+		nextExecutionTime = value;
+	}
+
 	public void cancel(){
 		nextExecutionTime = -1;
 	}

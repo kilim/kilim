@@ -161,8 +161,13 @@ public abstract class Task implements Runnable, EventSubscriber, Fiber.Worker {
         throw new AssertionError("Expected task to be run by WorkerThread");
     }
 
+    boolean checkTimeout() {
+        return timer_new.getExecutionTime()==-2;
+    }
     public void onEvent(EventPublisher ep, Event e) {
-        resume();
+        if (e==Cell.timedOut)
+            timer_new.setLiteral(-2);
+        boolean sched = resume();
     }
 
     public Thread getExecutionThread() {
@@ -189,6 +194,8 @@ public abstract class Task implements Runnable, EventSubscriber, Fiber.Worker {
             else
                 if (debugRunning) System.out.println("Task.pause.running: " + this);
                 
+
+
         if (doSchedule) {
             if (preferredResumeThread == -1)
                 scheduler.schedule(this);
