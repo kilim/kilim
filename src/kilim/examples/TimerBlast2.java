@@ -92,10 +92,14 @@ public class TimerBlast2 {
         }
         for (int ii=0; ii < num; ii++) tocks[ii].start();
 
+        Tick tick = new Tick(20);
+        tick.start();
         
         for (int ii=10; ii >= 0; ii--)
             loop(ii==0 ? 1:0);
         
+        tick.box.putb(0L);
+        tick.joinb();
     }
 
 // Scheduler.defaultScheduler.affinePool_.queues_.get(0).add(new kilim.timerservice.TimerService.WatchdogTask())

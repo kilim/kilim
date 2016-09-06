@@ -58,7 +58,19 @@ public class AffineThreadPool {
 		}
 	}
 
-	public long getTaskCount() {
+        /** 
+         * are the queues empty
+         * allows false positives, but not false negatives
+         * ie, if this method returns false, then at some moment during the call at least one queue was non-empty
+         * if it returns true then for each queue there was a moment during the call when it was empty
+         */
+	public boolean isEmptyish() {
+		for (BlockingQueue<Runnable> queue : queues_)
+			if (! queue.isEmpty()) return false;
+                return true;
+	}
+
+        long getTaskCount() {
 		long totalRemainingCapacity = 0L;
 		for (BlockingQueue<Runnable> queue : queues_) {
 			totalRemainingCapacity += queue.size();
@@ -81,6 +93,7 @@ public class AffineThreadPool {
 		return publish(index, task);
 	}
 
+        
 	public int publish(int index, Task task) {
 		KilimThreadPoolExecutor executorService = executorService_.get(index);
 		executorService.submit(task);
@@ -97,17 +110,21 @@ public class AffineThreadPool {
 		return statsStr;
 	}
 
-	public void shutdown() {
+        public void shutdown() {
 		for (ExecutorService executorService : executorService_) {
 			executorService.shutdown();
 		}
 	}
-}
+        public static void publish(ThreadPoolExecutor executor,Runnable payload) {
+            KilimThreadPoolExecutor exe = (KilimThreadPoolExecutor) executor;
+            executor.getQueue().add(payload);
+        }
 
 class KilimThreadPoolExecutor extends ThreadPoolExecutor {
 	int id = 0;
 	private TimerService timerService;
 	private BlockingQueue<Runnable> queue;
+
 
 	KilimThreadPoolExecutor(int id, int nThreads,
 			BlockingQueue<Runnable> queue, ThreadFactory tFactory,
@@ -128,4 +145,5 @@ class KilimThreadPoolExecutor extends ThreadPoolExecutor {
 		return super.getQueue().size();
 	}
 
+}
 }

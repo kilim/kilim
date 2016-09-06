@@ -83,6 +83,9 @@ public class Scheduler {
                 this.numThreads = numThreads;
 	}
 
+	public boolean isEmptyish() {
+		return affinePool_.isEmptyish();
+	}
 	public long getTaskCount() {
 		return affinePool_.getTaskCount();
 	}

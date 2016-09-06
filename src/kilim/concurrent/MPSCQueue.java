@@ -224,6 +224,11 @@ public class MPSCQueue<E> extends MPSCQueueL3Pad<E> {
 		return e;
 	}
 
+        public boolean isEmpty() {
+            final E e = peek();
+            return e==null;
+        }
+        
 	public E element() {
 		final E e = peek();
 		if (null == e) {
@@ -254,6 +259,7 @@ public class MPSCQueue<E> extends MPSCQueueL3Pad<E> {
 		} while (currentConsumerIndexBefore != currentConsumerIndexAfter);
 		return (int) (currentProducerIndex - currentConsumerIndexBefore);
 	}
+        
 
 	public enum BackOffStrategy {
 		SPIN {
