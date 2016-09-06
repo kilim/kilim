@@ -122,6 +122,22 @@ public class Scheduler {
 	public void scheduleTimer(Timer t){
             timerService.submit(t);
 	}
+
+	public void waitIdle() {
+            if (affinePool_ != null)
+                affinePool_.waitIdle(timerService,100);
+	}
+        /** 
+         * block the thread till a moment at which all scheduled tasks have completed
+         * and then shutdown the scheduler 
+         * does not prevent scheduling new tasks (from other threads) until the shutdown is complete
+         * so such a task could be partially executed
+         */
+	public void idledown() {
+            if (affinePool_ != null && affinePool_.waitIdle(timerService,100))
+                shutdown();
+	}
+        
 	public void shutdown() {
 		shutdown.set(true);
 		if (defaultScheduler == this) {

@@ -53,6 +53,35 @@ public class TimerService {
         }
     }
 
+    private boolean empty() { return timerHeap.isEmpty() && timerQueue.isEmpty(); }
+    
+    /**
+     * return true if empty at a particular moment during the call
+     *  allowing false negatives if operations are ongoing
+     */
+    public boolean isEmptyLazy(ThreadPoolExecutor executor) {
+        return empty() && new Empty().check(executor);
+    }
+    private class Empty implements EventSubscriber {
+        boolean empty, done;
+        ThreadPoolExecutor executor;
+        @Override
+        public void onEvent(EventPublisher ep,Event e) {
+            empty = AffineThreadPool.isEmptyProxy(executor) && empty();
+            done = true;
+            synchronized (this) { this.notify(); }
+        }
+        boolean check(ThreadPoolExecutor executor) {
+            this.executor = executor;
+            submit(new kilim.timerservice.Timer(this));
+            trigger(executor);
+            synchronized (this) {
+                try { if (!done) this.wait(); } catch (InterruptedException ex) {}
+            }
+            return empty;
+        }
+    }
+    
     public void trigger(final ThreadPoolExecutor executor) {
         int maxtry = 5;
 

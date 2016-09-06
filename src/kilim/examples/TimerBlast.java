@@ -59,9 +59,8 @@ public class TimerBlast extends Task {
         }
  
         
-        Scheduler.getDefaultScheduler().shutdown();
+        Scheduler.getDefaultScheduler().idledown();
         System.out.println(cnt.get());
-        System.exit(0);
     }
 
     public void execute() throws Pausable{

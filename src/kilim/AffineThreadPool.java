@@ -3,7 +3,10 @@ package kilim;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -33,6 +36,7 @@ public class AffineThreadPool {
 	private List<BlockingQueue<Runnable>> queues_ = new ArrayList<BlockingQueue<Runnable>>();
 	private List<KilimStats> queueStats_ = new ArrayList<KilimStats>();
 	private List<KilimThreadPoolExecutor> executorService_ = new ArrayList<KilimThreadPoolExecutor>();
+        private AtomicInteger count = new AtomicInteger();
 
 	public AffineThreadPool(int nThreads, String name, TimerService timerService) {
 		this(nThreads, MAX_QUEUE_SIZE, name, timerService);
@@ -96,6 +100,7 @@ public class AffineThreadPool {
         
 	public int publish(int index, Task task) {
 		KilimThreadPoolExecutor executorService = executorService_.get(index);
+                count.incrementAndGet();
 		executorService.submit(task);
 		queueStats_.get(index).record(executorService.getQueueSize());
 		return index;
@@ -110,6 +115,30 @@ public class AffineThreadPool {
 		return statsStr;
 	}
 
+        
+        /*
+        
+        wait till there are no pending timers
+        no running tasks
+        no tasks waiting to be run
+        
+        */
+	public boolean waitIdle(TimerService ts,int delay) {
+            while (! Thread.interrupted()) {
+                if (resolved(ts))
+                    return true;
+                try { Thread.sleep(delay); } catch (InterruptedException ex) { break; }
+            }
+            return false;
+	}
+
+
+        private boolean resolved(TimerService ts) {
+            if (count.get() > 0) return false;
+            KilimThreadPoolExecutor exe = executorService_.get(0);
+            return ts.isEmptyLazy(exe);
+        }
+        
         public void shutdown() {
 		for (ExecutorService executorService : executorService_) {
 			executorService.shutdown();
@@ -117,7 +146,12 @@ public class AffineThreadPool {
 	}
         public static void publish(ThreadPoolExecutor executor,Runnable payload) {
             KilimThreadPoolExecutor exe = (KilimThreadPoolExecutor) executor;
+            exe.count().incrementAndGet();
             executor.getQueue().add(payload);
+        }
+        public static boolean isEmptyProxy(ThreadPoolExecutor executor) {
+            KilimThreadPoolExecutor exe = (KilimThreadPoolExecutor) executor;
+            return exe.count().get()==0;
         }
 
 class KilimThreadPoolExecutor extends ThreadPoolExecutor {
@@ -125,6 +159,7 @@ class KilimThreadPoolExecutor extends ThreadPoolExecutor {
 	private TimerService timerService;
 	private BlockingQueue<Runnable> queue;
 
+        private AtomicInteger count() { return count; }
 
 	KilimThreadPoolExecutor(int id, int nThreads,
 			BlockingQueue<Runnable> queue, ThreadFactory tFactory,
@@ -139,6 +174,8 @@ class KilimThreadPoolExecutor extends ThreadPoolExecutor {
 	protected void afterExecute(Runnable r, Throwable th) {
 		super.afterExecute(r, th);
 		timerService.trigger(this);
+                count.decrementAndGet();
+                
 	}
 
 	protected int getQueueSize() {

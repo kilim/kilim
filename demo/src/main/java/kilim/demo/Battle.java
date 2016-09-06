@@ -30,14 +30,13 @@ public class Battle {
         }
     }
 
-    void setup() {
+    void start() {
         for (int ii=0; ii < num; ii++) (actors[ii] = new Actor()).start();
         actors[0].damage.putb(1);
         
-        for (int ii=0; ii < 20; ii++, sleep())
-            System.out.println(living.get());
+        for (int cnt, prev=num; (cnt=living.get()) > num/2 || cnt < prev; prev=cnt, sleep())
+            System.out.println(cnt);
 
-        System.out.format("\n%d actors survived the Battle Royale\n\n",living.get());
     }
 
     static void sleep() {
@@ -47,8 +46,10 @@ public class Battle {
     
     public static void main(String [] args) {
         if (kilim.tools.Kilim.trampoline(false,args)) return;
-        new Battle().setup();
-        Scheduler.getDefaultScheduler().shutdown();
+        Battle battle = new Battle();
+        battle.start();
+        Scheduler.getDefaultScheduler().idledown();
+        System.out.format("\n%d actors survived the Battle Royale\n\n",battle.living.get());
     }
     
 }
