@@ -23,6 +23,10 @@ public class TimerService {
         lock = new java.util.concurrent.locks.ReentrantLock();
     }
 
+    public void shutdown() {
+        timer.shutdown();
+    }
+
     public void submit(Timer t) {
         if (t.onQueue.compareAndSet(false,true))
             if (!timerQueue.offer(t))

@@ -9,10 +9,8 @@ package kilim;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.LinkedList;
-import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import kilim.timerservice.Timer;
 
 /**
  * A base class for tasks. A task is a lightweight thread (it contains its own
@@ -84,6 +82,9 @@ public abstract class Task implements Runnable, EventSubscriber, Fiber.Worker {
 
     // new timer service
     public kilim.timerservice.Timer       timer_new;
+    
+    // for debugging Task.resume race conditions
+    private static boolean debugRunning = false;
 
     public Task() {
         id = idSource.incrementAndGet();
@@ -182,9 +183,12 @@ public abstract class Task implements Runnable, EventSubscriber, Fiber.Worker {
         // it is worth returning to a pause state. The code at the top of stack
         // will be doing that anyway.
 
-        doSchedule = !done
-                && running.compareAndSet(/* expected */false, /* update */true);
-
+        if (!done)
+            if (running.compareAndSet(/* expected */false, /* update */true))
+                doSchedule = true;
+            else
+                if (debugRunning) System.out.println("Task.pause.running: " + this);
+                
         if (doSchedule) {
             if (preferredResumeThread == -1)
                 scheduler.schedule(this);
@@ -372,16 +376,11 @@ public abstract class Task implements Runnable, EventSubscriber, Fiber.Worker {
         // for
         // monitoring
         // later on.
-        Timer.timer.schedule(new TimerTask() {
-            public void run() {
-                sleepmb.putnb(0);
-            }
-        }, millis);
-        sleepmb.get(); // block until a message posted
+        
+        sleepmb.get(millis);
     }
 
     public static void shutdown() {
-        Timer.timer.cancel();
     }
     
     /**
@@ -472,6 +471,10 @@ public abstract class Task implements Runnable, EventSubscriber, Fiber.Worker {
 
     protected void setTid(int tid) {
         this.tid = tid;
+    }
+    /** return the thread ID that the task is currently running on, valid only during execute */
+    public int getTid() {
+        return tid;
     }
 
     /**
