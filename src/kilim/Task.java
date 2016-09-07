@@ -19,8 +19,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * 
  */
 public abstract class Task implements Runnable, EventSubscriber, Fiber.Worker {
-    public volatile int                  currentThread;
-
     static PauseReason                   yieldReason           = new YieldReason();
     /**
      * Task id, automatically generated
@@ -494,7 +492,6 @@ public abstract class Task implements Runnable, EventSubscriber, Fiber.Worker {
         Fiber f = fiber;
         boolean isDone = false;
         try {
-            currentThread = AffineThreadPool.getCurrentThreadId();
             assert (preferredResumeThread == -1 || preferredResumeThread == tid) : "Resumed "
                     + id + " in incorrect thread. ";
             // start execute. fiber is wound to the beginning.
@@ -540,7 +537,6 @@ public abstract class Task implements Runnable, EventSubscriber, Fiber.Worker {
 
             PauseReason pr = this.pauseReason;
             running.set(false);
-            currentThread = 0;
             // The task has been in "running" mode until now, and may have
             // missed
             // notifications to the pauseReason object (that is, it would have

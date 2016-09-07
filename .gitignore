@@ -2,7 +2,6 @@ classes/**/*
 testclasses/**/*
 .DS_Store
 /classes
-dist
 /plugins/maven/target/
 /target
 /libs

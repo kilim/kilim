@@ -109,7 +109,6 @@
     <delete>
       <fileset dir="." includes="target/kilim*.jar"/>
     </delete>
-    <delete dir="./dist" />
     <delete dir="./target/classes" />
     <delete dir="./target/test-classes" />
   </target>
@@ -148,7 +147,6 @@
 
 
   <target name="jar-prep">
-    <mkdir dir="dist" />
     <copy file="License" todir="target/classes/kilim" />
   </target>
 

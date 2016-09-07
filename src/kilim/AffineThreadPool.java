@@ -16,17 +16,6 @@ public class AffineThreadPool {
     private static final int MAX_QUEUE_SIZE = 4096;
     private static final String colon_ = ":";
 
-    protected static int getCurrentThreadId() {
-        String name = Thread.currentThread().getName();
-
-        int sIndex = name.indexOf(colon_);
-        try {
-            return Integer.parseInt(name.substring(sIndex+1,name.length()));
-        } catch (Exception ex) {
-        }
-        return name.hashCode();
-    }
-
     private int nThreads_;
     private String poolName_;
     private AtomicInteger currentIndex_ = new AtomicInteger(0);
@@ -69,13 +58,6 @@ public class AffineThreadPool {
         for (BlockingQueue<Runnable> queue : queues_)
             if (!queue.isEmpty()) return false;
         return true;
-    }
-
-    long getTaskCount() {
-        long totalRemainingCapacity = 0L;
-        for (BlockingQueue<Runnable> queue : queues_)
-            totalRemainingCapacity += queue.size();
-        return totalRemainingCapacity;
     }
 
     private int getNextIndex() {

@@ -37,7 +37,6 @@ public class Scheduler {
 
     // Added for new Timer service
     private TimerService timerService;
-    public AtomicInteger doSpinning = new AtomicInteger(0);
 
     static {
         String s = System.getProperty("kilim.Scheduler.numThreads");
@@ -77,10 +76,6 @@ public class Scheduler {
         return affinePool_.isEmptyish();
     }
 
-    public long getTaskCount() {
-        return affinePool_.getTaskCount();
-    }
-
     public int numThreads() { return numThreads; }
         
     protected String getName() {
@@ -111,11 +106,6 @@ public class Scheduler {
 
     public void scheduleTimer(Timer t) {
         timerService.submit(t);
-    }
-
-    public void waitIdle() {
-        if (affinePool_!=null)
-            affinePool_.waitIdle(timerService,100);
     }
 
     /**
