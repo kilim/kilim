@@ -60,6 +60,7 @@ public class AffineThreadPool {
 
 			queueStats_.add(new KilimStats(12, "num"));
 		}
+                timerservice.defaultExec = executorService_.get(0);
 	}
 
         /** 

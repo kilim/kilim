@@ -39,16 +39,16 @@ public class TimerService {
             System.out.format("timerservice: %d %d %d\n",c1,c2,c3);
     }
 
+    public ThreadPoolExecutor defaultExec;
+    
     // todo: verify that timer rechedule is thread safe
     // ie, under heavy load, can moving a timer cause it to be missed ?
     public void submit(Timer t) {
         if (t.onQueue.compareAndSet(false, true)) {
-            if (!timerQueue.offer(t)) {
-                new Exception(
-                        "Maximum pending timers limit:"
-                        + Integer.getInteger("kilim.maxpendingtimers", 100000)
-                        + " exceeded, set kilim.maxpendingtimers property"
-                ).printStackTrace();
+            while (!timerQueue.offer(t)) {
+                trigger(defaultExec);
+                try { Thread.sleep(0); } 
+                catch (InterruptedException ex) { return; }
             }
         }
     }
@@ -73,7 +73,8 @@ public class TimerService {
         }
         boolean check(ThreadPoolExecutor executor) {
             this.executor = executor;
-            submit(new kilim.timerservice.Timer(this));
+            if (! timerQueue.offer(new kilim.timerservice.Timer(this)))
+                return false;
             trigger(executor);
             synchronized (this) {
                 try { if (!done) this.wait(); } catch (InterruptedException ex) {}

@@ -127,7 +127,7 @@ public class TimerBlast2 {
     
     
     public static void main(String[] args) throws Exception {
-        int num = 4096 << 5;
+        int num = 4096 << 6;
 
         
         
