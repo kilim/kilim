@@ -1,8 +1,3 @@
-classes/**/*
-testclasses/**/*
-.DS_Store
-/classes
 /plugins/maven/target/
 /target
 /libs
-/demo/target/
