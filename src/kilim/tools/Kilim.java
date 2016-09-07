@@ -48,7 +48,7 @@ public class Kilim {
      */
     public static boolean trampoline(boolean check,String...args) {
         ClassLoader cl = Kilim.class.getClassLoader();
-        if (cl != ClassLoader.getSystemClassLoader()) return false;
+        if (cl.getClass().getName().equals(WeavingClassLoader.class.getName())) return false;
         StackTraceElement ste = new Exception().getStackTrace()[1];
 
         try {
