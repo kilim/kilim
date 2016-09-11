@@ -1,3 +1,4 @@
 /plugins/maven/target/
 /target
 /libs
+/demos/jetty/target/
