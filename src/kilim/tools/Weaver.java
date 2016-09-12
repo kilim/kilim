@@ -77,16 +77,25 @@ public class Weaver {
      * @see #weave(List) for run-time weaving.
      */
     public static void main(String[] args) throws IOException {
-        doMain(args);
+        ArrayList<String> names = parseArgs(args);
+        doMain(names.toArray(new String [] {}),null);
         if (err > 0) System.exit(err);
     }
-    public static int doMain(String ... args) throws IOException {
-
-        ArrayList<String> names = parseArgs(args);
+    private static String [] concat(String [] a,String [] b) {
+        String [] c = new String[a.length + b.length];
+        System.arraycopy(a,0,c,0,a.length);
+        System.arraycopy(b,0,c,a.length,b.length);
+        return c;
+    }
+    
+    public static int doMain(String [] names,String [] classpath) throws IOException {
+        mkdir(outputDir);
+        
         Weaver weaver;
         if (proxy) {
             ClassLoader current = Weaver.class.getClassLoader();
-            URL [] paths = WeavingClassLoader.getURLs(names.toArray(new String [] {}));
+            String [] composite = classpath==null ? names : concat(names,classpath);
+            URL [] paths = WeavingClassLoader.getURLs(composite);
             CachedClassMirrors ccm = new CachedClassMirrors(null,new URLClassLoader(paths,current));
             weaver = new Weaver(new KilimContext(ccm));
         }
@@ -259,7 +268,6 @@ public class Weaver {
             System.err.println("Specify output directory with -d option");
             System.exit(1);
         }
-        mkdir(outputDir);
         return ret;
     }
 

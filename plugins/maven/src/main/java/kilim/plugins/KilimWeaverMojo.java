@@ -24,11 +24,14 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
 import java.io.File;
+import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.apache.maven.project.MavenProject;
 
 /**
  * Kilim class file weaver..!
  */
-@Mojo(name = "weave", defaultPhase = LifecyclePhase.PROCESS_CLASSES)
+@Mojo(name = "weave", defaultPhase = LifecyclePhase.PROCESS_CLASSES,
+        requiresDependencyResolution=ResolutionScope.RUNTIME)
 public class KilimWeaverMojo extends AbstractMojo {
 
     /**
@@ -44,13 +47,19 @@ public class KilimWeaverMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project.build.outputDirectory}", property = "outputDir", required = true)
     private File outputDirectory;
 
+    @Parameter( defaultValue = "${project}", readonly = true, required = true )
+    private MavenProject project;
 
     public void execute() throws MojoExecutionException {
         try {
             String indir = inputDirectory.getAbsolutePath();
             String outdir = outputDirectory.getAbsolutePath();
             getLog().info("kilim weaver input/output dirs are: " + indir + ", " + outdir);
-            int err = Weaver.doMain("-d", outdir, indir);
+            
+            String [] roots = project.getCompileClasspathElements().toArray(new String[0]);
+            
+            Weaver.outputDir = outdir;
+            int err = Weaver.doMain(new String []{ indir },roots);
             getLog().info("kilim weaver done");
             if (err > 0)
                 throw new MojoExecutionException("Error while weaving the classes");
