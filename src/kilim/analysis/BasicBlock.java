@@ -351,6 +351,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
                         LabelNode il = flow.getOrCreateLabelAtPos(pos);
                         if (pos == startPos) {
                             setFlag(PAUSABLE);
+                            endOfBB = true;
                         } else {
                             bb = flow.getOrCreateBasicBlock(il);
                             bb.setFlag(PAUSABLE);
@@ -424,7 +425,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
             if (successors.size() == 1) {
                 BasicBlock succ = successors.get(0);
                 if (succ.numPredecessors == 1 && lastInstruction() != GOTO && lastInstruction() != JSR
-                        && !succ.isPausable()) {
+                        && !succ.isPausable() && !isPausable()) {
                     // successor can be merged
                     // absorb succesors and usage mask
                     this.successors = succ.successors;

@@ -26,11 +26,11 @@ public class TestJSR extends Base {
         assertEquals(3, flow.getBasicBlocks().size());
         flow = getFlow("pausableJSR1");
 //        System.out.println(flow.getBasicBlocks());
-        assertEquals(4, flow.getBasicBlocks().size());
+        assertEquals(5, flow.getBasicBlocks().size());
 
         flow = getFlow("pausableJSR2");
         ArrayList<BasicBlock> bbs = flow.getBasicBlocks();
-        assertEquals(7, bbs.size());
+        assertEquals(9, bbs.size());
         
         // make sure the blocks are unique
         int flag = 1 << 12;

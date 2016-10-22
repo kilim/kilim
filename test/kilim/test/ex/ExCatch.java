@@ -33,6 +33,7 @@ public class ExCatch extends ExYieldBase {
             case 2: nestedPausableCatch(); break;
             case 3: tryCatchFinally(); break;
             case 4: pausableBeforeCatch(); break;
+            case 5: tryDefUse(); break;
             default: throw new IllegalStateException("Unknown test case: " + testCase);
         }
     }
@@ -155,6 +156,17 @@ public class ExCatch extends ExYieldBase {
         verify(sa);
         verify(s);
         verify(l);
+    }
+
+    // use after a define that can be skipped by an exception
+    void tryDefUse() throws Pausable {
+        double  d = fd, d2 = d+1;
+        try {
+            pausable(d);
+            d = d2;
+        }
+        catch (Exception e) {}
+        verify(d);
     }
 
 

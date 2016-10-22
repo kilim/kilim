@@ -39,7 +39,7 @@ public class TestBasicBlock extends Base {
     }
 
     public void testExceptionSize() {
-        checkSize("exception", 6);
+        checkSize("exception", 7);
     }
 
     public void testNestedSize() {

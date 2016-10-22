@@ -45,6 +45,10 @@ public class TestYieldExceptions extends TestCase {
         TestYield.runTask(new kilim.test.ex.ExCatch(4));
     }
 
+    public void testRestoreBeforeDefine() throws Exception {
+        TestYield.runTask(new kilim.test.ex.ExCatch(5));
+    }
+
     public void testPureCatch()  throws Exception {
         TestYield.runPure(new kilim.test.ex.ExCatch.Pure());
     }
