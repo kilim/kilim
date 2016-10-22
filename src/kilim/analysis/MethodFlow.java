@@ -348,6 +348,9 @@ public class MethodFlow extends MethodNode {
             basicBlocks.add(bb);
         }
     }
+
+    /** print the bit by bit liveness data after calculation */
+    public static boolean debugPrintLiveness = false;
     
     /**
      * In live var analysis a BB asks its successor (in essence) about which
@@ -358,18 +361,51 @@ public class MethodFlow extends MethodNode {
      * spanning tree, but it seems like overkill for most bytecode
      * procedures. The order of computation doesn't affect the correctness;
      * it merely changes the number of iterations to reach a fixpoint.
+     * 
+     * the algorithm has been updated to track vars that been born, ie def'd by a parameter
      */
     private void doLiveVarAnalysis() {
         ArrayList<BasicBlock> bbs = getBasicBlocks();
         Collections.sort(bbs); // sorts in increasing startPos order
         
+        setArgsBorn(bbs.get(0));
+        
         boolean changed;
+        do {
+            changed = false;
+            for (int ii=0; ii < bbs.size(); ii++) {
+                changed = bbs.get(ii).flowVarBorn() || changed;
+            }
+        } while (changed);
         do {
             changed = false;
             for (int i = bbs.size() - 1; i >= 0; i--) {
                 changed = bbs.get(i).flowVarUsage() || changed;
             }
         } while (changed);
+        if (debugPrintLiveness) printUsage(bbs);
+    }
+
+    private void setArgsBorn(BasicBlock bb) {
+        int offset = 0;
+        if (!isStatic())
+            bb.usage.born(offset++);
+        for (String arg : TypeDesc.getArgumentTypes(desc)) {
+            bb.usage.born(offset);
+            offset += TypeDesc.isDoubleWord(arg) ? 2 : 1;
+        }
+    }
+    
+    void printUsage(ArrayList<BasicBlock> bbs) {
+        System.out.println(name);
+        if (bbs==null) bbs = getBasicBlocks();
+        for (BasicBlock bb : bbs) {
+            Usage uu = bb.usage;
+            String range = String.format("%4d %4d: ",bb.startPos,bb.endPos);
+            System.out.print(range + uu.toStringBits("  "));
+            System.out.println(" -- " + bb.printGeniology());
+        }
+        System.out.format("\n\n");
     }
     
     /**

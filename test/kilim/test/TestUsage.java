@@ -21,7 +21,7 @@ public class TestUsage extends TestCase {
         u.read(2);
         u.write(2);
         u.write(3);
-        u.evalLiveIn(new ArrayList<Usage>());
+        u.evalLiveIn(new ArrayList<Usage>(),null);
         assertFalse(u.isLiveIn(0));
         assertTrue(u.isLiveIn(1));
         assertTrue(u.isLiveIn(2));
@@ -40,11 +40,12 @@ public class TestUsage extends TestCase {
         //   30:in    30:in
         // Expected usage.in :  28:in 29:in 30:not_in
         u.read(29); u.write(30);
+        for (int ii=0; ii < 31; ii++) u.setBornIn(ii);
         ufollow1.setLiveIn(28); ufollow1.setLiveIn(29); ufollow1.setLiveIn(30);
         ufollow2.setLiveIn(30);
         ArrayList<Usage> ua = new ArrayList<Usage>(2);
         ua.add(ufollow1); ua.add(ufollow2);
-        assertTrue(u.evalLiveIn(ua)); // should return changed == true
+        assertTrue(u.evalLiveIn(ua,null)); // should return changed == true
         for (int i = 0; i < 28; i++) {
             assertFalse(u.isLiveIn(i));
         }

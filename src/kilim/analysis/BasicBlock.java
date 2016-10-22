@@ -191,6 +191,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
      * and real successors.
      */
     ArrayList<Usage>      succUsage;
+    ArrayList<Usage>      handUsage;
 
     /**
      * The frame at the BB's entry point. It changes when propagating changes
@@ -1165,19 +1166,39 @@ public class BasicBlock implements Comparable<BasicBlock> {
         return (AbstractInsnNode) flow.instructions.get(pos);
     }
 
-    public boolean flowVarUsage() {
+    /** pretty print successor and catch BB ids */
+    String printGeniology() {
+        String ts = "";
+        for (BasicBlock succ : successors)
+            ts += String.format(" %4d",succ.id);
+
+        String th = "";
+        for (Handler h : handlers)
+            th += String.format(" %4d",h.catchBB.id);
+        return String.format("%4d:%-20s...%-20s",id,ts,th);
+    }
+    
+    /** calculate the born usage by evolution */
+    public boolean flowVarBorn() {
         // for live var analysis, treat catch handlers as successors too.
         if (succUsage == null) {
             succUsage = new ArrayList<Usage>(successors.size()
                     + handlers.size());
+            handUsage = new ArrayList<Usage>(handlers.size());
             for (BasicBlock succ : successors) {
                 succUsage.add(succ.usage);
             }
             for (Handler h : handlers) {
                 succUsage.add(h.catchBB.usage);
+                handUsage.add(h.catchBB.usage);
             }
         }
-        return usage.evalLiveIn(succUsage);
+        return usage.evalBornIn(succUsage);
+    }
+    /** calculate the liveness usage by evolution (assume born usage has already been calculated) */
+    public boolean flowVarUsage() {
+        assert(succUsage != null);
+        return usage.evalLiveIn(succUsage,handUsage);
     }
 
     /**

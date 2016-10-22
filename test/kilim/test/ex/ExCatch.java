@@ -160,12 +160,40 @@ public class ExCatch extends ExYieldBase {
 
     // use after a define that can be skipped by an exception
     void tryDefUse() throws Pausable {
+        {
+            double  d = fd, d2 = d+1;
+            try {
+                pausable(d);
+                d = d2;
+            }
+            catch (Exception e) {}
+            verify(d);
+        }
+        {
+            double  d = fd, d2 = d+1;
+            try {
+                pausable(d);
+            }
+            catch (Exception e) { d2 = d; }
+            verify(d2);
+        }
+        {
+            double  d = fd, d2 = d+1;
+            try {
+                pausable(d);
+            }
+            catch (Exception e) { d2 = d; }
+            verify(d2);
+        }
+
         double  d = fd, d2 = d+1;
+        if (doPause)
+            Task.sleep(50);
         try {
-            pausable(d);
+            ((Object) null).toString();
             d = d2;
         }
-        catch (Exception e) {}
+        catch (Throwable ex) {}
         verify(d);
     }
 
