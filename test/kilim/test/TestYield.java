@@ -44,6 +44,10 @@ public class TestYield extends TestCase {
         runTask(new kilim.test.ex.ExYieldDups(1));
     }
 
+    public void testLongArgs() throws Exception {
+        runTask(new kilim.test.ex.ExYieldDups(2));
+    }
+
     public void testConstantsInStack() throws Exception {
         runTask(new kilim.test.ex.ExYieldConstants(0));
     }

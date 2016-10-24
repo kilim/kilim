@@ -185,6 +185,13 @@ public class ExCatch extends ExYieldBase {
             catch (Exception e) { d2 = d; }
             verify(d2);
         }
+        try { doFinally(); }
+        catch (NullPointerException ex) {}
+        try { doFinally2(); }
+        catch (NullPointerException ex) {}
+        try { doFinally3(); }
+        catch (NullPointerException ex) {}
+        doFinally4();
 
         double  d = fd, d2 = d+1;
         if (doPause)
@@ -194,6 +201,97 @@ public class ExCatch extends ExYieldBase {
             d = d2;
         }
         catch (Throwable ex) {}
+        verify(d);
+    }
+
+    void doFinally() throws Pausable {
+        double  d = fd, d2 = d+1;
+        if (!doPause)
+            Task.sleep(50);
+        try {
+            if (doPause)
+                Task.sleep(50);
+            ((Object) null).toString();
+            d2 = d;
+        }
+        finally { verify(d); verify(d2-1); }
+    }
+    void doFinally2() throws Pausable {
+        {
+            double  d = fd, d2 = d+1;
+            try {
+                if (doPause)
+                    Task.sleep(50);
+                ((Object) null).toString();
+                d = d2;
+            }
+            catch (Exception e) {
+                ((Object) null).toString();
+                d = d2;
+            }
+            finally { verify(d); }
+        }
+    }
+    void doFinally3() throws Pausable {
+        {
+            double  d = fd, d2 = d+1;
+            if (doPause)
+                Task.sleep(50);
+            try {
+                ((Object) null).toString();
+                d = d2;
+            }
+            catch (Exception e) {
+                ((Object) null).toString();
+                d = d2;
+            }
+            finally { verify(d); }
+        }
+    }
+    void doFinally4() throws Pausable {
+        double  d = fd, d2 = d+1;
+        try {
+            try {
+                if (doPause)
+                    Task.sleep(50);
+                ((Object) null).toString();
+                d = d2;
+            }
+            catch (Exception e) {
+                ((Object) null).toString();
+                d = d2;
+            }
+            finally { verify(d); }
+        }
+        catch (NullPointerException ex) {}
+        try {
+            if (doPause)
+                Task.sleep(50);
+            try {
+                ((Object) null).toString();
+                d = d2;
+            }
+            catch (Exception e) {
+                ((Object) null).toString();
+                d = d2;
+            }
+            finally { verify(d); }
+        }
+        catch (NullPointerException ex) {}
+        if (doPause)
+            Task.sleep(50);
+        try {
+            try {
+                ((Object) null).toString();
+                d = d2;
+            }
+            catch (Exception e) {
+                ((Object) null).toString();
+                d = d2;
+            }
+            finally {}
+        }
+        catch (NullPointerException ex) {}
         verify(d);
     }
 

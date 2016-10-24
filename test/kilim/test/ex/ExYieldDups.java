@@ -19,10 +19,33 @@ public class ExYieldDups extends ExYieldBase {
         switch(testCase) {
             case 0: testDupVars(); break;
             case 1: testDupsInStack(); break;
+            case 2: testLongArgs(); break;
             default: throw new IllegalStateException("Unknown test case: " + testCase);
         }
     }
 
+
+
+    void testLongArgs() throws Pausable {
+        LongVal val = new LongVal();
+        useLongArg(fl,val);
+        verify(val.msg);
+    }
+
+    static class LongVal {
+        long msg;
+    }
+    
+    // long and double values occupy 2 slots in the local variables table
+    // the weaver needs to track this to be able to mark the arguments as in-use
+    // test whether the weaver is correctly marking val as used after the pause
+    void useLongArg(long index,LongVal val) throws Pausable {
+        if (doPause)
+            Task.sleep(50);
+        val.msg = index;
+    }
+    
+    
     void testDupVars() throws Pausable {
         double d = fd;
         double dup_d = d;
