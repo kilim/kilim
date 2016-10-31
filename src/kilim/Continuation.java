@@ -29,8 +29,8 @@ package kilim;
 public abstract class Continuation implements Fiber.Worker {
     private static Fiber.MethodRef runnerInfo = new Fiber.MethodRef(Continuation.class.getName(),"run");
     static final FakeTask fakeTask = new FakeTask();
-    private static class FakeTask extends Task {
-        FakeTask() { super(false); }
+    public static class FakeTask extends Task {
+        protected FakeTask() { super(false); }
         Fiber.MethodRef getRunnerInfo() {
             return runnerInfo;
         }

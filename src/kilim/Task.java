@@ -396,7 +396,7 @@ public abstract class Task implements Runnable, EventSubscriber, Fiber.Worker {
     }
 
     public static void yield(Fiber f) {
-        if (f.task==Continuation.fakeTask) { f.togglePause(); return; }
+        if (f.task instanceof Continuation.FakeTask) { f.togglePause(); return; }
         if (f.pc == 0) {
             f.task.setPauseReason(yieldReason);
         } else {
