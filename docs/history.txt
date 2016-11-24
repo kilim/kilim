@@ -1,0 +1,36 @@
+
+
+new features in 2.0 (by nqzero unless noted):
+ - java 8, lambdas and Task.spawn (sriram)
+ - runtime weaver
+ - runtime trampoline
+ - continuations (pure fibers) and fiber recycling
+     offers dramatic speedup (20x) if scheduling is not required, eg for state machines
+ - affine thread pool scheduler (hedvig)
+ - reduced synchronization in Task (hedvig)
+ - statistics for Task performance (hedvig)
+ - high performance single producer and single consumer mailboxes (nilang)
+ - no-context-switch timerservice (nilang)
+ - ASM5
+ - kilim web server: keepalive and expose query components
+ - simplified class mirrors and detectors
+ - hybrid build: maven for dependencies and ant for tests
+ - maven plugin for weaving within a pom.xml
+ - demo projects (battle royale, jetty)
+ - idledown: automatically stop kilim when outstanding tasks complete
+ - bytecode weaver bugfixes (nqzero, sriram)
+ - maven packages for the cental repository
+
+
+
+taken as a whole, 2.0 represents a significant step forwards over 1.0
+
+
+
+__Older History__
+
+sriram wrote the initial version in 2006 based on matthias mann's continuation library
+ - many bugs were fixed
+ - tracked changes to java language
+ - feature set remained more or less unchanged thru 1.0 (circa 2013)
+
