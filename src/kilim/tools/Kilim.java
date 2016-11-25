@@ -1,4 +1,5 @@
-// copyright 2016 seth lytle, 2014 sriram srinivasan
+// copyright 2016 nqzero, 2014 sriram srinivasan - offered under the terms of the MIT License
+
 package kilim.tools;
 
 import java.lang.reflect.Method;

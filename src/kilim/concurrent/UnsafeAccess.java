@@ -1,3 +1,5 @@
+// Copyright 2014 by nilangshah - offered under the terms of the MIT License
+
 package kilim.concurrent;
 
 import java.lang.reflect.Field;

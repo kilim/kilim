@@ -1,3 +1,5 @@
+// Copyright 2014 nilangshah - offered under the terms of the MIT License
+
 package kilim.concurrent;
 
 import static kilim.concurrent.UnsafeAccess.UNSAFE;

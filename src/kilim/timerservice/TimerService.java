@@ -1,3 +1,5 @@
+// Copyright 2014 nilangshah, 2016 nqzero - offered under the terms of the MIT License
+
 package kilim.timerservice;
 
 import java.util.concurrent.Executors;

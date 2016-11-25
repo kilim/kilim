@@ -1,3 +1,5 @@
+// Copyright 2013 by Jason Pell <jason@pellcorp.com> - offered under the terms of the MIT License
+
 package kilim.analysis;
 
 import kilim.mirrors.Detector;

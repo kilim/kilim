@@ -1,3 +1,5 @@
+// Copyright 2006 by sriram - offered under the terms of the MIT License
+
 package kilim.analysis;
 
 import java.util.LinkedList;

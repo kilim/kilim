@@ -1,3 +1,5 @@
+// Copyright 2014 by Avinash Lakshman (hedviginc.com)
+
 package kilim;
 
 import java.util.concurrent.ThreadFactory;

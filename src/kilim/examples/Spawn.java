@@ -1,3 +1,5 @@
+// copyright 2016 nqzero - offered under the terms of the MIT License
+
 package kilim.examples;
 
 import kilim.Mailbox;

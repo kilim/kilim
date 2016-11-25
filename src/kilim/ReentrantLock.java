@@ -1,3 +1,5 @@
+// copyright 2006 sriram - offered under the terms of the MIT License
+
 package kilim;
 
 import java.util.concurrent.TimeUnit;

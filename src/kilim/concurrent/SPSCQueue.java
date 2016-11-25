@@ -1,3 +1,5 @@
+// Copyright 2014 nilangshah - offered under the terms of the MIT License
+
 package kilim.concurrent;
 
 //"Inspired directly by Martin's work --> https://github.com/mjpt777/examples"

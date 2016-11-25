@@ -1,3 +1,5 @@
+// Copyright 2014 by sriram - offered under the terms of the MIT License
+
 package kilim;
 
 

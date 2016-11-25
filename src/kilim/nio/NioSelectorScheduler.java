@@ -1,4 +1,4 @@
-/* Copyright (c) 2006, Sriram Srinivasan, seth lytle 2016
+/* Copyright (c) 2006, Sriram Srinivasan, nqzero 2016
  *
  * You may distribute this software under the terms of the license 
  * specified in the file "License"
