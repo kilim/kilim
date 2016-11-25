@@ -36,7 +36,7 @@
         <tag>fiber</tag>
     </scm>    
     <name>kilim</name>
-    <description>Coroutines, fibers, actors and message passing for the JVM</description>
+    <description>Coroutines, continuations, fibers, actors and message passing for the JVM</description>
     <url>https://github.com/nqzero/kilim</url>
     <developers>
         <developer>
