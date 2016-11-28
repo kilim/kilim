@@ -142,12 +142,13 @@ Kilim v2.0
 * Copyright (c) 2016 nqzero
 * Copyright (c) 2014 Avinash Lakshman (hedviginc.com)
 * Copyright (c) 2013 Nilang Shah
-* Copyright (c) 2013 Jason Pell <jason@pellcorp.com>
+* Copyright (c) 2013 Jason Pell
 
 
 This software is released under an MIT-style license (please see the
 License file). Unless otherwise noted, all files in this distribution are
-offered under these terms
+offered under these terms, and files that explicitly refer to the "MIT License"
+refer to this license
 
 
 **Important Exception - Caveat Emptor**
