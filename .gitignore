@@ -2,3 +2,5 @@
 /target
 /libs
 /demos/jetty/target/
+/nbactions.xml
+/demos/jetty/nb-configuration.xml
