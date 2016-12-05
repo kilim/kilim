@@ -131,6 +131,25 @@ public class AffineThreadPool {
         return exe.count().get()==0;
     }
 
+    static class ThreadFactoryImpl implements ThreadFactory
+    {
+        protected String id_;
+        protected ThreadGroup threadGroup_;    
+
+        public ThreadFactoryImpl(String id)
+        {
+            SecurityManager sm = System.getSecurityManager();
+            threadGroup_ = ( sm != null ) ? sm.getThreadGroup() : Thread.currentThread().getThreadGroup();
+            id_ = id;
+        }    
+
+        public Thread newThread(Runnable runnable)
+        {                      
+            Thread thread = new Thread(threadGroup_, runnable, id_);        
+            return thread;
+        }
+    }
+
     class KilimThreadPoolExecutor extends ThreadPoolExecutor {
         int id = 0;
         private TimerService timerService;
