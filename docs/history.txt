@@ -6,9 +6,8 @@ new features in 2.0 (by nqzero unless noted):
  - runtime trampoline
  - continuations (pure fibers) and fiber recycling
      offers dramatic speedup (20x) if scheduling is not required, eg for state machines
- - affine thread pool scheduler (hedvig)
+ - affine thread pool scheduler (concept by hedvig)
  - reduced synchronization in Task (hedvig)
- - statistics for Task performance (hedvig)
  - high performance single producer and single consumer mailboxes (nilang)
  - no-context-switch timerservice (nilang)
  - ASM5

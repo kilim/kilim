@@ -140,7 +140,6 @@ a number of companies (or their employees) appear to have been using Kilim recen
 Kilim v2.0
 * Copyright (c) 2006, 2014 Sriram Srinivasan (kilim _at_ malhar.net)
 * Copyright (c) 2016 nqzero
-* Copyright (c) 2014 Avinash Lakshman (hedviginc.com)
 * Copyright (c) 2013 Nilang Shah
 * Copyright (c) 2013 Jason Pell
 
@@ -149,20 +148,6 @@ This software is released under an MIT-style license (please see the
 License file). Unless otherwise noted, all files in this distribution are
 offered under these terms, and files that explicitly refer to the "MIT License"
 refer to this license
-
-
-**Important Exception - Caveat Emptor**
-
-The hedvig contributions that added new files do not explicitly list a license or copyright.
-I believe that copyright is implied so i've added the authors to each of those files.
-I've contacted them and received what I understand to be confirmation that the project license applies,
-but am waiting on a clearer statement.
-As such, I'm unable to say with certainty if the license applies to those files:
-
-* AffineThreadPool - used by the Scheduler
-* KilimScheduledExecutor
-* KilimStats.java
-* ThreadFactoryImpl
 
 
 
