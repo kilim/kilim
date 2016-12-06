@@ -59,12 +59,12 @@ public class Scheduler {
 
     public Scheduler(int numThreads,int queueSize) {
         timerService = new TimerService();
-        affinePool_ = new AffineThreadPool(numThreads,queueSize,timerService);
+        affinePool_ = new AffineThreadPool(numThreads,queueSize);
         this.numThreads = numThreads;
     }
 
     public boolean isEmptyish() {
-        return affinePool_.isEmptyish();
+        return false;
     }
 
     public int numThreads() { return numThreads; }
@@ -96,8 +96,6 @@ public class Scheduler {
      * could be partially executed
      */
     public void idledown() {
-        if (affinePool_!=null&&affinePool_.waitIdle(timerService,100))
-            shutdown();
     }
 
     public void shutdown() {
