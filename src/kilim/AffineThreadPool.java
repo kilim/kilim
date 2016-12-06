@@ -9,6 +9,20 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import kilim.timerservice.TimerService;
 
+/*
+    fixme:vestigial - release note for pre-2.0
+
+    __Caveat Emptor__
+    this is a from-scratch reimplementation of hedvig's ATP based on external linkage:
+        Scheduler usage
+        backed by ThreadPoolExecutor
+    with the non-hedvig additions (nilang, nqzero) replayed on it
+    it appears to be a drop-in-replacement for known usages:
+        ant clean testjit test
+        TimerBlast2
+    however, a number of methods were removed that were not used internally
+    so any external usages will now be broken
+*/
 public class AffineThreadPool {
     Executor [] exes;
     AtomicInteger index = new AtomicInteger(-1);

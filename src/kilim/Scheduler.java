@@ -126,15 +126,4 @@ public class Scheduler {
 }
 
 
-/*
-    AffineThreadPool has been removed for license reasons
-
-    interface visible thru linkage:
-        implements the interface defined in Scheduler
-        backed by ThreadPoolExecutor, must allowing pinning
-
-    TimerService usage post-dates hedvig contribution
-    and is added by the non-hedvig portions (previously deleted)
-*/
-
 
