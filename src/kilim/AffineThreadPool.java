@@ -36,7 +36,7 @@ public class AffineThreadPool {
         int value = 0, newValue = 0;
         do {
             value = index.get();
-            newValue = (value==exes.length) ? 0:value+1;
+            newValue = (value==exes.length-1) ? 0:value+1;
         } while (!index.compareAndSet(value,newValue));
         return newValue;
     }
@@ -47,6 +47,7 @@ public class AffineThreadPool {
 
     void publish(int index,Task task) {
         count.incrementAndGet();
+        task.setTid(index);
         exes[index].publish(task);
     }
 
