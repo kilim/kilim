@@ -5,10 +5,7 @@
  */
 package kilim;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import kilim.nio.NioSelectorScheduler.RegistrationTask;
 import kilim.timerservice.Timer;
@@ -22,15 +19,11 @@ import kilim.timerservice.TimerService;
  *
  */
 public class Scheduler {
-    private static final String defaultName_ = "KilimWorker";
     private static final int defaultQueueSize_ = Integer.MAX_VALUE;
     public static volatile Scheduler defaultScheduler = null;
     public static int defaultNumberThreads;
-    private static final String dash_ = "-";
     private static final ThreadLocal<Task> taskMgr_ = new ThreadLocal<Task>();
-    private static ConcurrentMap<String,AtomicInteger> nameGenerator_ = new ConcurrentHashMap<String,AtomicInteger>();
 
-    private String name_;
     private int numThreads;
     private AffineThreadPool affinePool_;
     protected AtomicBoolean shutdown = new AtomicBoolean(false);
@@ -61,14 +54,12 @@ public class Scheduler {
     }
 
     public Scheduler(int numThreads) {
-        this(numThreads,defaultQueueSize_,defaultName_);
+        this(numThreads,defaultQueueSize_);
     }
 
-    public Scheduler(int numThreads,int queueSize,String name) {
-        name_ = name;
-        nameGenerator_.putIfAbsent(name_,new AtomicInteger());
+    public Scheduler(int numThreads,int queueSize) {
         timerService = new TimerService();
-        affinePool_ = new AffineThreadPool(numThreads,queueSize,name,timerService);
+        affinePool_ = new AffineThreadPool(numThreads,queueSize,timerService);
         this.numThreads = numThreads;
     }
 
@@ -78,15 +69,6 @@ public class Scheduler {
 
     public int numThreads() { return numThreads; }
         
-    protected String getName() {
-        return name_;
-    }
-
-    protected String getNextName() {
-        AtomicInteger counter = nameGenerator_.get(name_);
-        return name_+dash_+counter.incrementAndGet();
-    }
-
     /**
      * Schedule a task to run. It is the task's job to ensure that it is not scheduled when it is runnable.
      */
@@ -130,9 +112,6 @@ public class Scheduler {
         return shutdown.get();
     }
 
-    public String getSchedulerStats() {
-        return affinePool_.getQueueStats();
-    }
 
     public synchronized static Scheduler getDefaultScheduler() {
         if (defaultScheduler==null)

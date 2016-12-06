@@ -47,7 +47,7 @@ public class TestIO extends TestCase {
         test.testParallelEchoes();
         test.testDelay();
         test.tearDown();
-        Scheduler.defaultScheduler.shutdown();
+        Scheduler.getDefaultScheduler().shutdown();
     }
 
     /**
