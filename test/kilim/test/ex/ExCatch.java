@@ -1,5 +1,6 @@
 package kilim.test.ex;
 
+import java.io.IOException;
 import kilim.Fiber;
 import kilim.Pausable;
 import kilim.Continuation;
@@ -34,6 +35,7 @@ public class ExCatch extends ExYieldBase {
             case 3: tryCatchFinally(); break;
             case 4: pausableBeforeCatch(); break;
             case 5: tryDefUse(); break;
+            case 6: whileCatch(); break;
             default: throw new IllegalStateException("Unknown test case: " + testCase);
         }
     }
@@ -127,6 +129,50 @@ public class ExCatch extends ExYieldBase {
         verify(sh);
         verify(s);
         verify(l);
+    }
+
+    private class MyFile {
+        private int isFile = 0;
+        boolean isDirectory() throws Pausable, IOException {
+            if (doPause)
+                Task.sleep(50);
+            isFile++;
+            if (isFile % 15==0) throw new IOException();
+            int val = isFile % 6;
+            return val==0 | val==2 | val==3;
+        }
+    }
+    private MyFile baseDirectory = new MyFile();
+    private void readRequest(String obj) throws Pausable, IOException {
+        if (doPause)
+            Task.sleep(50);
+        verify(obj);
+    }
+    
+    public void whileCatch() throws Pausable {
+        int vi = fi;
+        byte vb = fb;
+        try {
+            double d = fd;
+            String  s = fs;
+            String[][] sa = fa;
+            long   l = fl;
+            String req = fs;
+            while (true) {
+                verify(d);
+                readRequest(req);
+                verify(s);
+                MyFile file = baseDirectory;
+                if (file.isDirectory()) {
+                    verify(sa);
+                    file.isDirectory();
+                    verify(l);
+                }
+            }
+        } catch (Exception ioe) {
+            verify(vi);
+        }
+        verify(vb);
     }
 
     
