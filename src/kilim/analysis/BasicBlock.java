@@ -186,6 +186,10 @@ public class BasicBlock implements Comparable<BasicBlock> {
      */
     public Usage                  usage;
 
+    /** the block has already been visited during the born calculation */
+    boolean visited;
+    
+    
     /**
      * A cached version of all sucessors' usage, successors being catch handlers
      * and real successors.
@@ -224,7 +228,6 @@ public class BasicBlock implements Comparable<BasicBlock> {
         successors = new ArrayList<BasicBlock>(2);
     }
 
-    
     /**
      * Absorb as many instructions until the next label or the next transfer of
      * control instruction. In the first pass we may end up creating many many
@@ -1183,27 +1186,15 @@ public class BasicBlock implements Comparable<BasicBlock> {
         return String.format("%4d:%-20s...%-20s",id,ts,th);
     }
     
-    /** calculate the born usage by evolution */
-    public boolean flowVarBorn() {
-        // for live var analysis, treat catch handlers as successors too.
-        if (succUsage == null) {
-            succUsage = new ArrayList<Usage>(successors.size()
-                    + handlers.size());
-            handUsage = new ArrayList<Usage>(handlers.size());
-            for (BasicBlock succ : successors) {
-                succUsage.add(succ.usage);
-            }
-            for (Handler h : handlers) {
-                succUsage.add(h.catchBB.usage);
-                handUsage.add(h.catchBB.usage);
-            }
-        }
-        return usage.evalBornIn(succUsage);
-    }
     /** calculate the liveness usage by evolution (assume born usage has already been calculated) */
     public boolean flowVarUsage() {
-        assert(succUsage != null);
-        return usage.evalLiveIn(succUsage,handUsage);
+//        assert(succBlocks != null);
+        if (succUsage == null) {
+            succUsage = new ArrayList<Usage>(successors.size() + handlers.size());
+            for (BasicBlock succ : successors) succUsage.add(succ.usage);
+            for (Handler h : handlers)         succUsage.add(h.catchBB.usage);
+        }
+        return usage.evalLiveIn(succUsage,handlers);
     }
 
     /**

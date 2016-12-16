@@ -15,6 +15,7 @@ import static org.objectweb.asm.Opcodes.ACC_VOLATILE;
 import static org.objectweb.asm.Opcodes.JSR;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -96,7 +97,10 @@ public class MethodFlow extends MethodNode {
     
     /** copy of handlers provided by asm - null after being assigned to the BBs */
     ArrayList<Handler> origHandlers;
-
+    
+    /** stored value of the initial born variables */
+    private BitSet firstBorn;
+    
     public MethodFlow(
             ClassFlow classFlow,
             final int access,
@@ -381,6 +385,43 @@ public class MethodFlow extends MethodNode {
         }
     }
 
+    private boolean calcBornOnce() {
+        BBList bbs = getBasicBlocks();
+        LinkedList<BasicBlock> pending = new LinkedList();
+        boolean changed = false, first = true;
+        pending.add(bbs.get(0));
+        bbs.get(0).usage.evalBornIn(null,new BitSet());
+        while (! pending.isEmpty()) {
+            BasicBlock bb = pending.pop();
+            if (bb.visited) continue;
+            bb.visited = true;
+            for (Handler ho : bb.handlers) {
+                changed |= ho.catchBB.usage.evalBornIn(bb.usage,null);
+                pending.addFirst(ho.catchBB);
+            }
+            BitSet combo = bb.usage.getCombo();
+            if (first)
+                combo.or(firstBorn);
+            for (BasicBlock so : bb.successors) {
+                changed |= so.usage.evalBornIn(bb.usage,combo);
+                pending.addFirst(so);
+            }
+            first = false;
+        }
+        return changed;
+    }
+    
+    private void calcBornUsage() {
+        // defined vars don't mix into handlers, so do 2 passes
+        //   propogate predecessor to successor (def,born) and handler (born)
+        //   mix def into born
+        while (true)
+            if (! calcBornOnce()) break;
+        getBasicBlocks().get(0).usage.initBorn(firstBorn);
+        for (BasicBlock bb : getBasicBlocks())
+            bb.usage.mergeBorn();
+    }
+    
     /** print the bit by bit liveness data after calculation */
     public static boolean debugPrintLiveness = false;
     
@@ -400,15 +441,10 @@ public class MethodFlow extends MethodNode {
         ArrayList<BasicBlock> bbs = getBasicBlocks();
         Collections.sort(bbs); // sorts in increasing startPos order
         
-        setArgsBorn(bbs.get(0));
+        firstBorn = setArgsBorn(bbs.get(0));
         
         boolean changed;
-        do {
-            changed = false;
-            for (int ii=0; ii < bbs.size(); ii++) {
-                changed = bbs.get(ii).flowVarBorn() || changed;
-            }
-        } while (changed);
+        calcBornUsage();
         do {
             changed = false;
             for (int i = bbs.size() - 1; i >= 0; i--) {
@@ -418,14 +454,16 @@ public class MethodFlow extends MethodNode {
         if (debugPrintLiveness) printUsage(bbs);
     }
 
-    private void setArgsBorn(BasicBlock bb) {
+    private BitSet setArgsBorn(BasicBlock bb) {
+        BitSet born = new BitSet(bb.flow.maxLocals);
         int offset = 0;
         if (!isStatic())
-            bb.usage.born(offset++);
+            born.set(offset++);
         for (String arg : TypeDesc.getArgumentTypes(desc)) {
-            bb.usage.born(offset);
+            born.set(offset);
             offset += TypeDesc.isDoubleWord(arg) ? 2 : 1;
         }
+        return born;
     }
     
     void printUsage(ArrayList<BasicBlock> bbs) {
