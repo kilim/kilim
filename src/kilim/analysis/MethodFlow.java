@@ -94,6 +94,9 @@ public class MethodFlow extends MethodNode {
 
     private boolean hasPausableInvokeDynamic;
     
+    /** copy of handlers provided by asm - null after being assigned to the BBs */
+    ArrayList<Handler> origHandlers;
+
     public MethodFlow(
             ClassFlow classFlow,
             final int access,
@@ -150,6 +153,7 @@ public class MethodFlow extends MethodNode {
 
     
     public void analyze() throws KilimException {
+        preAssignCatchHandlers();
         buildBasicBlocks();
         if (basicBlocks.size() == 0) return;
         consolidateBasicBlocks();
@@ -314,8 +318,8 @@ public class MethodFlow extends MethodNode {
     public BBList getBasicBlocks() {
         return basicBlocks;
     }
-    
-    private void assignCatchHandlers() {
+
+    private void preAssignCatchHandlers() {
         @SuppressWarnings("unchecked")
         ArrayList<TryCatchBlockNode> tcbs = (ArrayList<TryCatchBlockNode>) tryCatchBlocks;
         /// aargh. I'd love to create an array of Handler objects, but generics
@@ -331,10 +335,38 @@ public class MethodFlow extends MethodNode {
                     tcb.type, 
                     getOrCreateBasicBlock(tcb.handler)));
         }
+        Collections.sort(handlers, Handler.startComparator());
+        origHandlers = handlers;
+        buildHandlerMap();
+    }
+    private void assignCatchHandlers() {
+        if (origHandlers==null) return;
         for (BasicBlock bb : basicBlocks) {
-            bb.chooseCatchHandlers(handlers);
+            bb.chooseCatchHandlers(origHandlers);
+        }
+        origHandlers = null;
+        handlerMap = null;
+    }
+    
+    private int [] handlerMap;
+    private void buildHandlerMap() {
+        handlerMap = new int[instructions.size()];
+        for (int ki=0; ki < handlerMap.length; ki++) handlerMap[ki] = -1;
+        int ki = 0;
+        for (int kh=0; kh < origHandlers.size(); kh++) {
+            Handler ho = origHandlers.get(kh);
+            for (; ki <= ho.from; ki++)
+                handlerMap[ki] = kh;
         }
     }
+
+    /** return the next handler.from >= start, else -1 - valid only until catch handlers are assigned */
+    int mapHandler(int start) {
+        if (handlerMap==null || start >= handlerMap.length) return -1;
+        int map = handlerMap[start];
+        return map < 0 ? -1 : origHandlers.get(map).from;
+    }
+    
     
     void buildBasicBlocks() {
         // preparatory phase

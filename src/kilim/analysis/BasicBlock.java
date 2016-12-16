@@ -241,13 +241,14 @@ public class BasicBlock implements Comparable<BasicBlock> {
     int initialize(int pos) {
         AbstractInsnNode ain;
         startPos = pos;
-
+        
         BasicBlock bb;
         boolean endOfBB = false;
         boolean hasFollower = true;
+        int nextCatch = flow.mapHandler(pos+1);
         int size = flow.instructions.size();
         for (; pos < size; pos++) {
-            if (pos > startPos && flow.getLabelAt(pos) != null) {
+            if (pos > startPos && (pos==nextCatch || flow.getLabelAt(pos) != null)) {
                 pos--;
                 hasFollower = true;
                 endOfBB = true;
@@ -425,8 +426,12 @@ public class BasicBlock implements Comparable<BasicBlock> {
         while (true) {
             if (successors.size() == 1) {
                 BasicBlock succ = successors.get(0);
+                // fixme:generality - should the endPos be checked too
+                //   (in java, seems like there should always be a goto, so not needed)
+                int nextCatch = flow.mapHandler(succ.startPos);
+                boolean isTry = nextCatch==succ.startPos;
                 if (succ.numPredecessors == 1 && lastInstruction() != GOTO && lastInstruction() != JSR
-                        && !succ.isPausable() && !isPausable()) {
+                        && !succ.isPausable() && !isPausable() && !isTry) {
                     // successor can be merged
                     // absorb succesors and usage mask
                     this.successors = succ.successors;

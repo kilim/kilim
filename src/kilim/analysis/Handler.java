@@ -9,6 +9,7 @@ import static kilim.Constants.THROWABLE_CLASS;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 
 /**
  * Representation for a catch handler. 
@@ -53,6 +54,9 @@ public class Handler implements Comparable<Handler> {
         c = this.catchBB.compareTo(h.catchBB);
         if (c != 0) return c;
 
+        return comparePos(h);
+    }
+    private int comparePos(Handler h) {
         return from < h.from ? -1 : (from == h.from) ? 0 : 1;
     }
     
@@ -79,4 +83,13 @@ public class Handler implements Comparable<Handler> {
         return newList;
     }
 
+    /** return a Comparator that orders the handlers by start position */
+    public static Comparator<Handler> startComparator() { return comp; }
+    private static Comp comp = new Comp();
+    private static class Comp implements Comparator<Handler> {
+        public int compare(Handler o1,Handler o2) {
+            return o1.comparePos(o2);
+        }
+    }
+    
 }
