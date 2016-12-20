@@ -1,7 +1,9 @@
+// copyright 2013 github.com/jestan (Jestan Nirojan), 2016 nqzero - offered under apache 2.0 license
+
+
 package kilim.plugins;
 
 /*
- * Copyright 2001-2005 The Apache Software Foundation.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,11 +30,11 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 
 /**
- * Kilim class file weaver..!
+ * maven plugin for ahead-of-time weaving of class files
  */
 @Mojo(name = "weave", defaultPhase = LifecyclePhase.PROCESS_CLASSES,
         requiresDependencyResolution=ResolutionScope.RUNTIME)
-public class KilimWeaverMojo extends AbstractMojo {
+public class KilimMavenPlugin extends AbstractMojo {
 
     /**
      * Location of the class files.
@@ -42,7 +44,7 @@ public class KilimWeaverMojo extends AbstractMojo {
 
 
     /**
-     * Location of the weaved class files.
+     * Location of the woven class files.
      */
     @Parameter(defaultValue = "${project.build.outputDirectory}", property = "outputDir", required = true)
     private File outputDirectory;
