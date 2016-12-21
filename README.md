@@ -129,9 +129,6 @@ License file). Unless otherwise noted, all files in this distribution are
 offered under these terms, and files that explicitly refer to the "MIT License"
 refer to this license
 
-The kilim maven plugin is licensed under the Apache 2.0. see `docs/plugin` for details
-
-
 
 ## Building
 
@@ -146,6 +143,8 @@ summary:
 * maven can also be used for building, but tests are disabled
 * there's a kilim maven plugin, but it's not used here to avoid a circular dependency - the weaver is run directly instead (using ant)
   * the plugin is only built during the maven build, but once built will be packaged by the ant build
+  * to include in an ant build, perform the build as normal, then run `mvn package`, and then rerun the
+ant packaging, typically `ant jar`
 
 simple:
 `mvn install`

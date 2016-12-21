@@ -24,6 +24,13 @@ new features in 2.0 (by nqzero unless noted):
 
 taken as a whole, 2.0 represents a significant step forwards over 1.0
 
+__kilim maven plugin__
+
+originally written by jestan
+integrated into kilim by nqzero
+license was apache 2.0, changed to MIT by jestan per this request:
+  https://github.com/jestan/kilim-maven-plugin/issues/1
+
 
 
 __Older History__
