@@ -13,8 +13,8 @@ Together, these facilities allow for simple concurrency and can scale to million
 ## Usage
 
 Code can be woven:
+* during compilation by using the maven plugin
 * during compilation by running `kilim.tools.Weaver`
-* during compilation by using the `kilim-maven-plugin`
 * at runtime by invoking `kilim.tools.Kilim com.yourcompany.yourclass`
 * at runtime by including `if (kilim.tools.Kilim.trampoline(false,args)) return;` at the start of main()
 
@@ -33,63 +33,43 @@ introduction.
   * `kj/src/main/java/KilimJetty.java` shows integrating with jetty async
   * `kilim/src/main/java/KilimHello.java` shows the built-in kilim web server (which in addition to doing async connections also does async io)
 
+#### "hello world" in kilim
+
+for an example of a project that uses kilim (with the trampoline for runtime weaving) see the
+[battle royale demo in this repository](https://github.com/nqzero/kilim/tree/master/demos/battle).
+clone this repository, and from that directory execute `mvn package exec:java -Dexec.mainClass=kilim.demo.Battle`
+
 
 ## Maven
 
+for an example of a project that uses kilim, see 
+the [kilim jetty demo in this repository](https://github.com/nqzero/kilim/tree/master/demos/jetty)
+- the `pom.xml` specifies kilim as both a dependency and a plugin for ahead-of-time weaving
 
+
+the dependency:
 
 ```
-<dependency>
-    <groupId>org.db4j</groupId>
-    <artifactId>kilim</artifactId>
-    <version>2.0.0-6</version>
-</dependency>
+    <dependency>
+        <groupId>org.db4j</groupId>
+        <artifactId>kilim</artifactId>
+        <version>2.0.0-6</version>
+    </dependency>
 ```
 
-## Building
+weaving with the kilim plugin:
 
-
-summary:
-
-* the primary build/test environment is ant
-* maven is used for downloading dependencies (or manually copy them to ./libs - see pom.xml)
-  * only needs to be done once
-  * `mvn initialize` (but any pom-based mvn command should work too)
-* maven can also be used for building, but tests are disabled
-* there's a kilim-maven-plugin, but it's not used here to avoid a circular dependency - the weaver is run directly instead (using ant)
-
-simple:
-`mvn install`
-
-build with tests:
-`ant clean testjit test jar doc`
-
-details:
-* testjit runs the tests (after compiling) using the runtime weaver
-* test runs the tests using the compile-time weaver, as well as some tests that don't require weaving
-* doc generates sources.jar and javadoc.jar
-* `mvn install:install-file -DpomFile=pom.xml -Dfile=target/kilim.jar -Dsources=target/sources.jar -Djavadoc=target/javadoc.jar`
-* java 8 is the recommended platform, but should build (with ant), run and test under both 6 and 7
-  * eg: `JAVA_HOME=path/to/java7 ant weave jar`
-
-
-## Running
-
-with runtime weaver:
 ```
-ant clean compile
-
-# using the runtime weaver
-java -cp "target/classes:libs/*" kilim.tools.Kilim kilim.examples.PerfTest
-
-# Userdata calls the trampoline (implicitly triggers the runtime weaver)
-java -cp "target/classes:libs/*" kilim.examples.Userdata
-
-# run the compile-time weaver
-ant weave
-
-# run woven code
-java -cp "target/classes:libs/*" kilim.examples.PerfTest
+    <plugin>
+        <groupId>org.db4j</groupId>
+        <artifactId>kilim</artifactId>
+        <version>2.0.0-6</version>
+        <executions>
+            <execution>
+                <goals><goal>weave</goal></goals>
+            </execution>
+        </executions>
+    </plugin>
 ```
 
 
@@ -142,15 +122,65 @@ Kilim v2.0
 * Copyright (c) 2016 nqzero
 * Copyright (c) 2013 Nilang Shah
 * Copyright (c) 2013 Jason Pell
-
+* Copyright (c) 2013 Jestan Nirojan (maven plugin)
 
 This software is released under an MIT-style license (please see the
 License file). Unless otherwise noted, all files in this distribution are
 offered under these terms, and files that explicitly refer to the "MIT License"
 refer to this license
 
+The kilim maven plugin is licensed under the Apache 2.0. see `docs/plugin` for details
 
 
 
+## Building
+
+
+summary:
+
+* the primary build/test environment is ant
+* maven is used for downloading dependencies (or manually copy them to ./libs - see pom.xml)
+  * only needs to be done once
+  * `mvn initialize` (but any pom-based mvn command should work too)
+  * when upgrading versions, delete the old dependencies in `./libs`
+* maven can also be used for building, but tests are disabled
+* there's a kilim maven plugin, but it's not used here to avoid a circular dependency - the weaver is run directly instead (using ant)
+  * the plugin is only built during the maven build, but once built will be packaged by the ant build
+
+simple:
+`mvn install`
+
+build with tests:
+`ant clean testjit test jar doc`
+
+details:
+* testjit runs the tests (after compiling) using the runtime weaver
+* test runs the tests using the compile-time weaver, as well as some tests that don't require weaving
+* doc generates sources.jar and javadoc.jar
+* `mvn install:install-file -DpomFile=pom.xml -Dfile=target/kilim.jar -Dsources=target/sources.jar -Djavadoc=target/javadoc.jar`
+* java 8 is the recommended platform, but should build (with ant), run and test under both 6 and 7
+  * eg: `JAVA_HOME=path/to/java7 ant weave jar`
+
+
+
+
+## Running
+
+with runtime weaver:
+```
+ant clean compile
+
+# using the runtime weaver
+java -cp "target/classes:libs/*" kilim.tools.Kilim kilim.examples.PerfTest
+
+# Userdata calls the trampoline (implicitly triggers the runtime weaver)
+java -cp "target/classes:libs/*" kilim.examples.Userdata
+
+# run the compile-time weaver
+ant weave
+
+# run woven code
+java -cp "target/classes:libs/*" kilim.examples.PerfTest
+```
 
 

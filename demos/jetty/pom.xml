@@ -40,7 +40,6 @@
                 <version>2.0.0-6</version>
                 <executions>
                     <execution>
-                        <id>weave</id>
                         <goals><goal>weave</goal></goals>
                     </execution>
                 </executions>
