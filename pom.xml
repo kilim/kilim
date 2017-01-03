@@ -46,7 +46,7 @@
         <connection>scm:git:git@github.com:nqzero/kilim.git</connection>
         <developerConnection>scm:git:git@github.com:nqzero/kilim.git</developerConnection>
         <url>git@github.com:nqzero/kilim.git</url>
-        <tag>fiber</tag>
+        <tag>master</tag>
     </scm>    
     <name>kilim</name>
     <description>Coroutines, continuations, fibers, actors and message passing for the JVM</description>
@@ -75,17 +75,6 @@
 			</configuration>
                     </execution>
 		</executions>
-            </plugin>
-            <plugin>
-                <groupId>org.sonatype.plugins</groupId>
-                <artifactId>nexus-staging-maven-plugin</artifactId>
-                <version>1.6.7</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <serverId>ossrh</serverId>
-                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
-                </configuration>
             </plugin>
             <!-- the primary env is ant, tests are disabled in mvn as they don't fit the lifecycle-->
             <plugin>
