@@ -16,6 +16,15 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 
 
+// note
+// servlet 3.1 introduced this non-blocking i/o (nbio)
+// it's not immediately clear which of the servlet methods are invalid when utilizing it
+// at one point, i read a document that defined these limitations
+//   best guess: jetty source code
+// based on that reading, my conclusion was that most of the servlet methods work normally
+// and it's only a couple of methods that parse the body that are unavailable with nbio
+
+
 public class KilimAsyncIO extends AbstractHandler implements ReadListener {
     Iface handler;
     private ServletInputStream in;

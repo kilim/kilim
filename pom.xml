@@ -29,6 +29,12 @@
           <version>3.0</version>
           <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-server</artifactId>
+            <version>9.3.0.v20150612</version>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
     <licenses>
         <license>
