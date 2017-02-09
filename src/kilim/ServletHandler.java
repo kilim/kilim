@@ -3,27 +3,25 @@ package kilim;
 import java.io.IOException;
 import javax.servlet.AsyncContext;
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
 
 
 
-public class JettyHandler extends AbstractHandler {
+public class ServletHandler extends HttpServlet {
     Iface handler;
-    public JettyHandler(Iface handler) { this.handler = handler; }
+    public ServletHandler(Iface handler) { this.handler = handler; }
 
-    public void handle(String target,Request br,HttpServletRequest req,HttpServletResponse resp) throws IOException, ServletException {
+    protected void service(HttpServletRequest req,HttpServletResponse resp) throws ServletException,IOException {
         final AsyncContext async = req.startAsync();
         new kilim.Task() {
             public void execute() throws Pausable, Exception {
                 try {
-                    String result = handler.handle(target,br,req,resp);
+                    String result = handler.handle(req,resp);
                     if (result != null) resp.getOutputStream().print(result);
                 }
                 catch (Exception ex) { resp.sendError(500,"the server encountered an error"); }
-                br.setHandled(true);
                 async.complete();
             }
         }.start();
@@ -31,7 +29,7 @@ public class JettyHandler extends AbstractHandler {
 
     
     public interface Iface {
-        String handle(String target,Request br,HttpServletRequest req,HttpServletResponse resp) throws Pausable, Exception;
+        String handle(HttpServletRequest req,HttpServletResponse resp) throws Pausable, Exception;
     }
 
     
