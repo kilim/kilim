@@ -67,7 +67,7 @@ public class CachedClassMirrors {
 
     /** get the major version of klass by loading the bytecode from source */
     public static int getVersion(ClassLoader source,Class klass) {
-        String cname = WeavingClassLoader.map(klass.getName());
+        String cname = WeavingClassLoader.makeResourceName(klass.getName());
         DataInputStream in = new DataInputStream(source.getResourceAsStream(cname));
         try {
             int magic = in.readInt();

@@ -113,7 +113,7 @@ public class WeavingClassLoader extends KilimClassLoader {
     }
     
     protected Class<?> findClass(String name) throws ClassNotFoundException {
-        String cname = map(name);
+        String cname = makeResourceName(name);
         
         InputStream is = pcl.getResourceAsStream( cname );
         if (is==null) is = ClassLoader.getSystemResourceAsStream( cname );
@@ -154,10 +154,18 @@ public class WeavingClassLoader extends KilimClassLoader {
         return defineClass(name, code, 0, code.length, get(name));
     }
 
-    public static String map(String name) { return name.replace('.', File.separatorChar) + ".class"; }
+    /**
+     * convert a fully qualified class name to a resource name. Note: the Class and ClassLoader
+     * javadocs don't explicitly specify the string formats used for the various methods, so
+     * this conversion is potentially fragile
+     * @param name as returned by Class.getName
+     * @return the name in a format suitable for use with the various ClassLoader.getResource methods
+     */
+    // https://docs.oracle.com/javase/8/docs/technotes/guides/lang/resources.html#res_names
+    public static String makeResourceName(String name) { return name.replace('.','/') + ".class"; }
     
     public static byte [] findCode(ClassLoader loader,String name) {
-        String cname = map(name);
+        String cname = makeResourceName(name);
         InputStream is = loader.getResourceAsStream( cname );
         if (is==null) is = ClassLoader.getSystemResourceAsStream( cname );
         if (is != null)
@@ -165,7 +173,7 @@ public class WeavingClassLoader extends KilimClassLoader {
         return null;
     }
     public URL url(String name) {
-        String cname = map(name);
+        String cname = makeResourceName(name);
         URL url = pcl.getResource( cname ), ret = null;
         if (url==null) url = ClassLoader.getSystemResource( cname );
         if (url==null) return null;
