@@ -177,6 +177,10 @@ public class MethodFlow extends MethodNode {
             String msg;
             String name = toString(classFlow.getClassName(),this.name,this.desc);   
             if (this.name.endsWith("init>")) {
+                // constructors cannot be pausable because they must begin with the super call
+                // meaning the weaver is unable to inject the preamble
+                // and a super with side effects would get called multiple times
+                // refuse to weave them
                 msg = "Constructor " + name + " calls pausable methods:\n";
             } else { 
                 msg = name + " should be marked pausable. It calls pausable methods\n";
