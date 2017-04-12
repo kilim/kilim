@@ -53,7 +53,7 @@ the dependency:
     <dependency>
         <groupId>org.db4j</groupId>
         <artifactId>kilim</artifactId>
-        <version>2.0.0-8</version>
+        <version>2.0.0-10</version>
     </dependency>
 ```
 
@@ -63,7 +63,7 @@ weaving with the kilim plugin:
     <plugin>
         <groupId>org.db4j</groupId>
         <artifactId>kilim</artifactId>
-        <version>2.0.0-8</version>
+        <version>2.0.0-10</version>
         <executions>
             <execution>
                 <goals><goal>weave</goal></goals>
