@@ -116,8 +116,10 @@ public class TimerService {
     
     private long doTrigger(long currentTime) {
         Timer[] buf = new Timer[100];
-        for (Timer t; (t = timerHeap.peek())!=null && t.getExecutionTime()==-1;)
+        for (Timer t; (t = timerHeap.peek())!=null && t.getExecutionTime()==-1;) {
+            t.onHeap = false;
             timerHeap.poll();
+        }
         int i = 0;
         timerQueue.fill(buf);
         do {
