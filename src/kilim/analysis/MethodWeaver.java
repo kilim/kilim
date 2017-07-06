@@ -110,7 +110,7 @@ public class MethodWeaver {
                 mf.accept(mv);
             }
         } else {
-        	mv.visitEnd();
+        	mf.accept(mv);
         }
     }
     

@@ -6,6 +6,10 @@
 
 package kilim.test;
 
+import java.lang.annotation.Annotation;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.reflect.Method;
 import junit.framework.TestCase;
 import kilim.ExitMsg;
 import kilim.Mailbox;
@@ -64,5 +68,39 @@ public class TestInterface extends TestCase {
             } 
         }
         s.shutdown();
+    }
+
+    // https://github.com/kilim/kilim/issues/53
+    // runtime-only - others would require parsing bytecode which seems more plroblematic than valuable
+    public void testRuntimeAnnotation() {
+        checkRuntimeAnnotation(Anno.F1.class);
+        checkRuntimeAnnotation(Anno.C1.class);
+    }
+
+    static void checkRuntimeAnnotation(Class klass) {
+        Method method = null;
+        try { method = klass.getDeclaredMethod("addEntry"); }
+        catch (Exception ex) {}
+        Annotation canno = klass.getAnnotation(Anno.A1.class),
+                manno = method.getAnnotation(Anno.A1.class);
+        assertNotNull(canno);
+        assertNotNull(manno);
+    }
+
+    private static class Anno {
+        @Retention(RetentionPolicy.RUNTIME)
+        public @interface A1 {
+            String value();
+        }
+        @A1("hello")
+        public interface F1 {
+            @A1(value = "Add")
+            void addEntry() throws Pausable;
+        }
+        @A1("hello")
+        public static abstract class C1 {
+            @A1(value = "Add")
+            abstract void addEntry() throws Pausable;
+        }
     }
 }
