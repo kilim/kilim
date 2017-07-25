@@ -582,18 +582,49 @@ public abstract class Task implements Runnable, EventSubscriber, Fiber.Worker {
         return running.get();
     }
     
+    public static class Spawn<TT> extends Task {
+        public static final Object nullValue = new Object();
+        Spawnable<TT> body;
+        public Mailbox<TT> mb = new Mailbox<TT>();
+        public void execute() throws Pausable, Exception {
+            TT val = body.execute();
+            ((Mailbox<Object>)mb).put(val==null ? nullValue:val);
+        }
+    }
+    
+    
     /**
      * Wraps the given object or lambda expression in a Task and starts that task.
      * Beware of inadvertent sharing when multiple lambdas are created in the same context 
      * 
      * @return the spawned task. 
      */
-    public static Task spawn (final Spawnable body) {
+    public static Task spawnCall(final Spawnable.Call body) {
         return new Task() {
             @Override
             public void execute() throws Pausable, Exception {
                 body.execute();
             }
         }.start();
+    }
+    public static <AA> Task beget1(AA arg1,final Spawnable.Call1<AA> body) {
+        return new Task() {
+            @Override
+            public void execute() throws Pausable, Exception {
+                body.execute(arg1);
+            }
+        }.start();
+    }
+    /**
+     * Wraps the given object or lambda expression in a Task and starts that task.
+     * Beware of inadvertent sharing when multiple lambdas are created in the same context 
+     * 
+     * @return the spawned task. 
+     */
+    public static <TT> Spawn<TT> spawn (final Spawnable<TT> body) {
+        Spawn<TT> spawn = new Spawn();
+        spawn.body = body;
+        spawn.start();
+        return spawn;
     }
 }

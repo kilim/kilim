@@ -21,12 +21,12 @@ public class TestLambda extends TestCase {
     
     public void testSpawn() throws Exception {
         Mailbox<Integer> mb = new Mailbox<Integer>();
-        Task t1 = Task.spawn(() -> {
+        Task t1 = Task.spawnCall(() -> {
             Task.sleep(100);
             Integer i = mb.get();
             Task.exit(i);
         });
-        Task t2 = Task.spawn(() -> {
+        Task t2 = Task.spawnCall(() -> {
             mb.put(100);
         });
         
@@ -42,7 +42,7 @@ public class TestLambda extends TestCase {
         // give normal (non-lambda) instances of Spawnable to spawn.
         
         Mailbox<Integer> mb = new Mailbox<Integer>();
-        Task t1 = Task.spawn( new Spawnable() {
+        Task t1 = Task.spawnCall( new Spawnable.Call() {
             @Override
             public void execute() throws Pausable {
                 Integer i = mb.get();
@@ -50,7 +50,7 @@ public class TestLambda extends TestCase {
             }
         });
         
-        Task t2 = Task.spawn( new Spawnable() {
+        Task t2 = Task.spawnCall( new Spawnable.Call() {
             @Override
             public void execute() throws Pausable {
                 Task.sleep(100);
