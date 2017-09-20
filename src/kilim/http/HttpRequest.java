@@ -244,6 +244,9 @@ public class HttpRequest extends HttpMsg {
     public String extractRange(int beg, int end) {
         return new String(buffer.array(), beg, (end - beg));
     }
+    public byte [] extractBytes(int beg, int end) {
+        return java.util.Arrays.copyOfRange(buffer.array(),beg,end);
+    }
 
 
     /*

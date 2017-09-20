@@ -218,8 +218,8 @@ public class HttpFileServer extends HttpSession {
         mimeTypes.put("rgb", "image/x-rgb");
         mimeTypes.put("xpm", "image/x-xpixmap");
         mimeTypes.put("xbm", "image/x-xbitmap");
-        mimeTypes.put("svg", "image/svg-xml ");
-        mimeTypes.put("svgz", "image/svg-xml ");
+        mimeTypes.put("svg", "image/svg+xml ");
+        mimeTypes.put("svgz", "image/svg+xml ");
         // Audio
         mimeTypes.put("au", "audio/basic");
         mimeTypes.put("snd", "audio/basic");
