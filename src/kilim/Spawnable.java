@@ -8,13 +8,13 @@ package kilim;
  */
 // this is a @FunctionalInterface, but not annotated to allow java7 compilation
 public interface Spawnable<TT> {
-    TT execute() throws Pausable;
+    TT execute() throws Pausable, Exception;
 
     public interface Call1<AA> {
-        void execute(AA arg1) throws Pausable;
+        void execute(AA arg1) throws Pausable, Exception;
     }
     
     public interface Call {
-        void execute() throws Pausable;
+        void execute() throws Pausable, Exception;
     }
 }
