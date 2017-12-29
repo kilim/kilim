@@ -110,7 +110,7 @@ public class SAMweaver implements Constants {
 
     String getShimMethodName() {
         assert index >= 0;
-        return "$shim$" + index;
+        return SAM_SHIM_PREFIX + index;
     }
 
     String getShimDesc() {

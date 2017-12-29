@@ -65,4 +65,12 @@ public interface Constants extends Opcodes {
     int    DSTORE_0         = 71;
     int    ASTORE_0         = 75;
     int    LDC2_W           = 20;
+
+    String SAM_SHIM_PREFIX = "$shim$";
+
+    public static class Util {
+        public static boolean isSamShim(String name) {
+            return name.startsWith(SAM_SHIM_PREFIX);
+        }
+    }
 }

@@ -147,13 +147,22 @@ public abstract class Task implements Runnable, EventSubscriber, Fiber.Worker {
         StackTraceElement[] stes;
         stes = new Exception().getStackTrace();
         int len = stes.length;
+        int num = 0;
         for (int i = 0; i < len; i++) {
             StackTraceElement ste = stes[i];
-            if (ste.getMethodName().equals(mr.methodname)
-                    && ste.getClassName().equals(mr.classname)) {
+            String name = ste.getMethodName();
+            String klass = ste.getClassName();
+            // ignore synthetic shim methods from SAM weaver - they don't get stack state allocated
+            // fixme: should any other synthetic methods be skipped ?
+            // fixme: could other vendors be using the same name for synthetic methods that shouldn't be skipped ?
+            if (ste.getLineNumber() < 0 & Constants.Util.isSamShim(name))
+                continue;
+            num++;
+            if (name.equals(mr.methodname) & klass.equals(mr.classname)) {
                 // discounting WorkerThread.run, Task._runExecute, and
                 // Scheduler.getStackDepth
-                return i - 1;
+                // and convert count to index
+                return num-2;
             }
         }
         throw new AssertionError("Expected task to be run by WorkerThread");
