@@ -6,6 +6,10 @@ import kilim.Mailbox;
 import kilim.Pausable;
 import kilim.Spawnable;
 import kilim.Task;
+import static kilim.test.TestYield.runTask;
+import static kilim.test.ex.ExCatch.restoreArgument;
+import static kilim.test.ex.ExYieldBase.fd;
+import static kilim.test.ex.ExYieldBase.verify;
 
 public class TestLambda extends TestCase {
     public void testLambda() throws Exception {
@@ -104,5 +108,55 @@ public class TestLambda extends TestCase {
     static interface Lambda<T> {
         T process(String input) throws Pausable;
     }
+    interface Foo { void run() throws Pausable; }
+    void foo(Foo foo) throws Pausable { foo.run(); }
+
+    void doLambda(Double resp) throws Pausable {
+        try {
+            foo(() -> restoreArgument(resp));
+        }
+        catch (Exception ex) {}
+        verify(resp);
+    }
+    static class Fork extends Task {
+        Spawnable.Call body;
+        public Fork(Spawnable.Call body) { this.body = body; }
+        public void execute() throws Pausable, Exception {
+            body.execute();
+        }
+    }
+    public static void runLambda(Task subtask) throws Exception {
+        Task task = new Fork(() -> subtask.execute());
+        runTask(task);
+    }
+
+    // these tests are lambda duplicates of TestYield and TestYieldExceptions
+    // reproduced here to stress the lambda/SAM processing
+    // not included in the original files to limit the java8 dependency to this file
+    // see the exclude8 variable in build.xml 
+
+    public void testYieldExceptions() throws Exception {
+        for (int ii=0; ii < 8; ii++)
+            runLambda(new kilim.test.ex.ExCatch(ii));
+        runTask(new Fork(() -> doLambda(fd)));
+        runLambda(new Fork(() -> doLambda(fd)));
+    }
+
+    public void testYield() throws Exception {
+        runLambda(new kilim.test.ex.ExYieldStack(0));
+        runLambda(new kilim.test.ex.ExYieldStack(1));
+        runLambda(new kilim.test.ex.ExYieldStack(2));
+        runLambda(new kilim.test.ex.ExYieldStack(3));
+        runLambda(new kilim.test.ex.ExYieldStack(4));
+        runLambda(new kilim.test.ex.ExYieldDups(0));
+        runLambda(new kilim.test.ex.ExYieldDups(1));
+        runLambda(new kilim.test.ex.ExYieldDups(2));
+        runLambda(new kilim.test.ex.ExYieldConstants(0));
+
+        kilim.test.ex.ExLoop ex = new kilim.test.ex.ExLoop();
+        runLambda(ex);
+        assertTrue(ex.verify());
+    }
+    
 }
 

@@ -36,6 +36,7 @@ public class ExCatch extends ExYieldBase {
             case 4: pausableBeforeCatch(); break;
             case 5: tryDefUse(); break;
             case 6: whileCatch(); break;
+            case 7: restoreArgument(fd); break;
             default: throw new IllegalStateException("Unknown test case: " + testCase);
         }
     }
@@ -102,6 +103,13 @@ public class ExCatch extends ExYieldBase {
     private static void throwEx() throws Pausable {
         Task.sleep(1);
         throw new RuntimeException();
+    }
+    public static void restoreArgument(Double resp) throws Pausable {
+        try {
+            throwEx();
+        }
+        catch (Exception ex) {}
+        verify(resp);
     }
 
     void tryCatchFinally() throws Pausable {
