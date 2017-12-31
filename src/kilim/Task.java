@@ -594,6 +594,8 @@ public abstract class Task implements Runnable, EventSubscriber, Fiber.Worker {
     public static class Spawn<TT> extends Task {
         public static final Object nullValue = new Object();
         Spawnable<TT> body;
+        public Spawn() {}
+        public Spawn(Spawnable<TT> body) { this.body = body; }
         public Mailbox<TT> mb = new Mailbox<TT>();
         public void execute() throws Pausable, Exception {
             TT val = body.execute();
@@ -630,9 +632,8 @@ public abstract class Task implements Runnable, EventSubscriber, Fiber.Worker {
      * 
      * @return the spawned task. 
      */
-    public static <TT> Spawn<TT> spawn (final Spawnable<TT> body) {
-        Spawn<TT> spawn = new Spawn();
-        spawn.body = body;
+    public static <TT> Spawn<TT> spawn(final Spawnable<TT> body) {
+        Spawn<TT> spawn = new Spawn(body);
         spawn.start();
         return spawn;
     }
