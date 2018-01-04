@@ -3,6 +3,7 @@
 package kilim.examples;
 
 import kilim.Mailbox;
+import kilim.Pausable;
 import kilim.Task;
 
 /**
@@ -28,4 +29,13 @@ public class  Spawn {
             });
         }
     }
+
+    // an example showing pausable chaining with exception inference
+    private void exampleUsage() throws Pausable, java.io.EOFException, java.io.IOException { 
+        Pausable.apply(new Task.Spawn(),
+                t -> t.start(),
+                t -> { throw new java.io.EOFException(); },
+                t -> { throw new java.io.IOException();  });
+    }
+    
 }
