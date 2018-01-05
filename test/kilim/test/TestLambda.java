@@ -4,7 +4,6 @@ import junit.framework.TestCase;
 import kilim.ExitMsg;
 import kilim.Mailbox;
 import kilim.Pausable;
-import kilim.Spawnable;
 import kilim.Task;
 import static kilim.test.TestYield.runTask;
 import static kilim.test.ex.ExCatch.restoreArgument;
@@ -25,12 +24,12 @@ public class TestLambda extends TestCase {
     
     public void testSpawn() throws Exception {
         Mailbox<Integer> mb = new Mailbox<Integer>();
-        Task t1 = Task.spawnCall(() -> {
+        Task t1 = Task.fork(() -> {
             Task.sleep(100);
             Integer i = mb.get();
             Task.exit(i);
         });
-        Task t2 = Task.spawnCall(() -> {
+        Task t2 = Task.fork(() -> {
             mb.put(100);
         });
         
@@ -46,7 +45,7 @@ public class TestLambda extends TestCase {
         // give normal (non-lambda) instances of Spawnable to spawn.
         
         Mailbox<Integer> mb = new Mailbox<Integer>();
-        Task t1 = Task.spawnCall( new Spawnable.Call() {
+        Task t1 = Task.fork( new Pausable.Fork() {
             @Override
             public void execute() throws Pausable {
                 Integer i = mb.get();
@@ -54,7 +53,7 @@ public class TestLambda extends TestCase {
             }
         });
         
-        Task t2 = Task.spawnCall( new Spawnable.Call() {
+        Task t2 = Task.fork( new Pausable.Fork() {
             @Override
             public void execute() throws Pausable {
                 Task.sleep(100);
@@ -118,15 +117,8 @@ public class TestLambda extends TestCase {
         catch (Exception ex) {}
         verify(resp);
     }
-    static class Fork extends Task {
-        Spawnable.Call body;
-        public Fork(Spawnable.Call body) { this.body = body; }
-        public void execute() throws Pausable, Exception {
-            body.execute();
-        }
-    }
-    public static void runLambda(Task subtask) throws Exception {
-        Task task = new Fork(() -> subtask.execute());
+    private static void runLambda(Task subtask) throws Exception {
+        Task task = new Task.Fork(() -> subtask.execute());
         runTask(task);
     }
 
@@ -138,8 +130,8 @@ public class TestLambda extends TestCase {
     public void testYieldExceptions() throws Exception {
         for (int ii=0; ii < 8; ii++)
             runLambda(new kilim.test.ex.ExCatch(ii));
-        runTask(new Fork(() -> doLambda(fd)));
-        runLambda(new Fork(() -> doLambda(fd)));
+        runTask(new Task.Fork(() -> doLambda(fd)));
+        runLambda(new Task.Fork(() -> doLambda(fd)));
     }
 
     public void testYield() throws Exception {

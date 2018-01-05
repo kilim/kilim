@@ -10,5 +10,17 @@ public class Pausable extends Exception {
     private static final long serialVersionUID = 1L;
     private Pausable() {}
     private Pausable(String msg) {}
+
+    
+    public interface Spawn<TT> {
+        TT execute() throws Pausable, Exception;
+    }
+    public interface Fork {
+        void execute() throws Pausable, Exception;
+    }
+    public interface Fork1<AA> {
+        void execute(AA arg1) throws Pausable, Exception;
+    }
+
 }
 

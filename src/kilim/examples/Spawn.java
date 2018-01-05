@@ -23,7 +23,7 @@ public class  Spawn {
         // Producers
         for (int i = 0; i < 10; i++) {
             final int fi = i; // Need a 'final' i to pass to closure
-            Task.spawnCall( () -> {
+            Task.fork( () -> {
                 mb.put("Hello from " + fi);  // mb and fi captured from environment
             });
         }

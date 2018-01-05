@@ -592,12 +592,19 @@ public abstract class Task<TT> implements Runnable, EventSubscriber, Fiber.Worke
     }
     
     public static class Spawn<TT> extends Task<TT> {
-        Spawnable<TT> body;
+        Pausable.Spawn<TT> body;
         public Spawn() {}
-        public Spawn(Spawnable<TT> body) { this.body = body; }
+        public Spawn(Pausable.Spawn<TT> body) { this.body = body; }
         public void execute() throws Pausable, Exception {
             TT val = body.execute();
             exit(val);
+        }
+    }
+    public static class Fork<TT> extends Task<TT> {
+        Pausable.Fork body;
+        public Fork(Pausable.Fork body) { this.body = body; }
+        public void execute() throws Pausable, Exception {
+            body.execute();
         }
     }
     
@@ -608,21 +615,8 @@ public abstract class Task<TT> implements Runnable, EventSubscriber, Fiber.Worke
      * 
      * @return the spawned task. 
      */
-    public static Task spawnCall(final Spawnable.Call body) {
-        return new Task() {
-            @Override
-            public void execute() throws Pausable, Exception {
-                body.execute();
-            }
-        }.start();
-    }
-    public static <AA> Task beget1(AA arg1,final Spawnable.Call1<AA> body) {
-        return new Task() {
-            @Override
-            public void execute() throws Pausable, Exception {
-                body.execute(arg1);
-            }
-        }.start();
+    public static Task fork(final Pausable.Fork body) {
+        return new Fork(body).start();
     }
     /**
      * Wraps the given object or lambda expression in a Task and starts that task.
@@ -630,7 +624,7 @@ public abstract class Task<TT> implements Runnable, EventSubscriber, Fiber.Worke
      * 
      * @return the spawned task. 
      */
-    public static <TT> Spawn<TT> spawn(final Spawnable<TT> body) {
+    public static <TT> Spawn<TT> spawn(final Pausable.Spawn<TT> body) {
         Spawn<TT> spawn = new Spawn(body);
         spawn.start();
         return spawn;
