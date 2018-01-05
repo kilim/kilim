@@ -9,11 +9,11 @@ package kilim;
 /**
  * @see kilim.Task#informOnExit(Mailbox)
  */
-public class ExitMsg {
-    public final Task task; // exiting task
-    public final Object result; // contains Throwable if exitCode == 1
+public class ExitMsg<TT> {
+    public final Task<TT> task; // exiting task
+    public final TT result; // contains Throwable if exitCode == 1
     
-    public ExitMsg(Task t, Object res) {
+    public ExitMsg(Task<TT> t,TT res) {
         task = t;
         result = res;
     }

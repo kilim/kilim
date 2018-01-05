@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * pausable execute method.
  * 
  */
-public abstract class Task implements Runnable, EventSubscriber, Fiber.Worker {
+public abstract class Task<TT> implements Runnable, EventSubscriber, Fiber.Worker {
     static PauseReason                   yieldReason           = new YieldReason();
     /**
      * Task id, automatically generated
@@ -67,7 +67,7 @@ public abstract class Task implements Runnable, EventSubscriber, Fiber.Worker {
     /**
      * @see #informOnExit(Mailbox)
      */
-    private LinkedList<Mailbox<ExitMsg>> exitMBs;
+    private LinkedList<Mailbox<ExitMsg<TT>>> exitMBs;
 
     /**
      * The object responsible for handing this task to a thread when the task is
@@ -212,13 +212,13 @@ public abstract class Task implements Runnable, EventSubscriber, Fiber.Worker {
         return doSchedule;
     }
     
-    public synchronized void informOnExit(Mailbox<ExitMsg> exit) {
+    public synchronized void informOnExit(Mailbox<ExitMsg<TT>> exit) {
         if (done) {
             exit.putnb(new ExitMsg(this, exitResult));
             return;
         }
         if (exitMBs == null) {
-            exitMBs = new LinkedList<Mailbox<ExitMsg>>();
+            exitMBs = new LinkedList();
         }
         exitMBs.add(exit);
     }
@@ -528,7 +528,7 @@ public abstract class Task implements Runnable, EventSubscriber, Fiber.Worker {
                 done = true;
                 if (exitMBs != null) {
                     ExitMsg msg = new ExitMsg(this, exitResult);
-                    for (Mailbox<ExitMsg> exitMB: exitMBs) {
+                    for (Mailbox<ExitMsg<TT>> exitMB: exitMBs) {
                         exitMB.putnb(msg);
                     }
                 }
@@ -562,14 +562,14 @@ public abstract class Task implements Runnable, EventSubscriber, Fiber.Worker {
         }
     }
 
-    public ExitMsg joinb() {
-        Mailbox<ExitMsg> mb = new Mailbox<ExitMsg>();
+    public ExitMsg<TT> joinb() {
+        Mailbox<ExitMsg<TT>> mb = new Mailbox();
         informOnExit(mb);
         return mb.getb();
     }
 
-    public ExitMsg join() throws Pausable {
-        Mailbox<ExitMsg> mb = new Mailbox<ExitMsg>();
+    public ExitMsg<TT> join() throws Pausable {
+        Mailbox<ExitMsg<TT>> mb = new Mailbox();
         informOnExit(mb);
         return mb.get();
     }
@@ -591,15 +591,13 @@ public abstract class Task implements Runnable, EventSubscriber, Fiber.Worker {
         return running.get();
     }
     
-    public static class Spawn<TT> extends Task {
-        public static final Object nullValue = new Object();
+    public static class Spawn<TT> extends Task<TT> {
         Spawnable<TT> body;
         public Spawn() {}
         public Spawn(Spawnable<TT> body) { this.body = body; }
-        public Mailbox<TT> mb = new Mailbox<TT>();
         public void execute() throws Pausable, Exception {
             TT val = body.execute();
-            ((Mailbox<Object>)mb).put(val==null ? nullValue:val);
+            exit(val);
         }
     }
     
