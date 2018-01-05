@@ -158,7 +158,7 @@ details:
 * doc generates sources.jar and javadoc.jar
 * `mvn install:install-file -DpomFile=pom.xml -Dfile=target/kilim.jar -Dsources=target/sources.jar -Djavadoc=target/javadoc.jar`
 * java 8 is the recommended platform, but should build (with ant), run and test under both 6 and 7
-  * eg: `JAVA_HOME=path/to/java7 ant weave jar`
+  * eg: `JAVA_HOME=path/to/java7 ant clean weave jar`
 
 
 

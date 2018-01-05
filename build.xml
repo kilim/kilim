@@ -53,6 +53,7 @@
   <target name="compile" depends="init">
     <mkdir dir="target"/>
     <javac includeantruntime="false" debug="on" srcdir="src" destdir="target/classes" 
+           excludes="${exclude8}"
            classpathref="kilim.classpath"/>
   </target>
   
