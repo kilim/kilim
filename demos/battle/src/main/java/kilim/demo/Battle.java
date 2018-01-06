@@ -4,7 +4,6 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import kilim.Mailbox;
 import kilim.Pausable;
-import kilim.Scheduler;
 import kilim.Task;
 
 public class Battle {
@@ -48,7 +47,7 @@ public class Battle {
         if (kilim.tools.Kilim.trampoline(false,args)) return;
         Battle battle = new Battle();
         battle.start();
-        Scheduler.getDefaultScheduler().idledown();
+        Task.idledown();
         System.out.format("\n%d actors survived the Battle Royale\n\n",battle.living.get());
     }
     

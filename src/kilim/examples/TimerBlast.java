@@ -7,9 +7,7 @@
 package kilim.examples;
 
 import java.util.concurrent.atomic.AtomicInteger;
-import kilim.Mailbox;
 import kilim.Pausable;
-import kilim.Scheduler;
 import kilim.Task;
 
 /*
@@ -59,7 +57,7 @@ public class TimerBlast extends Task {
         }
  
         
-        Scheduler.getDefaultScheduler().idledown();
+        idledown();
         System.out.println(cnt.get());
     }
 

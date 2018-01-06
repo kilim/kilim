@@ -135,7 +135,7 @@ public class TimerBlast2 {
         for (int ii=0; ii < 1; ii++)
             new TimerBlast2().setup(num << ii);
         
-        Scheduler.getDefaultScheduler().idledown();
+        Task.idledown();
     }
 
 }

@@ -8,7 +8,6 @@ package kilim.examples;
 
 import kilim.Mailbox;
 import kilim.Pausable;
-import kilim.Scheduler;
 import kilim.Task;
 
 /**
@@ -33,7 +32,7 @@ public class SimpleTask extends Task {
         mb.putnb("Hello ");
         mb.putnb("World\n");
         mb.putnb("done");
-        Scheduler.getDefaultScheduler().idledown();
+        idledown();
     }
 
     /**

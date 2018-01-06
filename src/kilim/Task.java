@@ -629,4 +629,12 @@ public abstract class Task<TT> implements Runnable, EventSubscriber, Fiber.Worke
         spawn.start();
         return spawn;
     }
+
+    /**
+     * idledown the default scheduler
+     * @see Scheduler#idledown()
+     */
+    public static void idledown() {
+        Scheduler.getDefaultScheduler().idledown();
+    }
 }
