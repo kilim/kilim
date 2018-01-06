@@ -110,6 +110,9 @@ public class TestLambda extends TestCase {
     interface Foo { void run() throws Pausable; }
     void foo(Foo foo) throws Pausable { foo.run(); }
 
+    void doLambda() throws Pausable {
+        doLambda(fd);
+    }
     void doLambda(Double resp) throws Pausable {
         try {
             foo(() -> restoreArgument(resp));
@@ -132,6 +135,7 @@ public class TestLambda extends TestCase {
             runLambda(new kilim.test.ex.ExCatch(ii));
         runTask(new Task.Fork(() -> doLambda(fd)));
         runLambda(new Task.Fork(() -> doLambda(fd)));
+        runLambda(new Task.Fork(this::doLambda));
     }
 
     public void testYield() throws Exception {
