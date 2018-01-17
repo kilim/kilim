@@ -13,7 +13,7 @@ public class ServletHandler extends HttpServlet {
     Iface handler;
     public ServletHandler(Iface handler) { this.handler = handler; }
 
-    protected void service(HttpServletRequest req,HttpServletResponse resp) throws ServletException,IOException {
+    protected void service(final HttpServletRequest req,final HttpServletResponse resp) throws ServletException,IOException {
         final AsyncContext async = req.startAsync();
         new kilim.Task() {
             public void execute() throws Pausable, Exception {

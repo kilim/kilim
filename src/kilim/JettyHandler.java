@@ -14,7 +14,7 @@ public class JettyHandler extends AbstractHandler {
     Iface handler;
     public JettyHandler(Iface handler) { this.handler = handler; }
 
-    public void handle(String target,Request br,HttpServletRequest req,HttpServletResponse resp) throws IOException, ServletException {
+    public void handle(final String target,final Request br,final HttpServletRequest req,final HttpServletResponse resp) throws IOException, ServletException {
         final AsyncContext async = req.startAsync();
         new kilim.Task() {
             public void execute() throws Pausable, Exception {
