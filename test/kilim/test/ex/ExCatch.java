@@ -4,7 +4,9 @@ import java.io.IOException;
 import kilim.Fiber;
 import kilim.Pausable;
 import kilim.Continuation;
+import kilim.Mailbox;
 import kilim.Task;
+import static kilim.Task.idledown;
 
 public class ExCatch extends ExYieldBase {
     public ExCatch(int test) {
@@ -37,6 +39,7 @@ public class ExCatch extends ExYieldBase {
             case 5: tryDefUse(); break;
             case 6: whileCatch(); break;
             case 7: restoreArgument(fd); break;
+            case 8: correctException(); break;
             default: throw new IllegalStateException("Unknown test case: " + testCase);
         }
     }
@@ -385,5 +388,20 @@ public class ExCatch extends ExYieldBase {
             else throw new Exception("10");
             count[num] += 107;
         }
+    }
+
+
+    // crude check for issue 55 - verify exceptions don't get reordered
+    public void correctException() throws Pausable {
+        double val = fd;
+        try {
+            Task.sleep(1);
+            throw new RuntimeException();
+        }
+        catch (RuntimeException ex) {}
+        catch (Exception ex) {
+            throw new RuntimeException("incorrect exception");
+        }
+        verify(val);
     }
 }

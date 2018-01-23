@@ -54,6 +54,9 @@ public class TestYieldExceptions extends TestCase {
     public void testRestoreArgument() throws Exception {
         TestYield.runTask(new kilim.test.ex.ExCatch(7));
     }
+    public void testCorrectException() throws Exception {
+        TestYield.runTask(new kilim.test.ex.ExCatch(8));
+    }
 
     public void testPureCatch()  throws Exception {
         TestYield.runPure(new kilim.test.ex.ExCatch.Pure());
