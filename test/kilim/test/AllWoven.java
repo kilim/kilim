@@ -10,16 +10,23 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 
 public class AllWoven extends TestSuite {
+    private static Class lambdaClass;
+    public static boolean java8;
+    static {
+        try {
+            lambdaClass = AllWoven.class.getClassLoader().loadClass("kilim.test.TestLambda");
+            java8 = true;
+        }
+        catch (ClassNotFoundException ex) {}
+    }
+
     public static Test suite() {
         TestSuite ret = new AllWoven();
         ret.addTestSuite(TestPrefThread.class);
         ret.addTestSuite(TestYield.class);
         ret.addTestSuite(TestInterface.class);
-        try {
-            Class klass = AllWoven.class.getClassLoader().loadClass("kilim.test.TestLambda");
-            ret.addTestSuite(klass);
-        }
-        catch (ClassNotFoundException ex) {}
+        if (java8)
+            ret.addTestSuite(lambdaClass);
         ret.addTestSuite(TestYieldExceptions.class);
         ret.addTestSuite(TestYieldJSR.class);
         ret.addTestSuite(TestMailbox.class);

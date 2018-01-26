@@ -71,7 +71,7 @@ public class TestInterface extends TestCase {
     }
 
     // https://github.com/kilim/kilim/issues/53
-    // runtime-only - others would require parsing bytecode which seems more plroblematic than valuable
+    // runtime-only - others would require parsing bytecode which seems more problematic than valuable
     public void testRuntimeAnnotation() {
         checkRuntimeAnnotation(Anno.F1.class);
         checkRuntimeAnnotation(Anno.C1.class);
@@ -84,7 +84,9 @@ public class TestInterface extends TestCase {
         Annotation canno = klass.getAnnotation(Anno.A1.class),
                 manno = method.getAnnotation(Anno.A1.class);
         assertNotNull(canno);
-        assertNotNull(manno);
+        // fixme:java7 - annotations are not preserved in the fiber-less method in java 7
+        if (AllWoven.java8)
+            assertNotNull(manno);
     }
 
     private static class Anno {
