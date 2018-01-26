@@ -15,22 +15,23 @@
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-server</artifactId>
-            <version>9.3.0.v20150612</version>
+            <version>${jetty.version}</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-util-ajax</artifactId>
-            <version>9.3.0.v20150612</version>
+            <version>${jetty.version}</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-webapp</artifactId>
-            <version>9.3.0.v20150612</version>
+            <version>${jetty.version}</version>
         </dependency>
     </dependencies>
     <properties>
        <maven.compiler.source>1.8</maven.compiler.source>
        <maven.compiler.target>1.8</maven.compiler.target>
+       <jetty.version>9.3.0.v20150612</jetty.version>
     </properties>
     <build>
         <plugins>
