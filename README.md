@@ -164,9 +164,9 @@ details:
 ## java 7
   * `JAVA_HOME=path/to/java7 ant clean weave jar`
   * `mvn install:install-file -DpomFile=pom.xml -Dfile=target/kilim.jar -Dclassifier=jdk7`
+  * in pom.xml use: `<classifier>jdk7</classifier>`
   * see demos/java7 for an example java 7 project
-  * not all features are available in java 7
-
+  * some versions may be in maven central with a jdk7 classifier, eg 2.0.0-15:jdk7
 
 
 ## Running
