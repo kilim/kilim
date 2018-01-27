@@ -509,7 +509,7 @@ public abstract class Task<TT> implements Runnable, EventSubscriber, Fiber.Worke
             // execute() done. Check fiber if it is pausing and reset it.
             isDone = f.end() || (pauseReason instanceof TaskDoneReason);
         } catch (Throwable th) {
-            th.printStackTrace();
+            getScheduler().log(th);
             // Definitely done
             setPauseReason(new TaskDoneReason(th));
             isDone = true;

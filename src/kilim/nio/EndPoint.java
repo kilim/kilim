@@ -111,7 +111,9 @@ public class EndPoint { // Mailbox for receiving socket ready events.
             int n = ch.read(buf);
             // System.out.println(buf);
             if (n == -1) {
-                close();
+                IOException ex = close2();
+                if (ex != null)
+                    Sched.log(Task.getCurrentTask().getScheduler(),ex);
                 throw new EOFException();
             }
             if (n == 0) {
@@ -130,7 +132,10 @@ public class EndPoint { // Mailbox for receiving socket ready events.
         } while (atleastN > 0);
         return buf;
     }
- 
+
+    private static class Sched extends kilim.Scheduler {
+        static void log(kilim.Scheduler sched,Object obj) { logRelay(sched,obj); }
+    }
 
     /**
      * Reads a length-prefixed message in its entirety.
@@ -224,10 +229,17 @@ public class EndPoint { // Mailbox for receiving socket ready events.
         }
     }
 
+    /** Close the endpoint */
+    IOException close2() {
+        try { sockch.close(); return null; }
+        catch (IOException ex) { return ex; }
+    }
     /**
-     * Close the endpoint
+     * Close the endpoint, printing and returning and any IOException
+     * @deprecated in a future version, this method will no longer print the stack trace
      */
-    public void close() {
+    @Deprecated
+    public IOException close() {
         try {
             // if (sk != null && sk.isValid()) {
             // sk.attach(null);
@@ -235,8 +247,10 @@ public class EndPoint { // Mailbox for receiving socket ready events.
             // sk = null;
             // }
             sockch.close();
-        } catch (Exception ignore) {
+            return null;
+        } catch (IOException ignore) {
             ignore.printStackTrace();
+            return ignore;
         }
     }
 }

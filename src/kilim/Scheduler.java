@@ -27,6 +27,9 @@ public class Scheduler {
     private int numThreads;
     private AffineThreadPool affinePool_;
     protected AtomicBoolean shutdown = new AtomicBoolean(false);
+    
+    /** print exceptions to standard out, default:true */
+    public boolean enableExceptionLog = true;
 
     // Added for new Timer service
     private TimerService timerService;
@@ -123,6 +126,21 @@ public class Scheduler {
         return shutdown.get();
     }
 
+    /** a static accessor to allow log to be protected */
+    static protected void logRelay(Scheduler sched,Object obj) { sched.log(obj); }
+    
+    /**
+     * write to the log
+     * @param obj the obj to log
+     */
+    protected void log(Object obj) {
+        if (!enableExceptionLog)
+            return;
+        if (obj instanceof Throwable)
+            ((Throwable) obj).printStackTrace();
+        else
+            System.out.println(obj);
+    }    
 
     public synchronized static Scheduler getDefaultScheduler() {
         if (defaultScheduler==null)
