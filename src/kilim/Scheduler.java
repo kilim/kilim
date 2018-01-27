@@ -53,11 +53,22 @@ public class Scheduler {
     protected Scheduler() {
     }
 
+    /**
+     * create the scheduler with a default queue size
+     * @param numThreads the number of threads to use, or use the default if less than zero 
+     */
     public Scheduler(int numThreads) {
         this(numThreads,defaultQueueSize_);
     }
 
+    /**
+     * create the scheduler
+     * @param numThreads the number of threads to use, or use the default if less than zero 
+     * @param queueSize the queue size to use
+     */
     public Scheduler(int numThreads,int queueSize) {
+        if (numThreads < 0)
+            numThreads = defaultNumberThreads;
         timerService = new TimerService();
         affinePool_ = new AffineThreadPool(numThreads,queueSize,timerService);
         this.numThreads = numThreads;
