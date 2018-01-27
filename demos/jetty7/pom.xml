@@ -2,8 +2,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.db4j</groupId>
-    <artifactId>kilim-demo-jetty</artifactId>
-    <name>kilim-demo-jetty</name>
+    <artifactId>kilim-demo-jetty7</artifactId>
+    <name>kilim-demo-jetty7</name>
     <version>0.1-SNAPSHOT</version>
 
     <dependencies>
