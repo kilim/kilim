@@ -84,15 +84,22 @@ public class Scheduler {
     public int numThreads() { return numThreads; }
         
     /**
-     * Schedule a task to run. It is the task's job to ensure that it is not scheduled when it is runnable.
+     * Schedule a task to run.
+     * It is the task's job to ensure that it is not scheduled when it is runnable.
+     * the default index for assignment to an executor
      */
     public void schedule(Task t) {
         if (t instanceof RegistrationTask)
             ((RegistrationTask) t).wake();
         else
-            affinePool_.publish(t);
+            schedule(-1,t);
     }
 
+    /**
+     * schedule a task to run
+     * @param index the index of the executor to use, or less than zero to use the default (round robin) assignment
+     * @param t the task
+     */
     public void schedule(int index,Task t) {
         if (t instanceof RegistrationTask)
             assert (false);

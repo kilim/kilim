@@ -55,11 +55,9 @@ public class AffineThreadPool {
         return newValue;
     }
     
-    void publish(Task task) {
-        publish(next(),task);
-    }
-
     void publish(int index,Task task) {
+        if (index < 0)
+            index = next();
         count.incrementAndGet();
         task.setTid(index);
         exes[index].publish(task);
