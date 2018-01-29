@@ -13,15 +13,15 @@ public class Reflect extends Task {
     int n = test();
     System.out.println("test (normal invocation of instance method): " + n);
     // Invoking test() via reflection
-    Method mthd = Reflect.class.getDeclaredMethod("test", new Class[0]);
-    Object ret = Task.invoke(mthd, this, /* no args */(Object[])null);
+    Method method = Reflect.class.getDeclaredMethod("test", new Class[0]);
+    Object ret = Task.invoke(method, this, /* no args */(Object[])null);
     System.out.println("test (reflect invocation of instance method): " + ret);
 
     n = static_test();
     System.out.println("test (normal invocation of static method): " + n);
     // Invoking test() via reflection
-    mthd = Reflect.class.getDeclaredMethod("static_test", new Class[0]);
-    ret = Task.invoke(mthd, /* target = */ null, /* no args */(Object[])null);
+    method = Reflect.class.getDeclaredMethod("static_test", new Class[0]);
+    ret = Task.invoke(method, /* target = */ null, /* no args */(Object[])null);
     System.out.println("test (reflect invocation of static method): " + ret);
     System.exit(0);
   }

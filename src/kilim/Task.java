@@ -315,10 +315,10 @@ public abstract class Task<TT> implements Runnable, EventSubscriber, Fiber.Worke
     /**
      * Invoke a pausable method via reflection. Equivalent to Method.invoke().
      * 
-     * @param mthd
+     * @param method
      * : The method to be invoked. (Implementation note: the corresponding woven
      * method is invoked instead).
-     * @param target
+     * @param obj
      * : The object on which the method is invoked. Can be null if the method is
      * static.
      * @param args
@@ -329,7 +329,7 @@ public abstract class Task<TT> implements Runnable, EventSubscriber, Fiber.Worke
      * @throws IllegalArgumentException
      * @throws InvocationTargetException
      */
-    public static Object invoke(Method mthd, Object target, Object... args)
+    public static Object invoke(Method method, Object obj, Object... args)
                                                                            throws Pausable,
                                                                            IllegalAccessException,
                                                                            IllegalArgumentException,
@@ -337,7 +337,7 @@ public abstract class Task<TT> implements Runnable, EventSubscriber, Fiber.Worke
         Fiber f = getCurrentTask().fiber;
         Object[] fargs;
         if (f.pc == 0) {
-            mthd = getWovenMethod(mthd);
+            method = getWovenMethod(method);
             // Normal invocation.
             if (args == null) {
                 fargs = new Object[1];
@@ -349,22 +349,22 @@ public abstract class Task<TT> implements Runnable, EventSubscriber, Fiber.Worke
         } else {
             // Resuming from a previous yield
             ArgState as = (ArgState) f.getState();
-            mthd = (Method) as.mthd;
-            target = as.obj;
+            method = (Method) as.mthd;
+            obj = as.obj;
             fargs = as.fargs;
         }
         f.down();
-        Object ret = mthd.invoke(target, fargs);
+        Object ret = method.invoke(obj, fargs);
         switch (f.up()) {
             case Fiber.NOT_PAUSING__NO_STATE:
             case Fiber.NOT_PAUSING__HAS_STATE:
                 return ret;
             case Fiber.PAUSING__NO_STATE:
                 ArgState as = new ArgState();
-                as.obj = target;
+                as.obj = obj;
                 as.fargs = fargs;
                 as.pc = 1;
-                as.mthd = mthd;
+                as.mthd = method;
                 f.setState(as);
                 return null;
             case Fiber.PAUSING__HAS_STATE:
