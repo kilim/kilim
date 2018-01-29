@@ -126,13 +126,13 @@ public class Frame {
             setLocal(i, Value.V_UNDEFINED);
         }
         int local = 0;
-        int paramPos = 100000;
+        int fakeParamPos = 100000;
         if ((method.access & ACC_STATIC) == 0) {
             // 0th local is "this"
-            setLocal(local++, Value.make(paramPos++,classDesc));
+            setLocal(local++, Value.make(fakeParamPos++,classDesc));
         }
         for (int i = 0; i < argTypeDescs.length; i++) {
-            local += setLocal(local, Value.make(paramPos++, argTypeDescs[i]));
+            local += setLocal(local, Value.make(fakeParamPos++, argTypeDescs[i]));
         }
         if ((method.access & ACC_SYNCHRONIZED) != 0) {
             numMonitorsActive = 1;

@@ -118,9 +118,6 @@ public class Value {
 
     @Override
     public boolean equals(Object obj) {
-        // TODO FIXME : This is WRONG. Two values can be created at the same site when
-        // entering a method (all incoming parameter values are given location 0). 
-        // That would make two distinct params with the same type equal.
         if (this == obj) return true;
         Value other = (Value)obj;
         if (this.typeDesc.equals(other.typeDesc) &&
@@ -146,10 +143,23 @@ public class Value {
         return h;
     }
 
+    /** 
+     * create a new Value with the given position and type and no constant value
+     * @param pos the position in the method for the corresponding instruction, or a unique value for method params
+     * @param desc the type descriptor
+     * @return the new Value
+     */
     public static Value make(int pos, String desc) {
         return new Value(pos, desc, NO_VAL);
     }
     
+    /**
+     * create a new Value
+     * @param pos the position in the method for the corresponding instruction, or a unique value for method params
+     * @param desc the type descriptor
+     * @param aConstVal the constant value
+     * @return the new Value
+     */
     public static Value make(int pos, String desc, Object aConstVal) {
         return new Value(pos, desc, aConstVal);
     }
