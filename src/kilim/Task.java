@@ -95,7 +95,7 @@ public abstract class Task<TT> implements Runnable, EventSubscriber, Fiber.Worke
         return id;
     }
 
-    public synchronized Task setScheduler(Scheduler s) {
+    public synchronized Task<TT> setScheduler(Scheduler s) {
         // if (running) {
         // throw new
         // AssertionError("Attempt to change task's scheduler while it is running");
@@ -122,7 +122,7 @@ public abstract class Task<TT> implements Runnable, EventSubscriber, Fiber.Worke
      * 
      * @return
      */
-    public Task start() {
+    public Task<TT> start() {
         if (scheduler == null) {
             setScheduler(Scheduler.getDefaultScheduler());
         }
