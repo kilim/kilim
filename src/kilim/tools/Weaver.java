@@ -96,7 +96,7 @@ public class Weaver {
             ClassLoader current = Weaver.class.getClassLoader();
             String [] composite = classpath==null ? names : concat(names,classpath);
             URL [] paths = WeavingClassLoader.getURLs(composite);
-            CachedClassMirrors ccm = new CachedClassMirrors(null,new URLClassLoader(paths,current));
+            CachedClassMirrors ccm = new CachedClassMirrors(new URLClassLoader(paths,current));
             weaver = new Weaver(new KilimContext(ccm));
         }
         else

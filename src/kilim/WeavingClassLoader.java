@@ -77,7 +77,7 @@ public class WeavingClassLoader extends KilimClassLoader {
         proxy = useProxy ? new URLClassLoader(paths) : null;
         pcl = useProxy ? proxy : current;
 
-        CachedClassMirrors ccm = new CachedClassMirrors(this,pcl);
+        CachedClassMirrors ccm = new CachedClassMirrors(pcl);
         KilimContext kc = new KilimContext(ccm);
         weaver = new Weaver(kc);
     }

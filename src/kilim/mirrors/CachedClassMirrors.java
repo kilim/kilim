@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import kilim.KilimClassLoader;
 import kilim.WeavingClassLoader;
 
 import org.objectweb.asm.AnnotationVisitor;
@@ -28,15 +27,12 @@ public class CachedClassMirrors {
     final static String[] EMPTY_SET = new String[0];
     
     ConcurrentHashMap<String,ClassMirror> cachedClasses = new ConcurrentHashMap<String, ClassMirror>();
-    private final KilimClassLoader loader;
     final ClassLoader source;
 
     public CachedClassMirrors() {
-        loader = new KilimClassLoader();
         source = getClass().getClassLoader();
     }
-    public CachedClassMirrors(KilimClassLoader $loader,ClassLoader $source) {
-        loader = $loader;
+    public CachedClassMirrors(ClassLoader $source) {
         source = $source;
     }
     
