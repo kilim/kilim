@@ -111,7 +111,20 @@ public class WeavingClassLoader extends KilimClassLoader {
         }
         return ret;
     }
-    
+
+    /**
+     * load the bytecode for a class of a given name from the classpath and weave it
+     * @param name the fully qualified class name
+     * @return the weaver
+     */    
+    public ClassWeaver weaveClass(String name) {
+        String cname = makeResourceName(name);
+        
+        InputStream is = pcl.getResourceAsStream( cname );
+        if (is==null) is = ClassLoader.getSystemResourceAsStream( cname );
+        ClassWeaver cw = weaver.weave(is);
+        return cw;
+    }
     protected Class<?> findClass(String name) throws ClassNotFoundException {
         String cname = makeResourceName(name);
         

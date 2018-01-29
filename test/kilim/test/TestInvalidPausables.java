@@ -8,21 +8,24 @@ package kilim.test;
 
 import junit.framework.TestCase;
 import kilim.KilimException;
-import kilim.mirrors.Detector;
-import kilim.tools.Weaver;
+import kilim.WeavingClassLoader;
 
 public class TestInvalidPausables extends TestCase {
+    private static boolean debug = false;
     private void ensureException(String className) {
         try {
-//            Weaver.weaveClass2(className, Detector.DEFAULT);
-//            fail("Expected weave exception while processing " + className);
+            new WeavingClassLoader().weaveClass(className);
+            fail("Expected weave exception while processing " + className);
         } catch (KilimException ke) {
+            if (debug) System.out.println(ke);
         } catch (Exception e) {
             fail(e.toString());
         }
     }
     public void testWeaveConstructor() {
         ensureException("kilim.test.ex.ExInvalidConstructor");
+        ensureException("kilim.test.ex.ExInvalidConstructor2");
+        ensureException("kilim.test.ex.ExInvalidConstructor3");
     }
     public void testWeaveSynchronized() {
         ensureException("kilim.test.ex.ExInvalidSynchronized");
@@ -47,11 +50,11 @@ public class TestInvalidPausables extends TestCase {
     
     public void testWeaveInterfacePausable() {
         ensureException("kilim.test.ex.ExInvalidPImp");
-        
+        ensureException("kilim.test.ex.ExInvalidPFace");
     }
     
     public void testWeaveInterfaceNotPausable() {
         ensureException("kilim.test.ex.ExInvalidNPImp");
-        
+        ensureException("kilim.test.ex.ExInvalidNPFace");
     }
 }
