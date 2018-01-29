@@ -173,21 +173,22 @@ public class MethodFlow extends MethodNode {
         // anything
         if (classFlow.isWoven || suppressPausableCheck) return;
         
+        String methodText = toString(classFlow.getClassName(),this.name,this.desc);
+        boolean ctor = this.name.endsWith("init>");
+
+        // constructors cannot be pausable because they must begin with the super call
+        // meaning the weaver is unable to inject the preamble
+        // and a super with side effects would get called multiple times
+        // refuse to weave them
+        if (ctor & hasPausableAnnotation)
+            throw new KilimException("Constructors cannot be declared Pausable: " + methodText + "\n");
+
         if (!hasPausableAnnotation && !pausableMethods.isEmpty()) {
-            String msg;
-            String name = toString(classFlow.getClassName(),this.name,this.desc);   
-            if (this.name.endsWith("init>")) {
-                // constructors cannot be pausable because they must begin with the super call
-                // meaning the weaver is unable to inject the preamble
-                // and a super with side effects would get called multiple times
-                // refuse to weave them
-                msg = "Constructor " + name + " calls pausable methods:\n";
-            } else { 
-                msg = name + " should be marked pausable. It calls pausable methods\n";
-            }
-            for (MethodInsnNode min: pausableMethods) {
+            String msg = ctor
+                    ? "Constructor " + methodText + " illegally calls pausable methods:\n"
+                    : methodText + " should be marked pausable. It calls pausable methods\n";
+            for (MethodInsnNode min: pausableMethods)
                 msg += toString(min.owner, min.name, min.desc) + '\n';
-            }
             throw new KilimException(msg);
         }
         if (classFlow.superName != null) {
