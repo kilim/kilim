@@ -637,6 +637,20 @@ public abstract class Task<TT> implements Runnable, EventSubscriber, Fiber.Worke
             body.execute();
         }
     }
+    public static class Invoke<TT> extends Task<TT> {
+        Method method;
+        Object obj;
+        Object [] args;
+        public Invoke(Method method,Object obj,Object...args) {
+            this.method = method;
+            this.obj = obj;
+            this.args = args;
+        }
+        public void execute() throws Pausable, Exception {
+            Object val = Task.invoke(method,obj,args);
+            exit(val);
+        }
+    }
     
     
     /**
@@ -658,6 +672,12 @@ public abstract class Task<TT> implements Runnable, EventSubscriber, Fiber.Worke
      */
     public static <TT> Spawn<TT> spawn(final Pausable.Spawn<TT> body) {
         Spawn<TT> spawn = new Spawn(body);
+        spawn.start();
+        return spawn;
+    }
+
+    public static Invoke spawn(Method method,Object obj,Object... args) {
+        Invoke spawn = new Invoke(method,obj,args);
         spawn.start();
         return spawn;
     }
