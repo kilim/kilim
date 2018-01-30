@@ -34,7 +34,11 @@ public class Javac {
      * a temporary directory that's deleted after the compilation), and if no public class or
      * interface is found, the name of the first class in the string is used.
      * 
-     * Note that the list of returned classes may be larger than 
+     * Note that the list of returned classes may be larger than list of sources
+     * 
+     * Note: the java compiler api is ill-defined and this class should not be considered production.
+     * specifically, the classpath appears to depend on the execution environment,
+     * eg command line maven vs IDE vs the java command line
      * 
      * @param srcCodes
      *            . List of strings.
@@ -50,10 +54,13 @@ public class Javac {
 
         File classDir = new File(rootDir.getAbsolutePath() + File.separatorChar + "classes");
         classDir.mkdir(); // "<rootDir>/classes"
+        String cp = getClassPath();
 
         ArrayList<String>
                 args = new ArrayList();
         add(args, "-d", classDir.getAbsolutePath());
+        if (cp != null)
+            add(args, "-cp", cp);
         for (SourceInfo srci : srcInfos) {
             String name = rootDir.getAbsolutePath() + File.separatorChar + srci.className + ".java";
             writeFile(new File(name), srci.srcCode.getBytes());
@@ -74,6 +81,27 @@ public class Javac {
             list.add(val);
     }
 
+    /** 
+     * the compiler classpath appears to depend on the class.path system variable which changes 
+     * depending on the execution environment, eg command line maven vs command line java vs IDE vs ant
+     * to limit this dependence, generate a classpath from the class loader urls instead
+     */
+    static String getClassPath() {
+        String cp = "";
+        ClassLoader sys = ClassLoader.getSystemClassLoader();
+        ClassLoader cl = Javac.class.getClassLoader();
+        // FIXME::rhetorical - what order should the classpath be ?
+        //   the reality is that calling the compiler cannot be 100% robust
+        //   so this detail is likely insignificant
+        for (; cl != null & cl != sys; cl = cl.getParent())
+            if (cl instanceof java.net.URLClassLoader) {
+                java.net.URLClassLoader ucl = (java.net.URLClassLoader) cl;
+                for (java.net.URL url : ucl.getURLs())
+                    cp += File.pathSeparator + url.getPath();
+            }
+        return cp.length()==0 ? null : cp.substring(1);
+    }
+    
     private static List<SourceInfo> getSourceInfos(List<String> srcCodes) {
         List<SourceInfo> srcInfos = new ArrayList<SourceInfo>(srcCodes.size());
         for (String srcCode : srcCodes) {
