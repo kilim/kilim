@@ -51,25 +51,27 @@ public class Javac {
         File classDir = new File(rootDir.getAbsolutePath() + File.separatorChar + "classes");
         classDir.mkdir(); // "<rootDir>/classes"
 
-        String options[] = { "-d", classDir.getAbsolutePath() };
-
-        String args[] = new String[options.length + srcCodes.size()];
-        System.arraycopy(options, 0, args, 0, options.length);
-        int i = options.length;
-
+        ArrayList<String>
+                args = new ArrayList();
+        add(args, "-d", classDir.getAbsolutePath());
         for (SourceInfo srci : srcInfos) {
             String name = rootDir.getAbsolutePath() + File.separatorChar + srci.className + ".java";
             writeFile(new File(name), srci.srcCode.getBytes());
-            args[i++] = name;
+            args.add(name);
         }
+        String [] arguments = args.toArray(new String[0]);
 
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        compiler.run(null, null, null, args);
+        compiler.run(null, null, null, arguments);
 
         List<ClassInfo> ret = new ArrayList<ClassInfo>();
         addClasses(ret, "", classDir);
         deleteDir(rootDir);
         return ret;
+    }
+    static void add(ArrayList<String> list,String ... vals) {
+        for (String val : vals)
+            list.add(val);
     }
 
     private static List<SourceInfo> getSourceInfos(List<String> srcCodes) {
