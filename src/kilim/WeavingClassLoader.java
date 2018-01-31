@@ -23,6 +23,9 @@ import kilim.analysis.KilimContext;
 import kilim.mirrors.CachedClassMirrors;
 import kilim.tools.Weaver;
 
+// TODO: this and related real-time-weaving classes could be moved to the analysis package
+//       allowing the ant kilim-runtime.jar (see build.xml) to be smaller
+
 /**
  * Classloader that loads classes from the classpath spec given by the system property
  * "kilim.class.path" and weaves them dynamically.
@@ -177,7 +180,14 @@ public class WeavingClassLoader extends KilimClassLoader {
     // https://docs.oracle.com/javase/8/docs/technotes/guides/lang/resources.html#res_names
     public static String makeResourceName(String name) { return name.replace('.','/') + ".class"; }
     
+    /** 
+     * read bytecode for the named class from a source classloader
+     * @param loader the classloader to get the bytecode from, or null for the current classloader
+     * @param name the internal name for the class as would be passed to loadClass
+     * @return a new instance, or null if the bytecode is not found
+     */
     public static byte [] findCode(ClassLoader loader,String name) {
+        if (loader==null) loader = WeavingClassLoader.class.getClassLoader();
         String cname = makeResourceName(name);
         InputStream is = loader.getResourceAsStream( cname );
         if (is==null) is = ClassLoader.getSystemResourceAsStream( cname );
