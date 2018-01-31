@@ -12,12 +12,12 @@ import kilim.Task;
 
 /**
  * Spawn a task, communicate through a shared mailbox. The task's
- * termination is knowm through another mailbox.
+ * termination is known through another mailbox.
  * 
  * The structure of this class is not much different from a Thread 
  * version that uses PipedInput/OutputStreams (Task instead of Thread,
  * execute() instead of run(), and typed, buffered mailboxes instead
- * of pipes.
+ * of pipes).
  * 
  * [compile] javac -d ./classes SimpleTask.java
  * [weave]   java kilim.tools.Weave -d ./classes kilim.examples.SimpleTask
