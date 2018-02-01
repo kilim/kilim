@@ -38,8 +38,8 @@ public class MailboxSPSC<T> extends SPSCQueue<T> implements PauseReason,
 	public static final int MSG_AVAILABLE = 2;
 	public static final int TIMED_OUT = 3;
 
-	public static final Event spaceAvailble = new Event(MSG_AVAILABLE);
-	public static final Event messageAvailable = new Event(SPACE_AVAILABLE);
+        public static final Event spaceAvailble = new Event(SPACE_AVAILABLE);
+        public static final Event messageAvailable = new Event(MSG_AVAILABLE);
 	public static final Event timedOut = new Event(TIMED_OUT);
 
 	// DEBUG steuuff
