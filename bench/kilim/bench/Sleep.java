@@ -12,8 +12,14 @@ import kilim.*;
 public class Sleep extends Task {
     static boolean pause = false;
     static boolean pausable = false;
+    /**
+     * benchmark interleaved Thread.sleep(1) and Fiber.pause calls
+     * runtime in msec should be approximately 4 times the number of passes
+     * @param args the number of passes, optional
+     * @throws Exception 
+     */
     public static void main(String[] args) throws Exception {
-        int n = Integer.parseInt(args[0]);
+        int n = args.length < 1 ? 1000 : Integer.parseInt(args[0]);
         
         sleep(); // waste 
         pausable = true;

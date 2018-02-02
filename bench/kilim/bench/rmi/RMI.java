@@ -8,6 +8,7 @@ package kilim.bench.rmi;
 import java.rmi.*;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Hashtable;
+import kilim.Task;
 public class RMI {
     public static void main(String[] args) throws Exception {
         int ntimes = args.length == 0 ? 1000 : Integer.parseInt(args[0]);
@@ -23,6 +24,7 @@ public class RMI {
         }
         System.out.println("Elapsed (" + ntimes + " iters) : " + 
                 (System.currentTimeMillis() - begin) + " millis");
+        UnicastRemoteObject.unexportObject(obj,false);
     }
 }
 

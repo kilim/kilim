@@ -12,8 +12,13 @@ import kilim.*;
 public class Unwind extends Task {
     static boolean pause = false;
     static boolean pausable = false;
+    /**
+     * benchmark kilim stack manipulation, comparing pausable and non-pausable variants of a trivial operation
+     * @param args the number of passes, optional
+     * @throws Exception 
+     */
     public static void main(String[] args) throws Exception {
-        int n = Integer.parseInt(args[0]);
+        int n = args.length < 1 ? 50000000 : Integer.parseInt(args[0]);
         pausable = true;
         
         pause = true;

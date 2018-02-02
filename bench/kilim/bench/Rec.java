@@ -11,9 +11,13 @@ import kilim.*;
 public class Rec extends Task {
     static boolean pause = false;
     static boolean pausable = false;
+    /** 
+     * benchmark recursion
+     * @param args the number of passes and the depth of each pass, both optional
+     */
     public static void main(String[] args) throws  Exception {
-        int n = Integer.parseInt(args[0]);
-        int d = Integer.parseInt(args[1]);
+        int n = args.length < 1 ? 1000000 : Integer.parseInt(args[0]);
+        int d = args.length < 2 ? 100     : Integer.parseInt(args[1]);
         
         pausable = true;
         

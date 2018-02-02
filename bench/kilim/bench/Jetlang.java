@@ -27,6 +27,7 @@ public class Jetlang extends Task {
         t.joinb(); // wait for receiver to finish
         
         s.tickPrint(max+1); // same number of iterations as jetlang's tests.
+        Task.idledown();
     }
 
     public void execute() throws Pausable {
