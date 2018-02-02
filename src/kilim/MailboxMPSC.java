@@ -26,8 +26,11 @@ import kilim.concurrent.VolatileReferenceCell;
 
 public class MailboxMPSC<T> extends MPSCQueue<T> implements PauseReason, EventPublisher {
 	// TODO. Give mbox a config name and id and make monitorable
-	VolatileReferenceCell<EventSubscriber> sink = new VolatileReferenceCell<EventSubscriber>();
-	Queue<EventSubscriber> srcs = new ConcurrentLinkedQueue<EventSubscriber>();
+	VolatileReferenceCell<EventSubscriber> sink = new VolatileReferenceCell<EventSubscriber>
+            ();
+	Queue
+            <EventSubscriber> srcs = new 
+                ConcurrentLinkedQueue<EventSubscriber>();
 
 	// FIX: I don't like this event design. The only good thing is that
 	// we don't create new event objects every time we signal a client
@@ -72,25 +75,12 @@ public class MailboxMPSC<T> extends MPSCQueue<T> implements PauseReason, EventPu
 			}
 		}
 
-		if (srcs.size() > 0) {
-			producer = srcs.poll();
-		}
+		producer = getProducer();
 		if (producer != null) {
 			producer.onEvent(this, spaceAvailble);
 		}
 		return e;
 	}
-
-	/**
-	 * Non-blocking, nonpausing put.
-	 * 
-	 * @param eo
-	 *            . If non-null, registers this observer and calls it with an
-	 *            SpaceAvailable event when there's space.
-	 * @return buffered message if there's one, or null
-	 * @see #putnb(Object)
-	 * @see #putb(Object)
-	 */
 
 	public boolean put(T msg, EventSubscriber eo) {
 		if (msg == null) {
@@ -100,7 +90,7 @@ public class MailboxMPSC<T> extends MPSCQueue<T> implements PauseReason, EventPu
 		boolean b = offer(msg);
 		if (!b) {
 			if (eo != null) {
-				srcs.offer(eo);
+				addSpaceAvailableListener(eo);
 			}
 		}
 		subscriber = sink.getAndSet(null);
@@ -118,16 +108,6 @@ public class MailboxMPSC<T> extends MPSCQueue<T> implements PauseReason, EventPu
 	 */
 	public T getnb() {
 		return get(null);
-	}
-
-	public void fill(T[] buf) {
-
-		for (int i = 0; i < buf.length; i++) {
-			buf[i] = getnb();
-			if (buf[i] == null) {
-				break;
-			}
-		}
 	}
 
 	/**
@@ -168,7 +148,7 @@ public class MailboxMPSC<T> extends MPSCQueue<T> implements PauseReason, EventPu
 		}
 		return msg;
 	}
-	/**
+        /**
 	 * Attempt to put a message, and return true if successful. The thread is
 	 * not blocked, nor is the task paused under any circumstance.
 	 */
@@ -176,22 +156,31 @@ public class MailboxMPSC<T> extends MPSCQueue<T> implements PauseReason, EventPu
 		return put(msg, null);
 	}
 
-        
-	public synchronized void addSpaceAvailableListener(EventSubscriber spcSub) {
+        synchronized         
+	public void addSpaceAvailableListener(EventSubscriber spcSub) {
 		srcs.offer(spcSub);
 	}
-
-	public synchronized void removeSpaceAvailableListener(EventSubscriber spcSub) {
+        synchronized 
+	public void removeSpaceAvailableListener(EventSubscriber spcSub) {
 		srcs.remove(spcSub);
 	}
-
-	public synchronized void addMsgAvailableListener(EventSubscriber msgSub) {
+        synchronized 
+	public void addMsgAvailableListener(EventSubscriber msgSub) {
 		sink.set(msgSub);
 	}
-
-	public synchronized void removeMsgAvailableListener(EventSubscriber msgSub) {
+        synchronized 
+	public void removeMsgAvailableListener(EventSubscriber msgSub) {
 		sink.set(null);
 	}
+        private EventSubscriber getProducer() {
+            return srcs.size()==0 ? null : srcs.poll();
+        }
+        private boolean srcContains(Task t) {
+            return srcs.contains(t);
+        }
+        private long getSize() {
+            return size();
+        }
 
 
 	/**
@@ -240,55 +229,41 @@ public class MailboxMPSC<T> extends MPSCQueue<T> implements PauseReason, EventPu
 	}
 
 
-	public synchronized String toString() {
+
+        
+        
+        
+        public synchronized String toString() {
 		return "id:" + System.identityHashCode(this) + " " +
-				"numMsgs:" + size();
+				"numMsgs:" + getSize();
 	}
 
-	// Implementation of PauseReason
-	public synchronized boolean isValid(Task t) {
+        
+        
+        
+        
+        
+
+        synchronized 
+        // Implementation of PauseReason
+	public boolean isValid(Task t) {
 		if (t == sink.get()) {
 			return !hasMessage();
-		} else if (srcs.contains(t)) {
+		} else if (srcContains(t)) {
 			return !hasSpace();
 		} else {
 			return false;
 		}
 	}
 
-}
-
-class EmptySet_MsgAvListenerMpSc implements PauseReason, EventSubscriber {
-	final Task task;
-	final MailboxMPSC<?>[] mbxs;
-
-	EmptySet_MsgAvListenerMpSc(Task t, MailboxMPSC<?>[] mbs) {
-		task = t;
-		mbxs = mbs;
-	}
-
-	public boolean isValid(Task t) {
-		// The pauseReason is true (there is valid reason to continue
-		// pausing) if none of the mboxes have any elements
-		for (MailboxMPSC<?> mb : mbxs) {
-			if (mb.hasMessage())
-				return false;
-		}
-		return true;
-	}
-
-	public void onEvent(EventPublisher ep, Event e) {
-		for (MailboxMPSC<?> m : mbxs) {
-			if (m != ep) {
-				((MailboxMPSC<?>) ep).removeMsgAvailableListener(this);
+	public void fill(T[] msg) {
+		for (int i = 0; i < msg.length; i++) {
+			msg[i] = getnb();
+			if (msg[i] == null) {
+				break;
 			}
 		}
-		task.resume();
 	}
 
-	public void cancel() {
-		for (MailboxMPSC<?> mb : mbxs) {
-			mb.removeMsgAvailableListener(this);
-		}
-	}
 }
+

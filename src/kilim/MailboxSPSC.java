@@ -7,7 +7,6 @@
 package kilim;
 
 import kilim.concurrent.SPSCQueue;
-import kilim.concurrent.VolatileLongCell;
 import kilim.concurrent.VolatileReferenceCell;
 
 /**
@@ -26,10 +25,12 @@ public class MailboxSPSC<T> extends SPSCQueue<T> implements PauseReason,
 		EventPublisher {
 	// TODO. Give mbox a config name and id and make monitorable
 
-	final VolatileReferenceCell<EventSubscriber> sink = new VolatileReferenceCell<EventSubscriber>(
-			null);
-	final VolatileReferenceCell<EventSubscriber> srcs = new VolatileReferenceCell<EventSubscriber>(
-			null);
+	final
+        VolatileReferenceCell<EventSubscriber> sink = new VolatileReferenceCell<EventSubscriber>
+            (null);
+	final VolatileReferenceCell
+            <EventSubscriber> srcs = new
+                VolatileReferenceCell<EventSubscriber>(null);
 
 	// FIX: I don't like this event design. The only good thing is that
 	// we don't create new event objects every time we signal a client
@@ -80,46 +81,6 @@ public class MailboxSPSC<T> extends SPSCQueue<T> implements PauseReason,
 
 		return true;
 	}
-
-	/**
-	 * Pausable fill Pause the caller until at least one message is available.
-	 *
-	 * @throws Pausable
-	 */
-	public void fill(T[] msg) throws Pausable {
-		Task t = Task.getCurrentTask();
-		boolean b = fill(t, msg);
-		while (!b) {
-			Task.pause(this);
-			removeMsgAvailableListener(t);
-			b = fill(t, msg);
-		}
-	}
-
-	/**
-	 * Non-blocking, nonpausing get.
-	 * 
-	 * @param eo
-	 *            . If non-null, registers this observer and calls it with a
-	 *            MessageAvailable event when a put() is done.
-	 * @return buffered message if there's one, or null
-	 */
-	public T get(EventSubscriber eo) {
-		EventSubscriber producer = null;
-		T e = poll();
-		if (e == null) {
-			if (eo != null) {
-				sink.set(eo);
-			}
-		}
-
-		producer = srcs.getAndSet(null);
-		if (producer != null) {
-			producer.onEvent(this, spaceAvailble);
-		}
-		return e;
-	}
-
 	/**
 	 * put a non-null messages from buffer in the mailbox, and pause the calling
 	 * task until all the messages put in the mailbox
@@ -171,6 +132,30 @@ public class MailboxSPSC<T> extends SPSCQueue<T> implements PauseReason,
 		}
 	}
 
+	/**
+	 * Non-blocking, nonpausing get.
+	 * 
+	 * @param eo
+	 *            . If non-null, registers this observer and calls it with a
+	 *            MessageAvailable event when a put() is done.
+	 * @return buffered message if there's one, or null
+	 */
+	public T get(EventSubscriber eo) {
+		EventSubscriber producer = null;
+		T e = poll();
+		if (e == null) {
+			if (eo != null) {
+				addMsgAvailableListener(eo);
+			}
+		}
+
+		producer = getProducer();
+		if (producer != null) {
+			producer.onEvent(this, spaceAvailble);
+		}
+		return e;
+	}
+
 	public boolean put(T msg, EventSubscriber eo) {
 		if (msg == null) {
 			throw new NullPointerException("Null is not a valid element");
@@ -179,7 +164,7 @@ public class MailboxSPSC<T> extends SPSCQueue<T> implements PauseReason,
 		boolean b = offer(msg);
 		if (!b) {
 			if (eo != null) {
-				srcs.set(eo);
+				addSpaceAvailableListener(eo);
 			}
 		}
 		subscriber = sink.getAndSet(null);
@@ -237,18 +222,20 @@ public class MailboxSPSC<T> extends SPSCQueue<T> implements PauseReason,
 		}
 		return msg;
 	}
-
+        /**
+	 * Attempt to put a message, and return true if successful. The thread is
+	 * not blocked, nor is the task paused under any circumstance.
+	 */
 	public boolean putnb(T msg) {
 		return put(msg, null);
 	}
 
 
 	public void addSpaceAvailableListener(EventSubscriber spcSub) {
-		srcs.set(spcSub);
+		srcs.set  (spcSub);
 	}
 
 	public void removeSpaceAvailableListener(EventSubscriber spcSub) {
-
 		srcs.compareAndSet(spcSub, null);
 	}
 
@@ -257,10 +244,17 @@ public class MailboxSPSC<T> extends SPSCQueue<T> implements PauseReason,
 	}
 
 	public void removeMsgAvailableListener(EventSubscriber msgSub) {
-
 		sink.compareAndSet(msgSub, null);
-
 	}
+        private EventSubscriber getProducer() {
+            return srcs.getAndSet(null);
+        }
+        private boolean srcContains(Task t) {
+            return srcs.get()==t;
+        }
+        private long getSize() {
+            return tail.get()-head.get();
+        }
 
 
 	/**
@@ -299,57 +293,25 @@ public class MailboxSPSC<T> extends SPSCQueue<T> implements PauseReason,
 		return true;
 	}
 
-	public class BlockingSubscriber implements EventSubscriber {
-		public volatile boolean eventRcvd = false;
+        
+        
+        
+        
+        
+        
+        
+        
 
-		public void onEvent(EventPublisher ep, Event e) {
-			synchronized (MailboxSPSC.this) {
-				eventRcvd = true;
-				MailboxSPSC.this.notify();
-			}
-		}
 
-		public void blockingWait(final long timeoutMillis) {
-			long start = System.currentTimeMillis();
-			long remaining = timeoutMillis;
-			boolean infiniteWait = timeoutMillis == 0;
-			synchronized (MailboxSPSC.this) {
-				while (!eventRcvd && (infiniteWait || remaining > 0)) {
-					try {
-						MailboxSPSC.this.wait(infiniteWait ? 0 : remaining);
-					} catch (InterruptedException ie) {
-					}
-					long elapsed = System.currentTimeMillis() - start;
-					remaining -= elapsed;
-				}
-			}
-		}
-	}
 
-	/**
-	 * retrieve a message, blocking the thread indefinitely. Note, this is a
-	 * heavyweight block, unlike #get() that pauses the Fiber but doesn't block
-	 * the thread.
-	 * 
-	 * @throws InterruptedException
-	 */
 
-	/**
-	 * retrieve a msg, and block the Java thread for the time given.
-	 * 
-	 * @param millis
-	 *            . max wait time
-	 * @return null if timed out.
-	 * @throws InterruptedException
-	 */
 
-	public synchronized String toString() {
+        
+        
+        
+        public synchronized String toString() {
 		return "id:" + System.identityHashCode(this) + " " +
-		// DEBUG "nGet:" + nGet + " " +
-		// "nPut:" + nPut + " " +
-		// "numWastedPuts:" + nWastedPuts + " " +
-		// "nWastedGets:" + nWastedGets + " " +
-				"numMsgs:" + (tail.get() - head.get());
+				"numMsgs:" + getSize();
 	}
 
 	public void clear() {
@@ -363,46 +325,27 @@ public class MailboxSPSC<T> extends SPSCQueue<T> implements PauseReason,
 	public boolean isValid(Task t) {
 		if (t == sink.get()) {
 			return !hasMessage();
-		} else if (srcs.get() == t) {
+		} else if (srcContains(t)) {
 			return !hasSpace();
 		} else {
 			return false;
 		}
 	}
 
+	/**
+	 * Pausable fill Pause the caller until at least one message is available.
+	 *
+	 * @throws Pausable
+	 */
+	public void fill(T[] msg) throws Pausable {
+		Task t = Task.getCurrentTask();
+		boolean b = fill(t, msg);
+		while (!b) {
+			Task.pause(this);
+			removeMsgAvailableListener(t);
+			b = fill(t, msg);
+		}
+	}
+
 }
 
-class EmptySet_MsgAvListenerSpSc implements PauseReason, EventSubscriber {
-	final Task task;
-	final MailboxSPSC<?>[] mbxs;
-
-	EmptySet_MsgAvListenerSpSc(Task t, MailboxSPSC<?>[] mbs) {
-		task = t;
-		mbxs = mbs;
-	}
-
-	public boolean isValid(Task t) {
-		// The pauseReason is true (there is valid reason to continue
-		// pausing) if none of the mboxes have any elements
-		for (MailboxSPSC<?> mb : mbxs) {
-			if (mb.hasMessage())
-				return false;
-		}
-		return true;
-	}
-
-	public void onEvent(EventPublisher ep, Event e) {
-		for (MailboxSPSC<?> m : mbxs) {
-			if (m != ep) {
-				((MailboxSPSC<?>) ep).removeMsgAvailableListener(this);
-			}
-		}
-		task.resume();
-	}
-
-	public void cancel() {
-		for (MailboxSPSC<?> mb : mbxs) {
-			mb.removeMsgAvailableListener(this);
-		}
-	}
-}
