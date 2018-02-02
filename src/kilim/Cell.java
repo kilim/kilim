@@ -74,13 +74,13 @@ public class Cell<T> implements PauseReason, EventPublisher {
      * SpaceAvailable event when there's space.
      * @return buffered message if there's one, or null
      */
-    public boolean put(T amsg, EventSubscriber eo) {
+    public boolean put(T msg, EventSubscriber eo) {
         boolean ret = true; // assume we'll be able to enqueue
         EventSubscriber subscriber;
-        if (amsg == null)
+        if (msg == null)
             throw new NullPointerException("Null message supplied to put");
 
-        if (message.compareAndSet(null, amsg)) {
+        if (message.compareAndSet(null, msg)) {
             subscriber = sink.get();
             // sink.set(null);
         } else {
@@ -204,14 +204,12 @@ public class Cell<T> implements PauseReason, EventPublisher {
 
     public class BlockingSubscriber implements EventSubscriber {
         public volatile boolean eventRcvd = false;
-
         public void onEvent(EventPublisher ep, Event e) {
             synchronized (Cell.this) {
                 eventRcvd = true;
                 Cell.this.notify();
             }
         }
-
         public void blockingWait(final long timeoutMillis) {
             long start = System.currentTimeMillis();
             long remaining = timeoutMillis;

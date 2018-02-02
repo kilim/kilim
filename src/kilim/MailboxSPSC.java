@@ -242,151 +242,6 @@ public class MailboxSPSC<T> extends SPSCQueue<T> implements PauseReason,
 		return put(msg, null);
 	}
 
-	/**
-	 * Block caller until at least one message is available.
-	 * 
-	 * @throws Pausable
-	 */
-	// Not tested
-	// public void untilHasMessage() throws Pausable {
-	// while (hasMessage(Task.getCurrentTask()) == false) {
-	// Task.pause(this);
-	// }
-	// }
-	//
-	// /**
-	// * Block caller until <code>num</code> messages are available.
-	// *
-	// * @param num
-	// * @throws Pausable
-	// */
-	// public void untilHasMessages(int num) throws Pausable {
-	// while (hasMessages(num, Task.getCurrentTask()) == false) {
-	// Task.pause(this);
-	// }
-	// }
-
-	/**
-	 * Block caller (with timeout) until a message is available.
-	 * 
-	 * @return non-null message.
-	 * @throws Pausable
-	 */
-	// public boolean untilHasMessage(long timeoutMillis) throws Pausable {
-	// final Task t = Task.getCurrentTask();
-	// boolean has_msg = hasMessage(t);
-	// long end = System.currentTimeMillis() + timeoutMillis;
-	// while (has_msg == false) {
-	// TimerTask tt = new TimerTask() {
-	// public void run() {
-	// MailboxSPSC.this.removeMsgAvailableListener(t);
-	// t.onEvent(MailboxSPSC.this, timedOut);
-	// }
-	// };
-	// Task.timer.schedule(tt, timeoutMillis);
-	// Task.pause(this);
-	// tt.cancel();
-	// has_msg = hasMessage(t);
-	// timeoutMillis = end - System.currentTimeMillis();
-	// if (timeoutMillis <= 0) {
-	// removeMsgAvailableListener(t);
-	// break;
-	// }
-	// }
-	// return has_msg;
-	// }
-
-	/**
-	 * Block caller (with timeout) until <code>num</code> messages are
-	 * available.
-	 * 
-	 * @param num
-	 * @param timeoutMillis
-	 * @return Message or <code>null</code> on timeout
-	 * @throws Pausable
-	 */
-	// public boolean untilHasMessages(int num, long timeoutMillis)
-	// throws Pausable {
-	// final Task t = Task.getCurrentTask();
-	// final long end = System.currentTimeMillis() + timeoutMillis;
-	//
-	// boolean has_msg = hasMessages(num, t);
-	// while (has_msg == false) {
-	// TimerTask tt = new TimerTask() {
-	// public void run() {
-	// MailboxSPSC.this.removeMsgAvailableListener(t);
-	// t.onEvent(MailboxSPSC.this, timedOut);
-	// }
-	// };
-	// Task.timer.schedule(tt, timeoutMillis);
-	// Task.pause(this);
-	// if (!tt.cancel()) {
-	// removeMsgAvailableListener(t);
-	// }
-	//
-	// has_msg = hasMessages(num, t);
-	// timeoutMillis = end - System.currentTimeMillis();
-	// if (!has_msg && timeoutMillis <= 0) {
-	// removeMsgAvailableListener(t);
-	// break;
-	// }
-	// }
-	// return has_msg;
-	// }
-
-	// public boolean hasMessage(Task eo) {
-	// boolean has_msg;
-	// synchronized (this) {
-	// int n = (int) (tail.get() - head.get());
-	// if (n > 0) {
-	// has_msg = true;
-	// } else {
-	// has_msg = false;
-	// addMsgAvailableListener(eo);
-	// }
-	// }
-	// return has_msg;
-	// }
-	//
-	// public boolean hasMessages(int num, Task eo) {
-	// boolean has_msg;
-	// synchronized (this) {
-	// int n = (int) (tail.get() - head.get());
-	// if (n >= num) {
-	// has_msg = true;
-	// } else {
-	// has_msg = false;
-	// addMsgAvailableListener(eo);
-	// }
-	// }
-	// return has_msg;
-	// }
-
-	/**
-	 * Takes an array of mailboxes and returns the index of the first mailbox
-	 * that has a message. It is possible that because of race conditions, an
-	 * earlier mailbox in the list may also have received a message.
-	 */
-	// TODO: need timeout variant
-	// public static int select(MailboxSPSC... mboxes) throws Pausable {
-	// while (true) {
-	// for (int i = 0; i < mboxes.length; i++) {
-	// if (mboxes[i].hasMessage()) {
-	// return i;
-	// }
-	// }
-	// Task t = Task.getCurrentTask();
-	// EmptySet_MsgAvListenerSpSc pauseReason = new EmptySet_MsgAvListenerSpSc(
-	// t, mboxes);
-	// for (int i = 0; i < mboxes.length; i++) {
-	// mboxes[i].addMsgAvailableListener(pauseReason);
-	// }
-	// Task.pause(pauseReason);
-	// for (int i = 0; i < mboxes.length; i++) {
-	// mboxes[i].removeMsgAvailableListener(pauseReason);
-	// }
-	// }
-	// }
 
 	public void addSpaceAvailableListener(EventSubscriber spcSub) {
 		srcs.set(spcSub);
@@ -398,12 +253,6 @@ public class MailboxSPSC<T> extends SPSCQueue<T> implements PauseReason,
 	}
 
 	public void addMsgAvailableListener(EventSubscriber msgSub) {
-		// EventSubscriber sink1 = sink.get();
-		// if (sink1 != null && sink1 != msgSub) {
-		// throw new AssertionError(
-		// "Error: A mailbox can not be shared by two consumers.  New = "
-		// + msgSub + ", Old = " + sink1);
-		// }
 		sink.set(msgSub);
 	}
 
@@ -413,10 +262,6 @@ public class MailboxSPSC<T> extends SPSCQueue<T> implements PauseReason,
 
 	}
 
-	/**
-	 * Attempt to put a message, and return true if successful. The thread is
-	 * not blocked, nor is the task paused under any circumstance.
-	 */
 
 	/**
 	 * put a non-null message in the mailbox, and pause the calling task until
