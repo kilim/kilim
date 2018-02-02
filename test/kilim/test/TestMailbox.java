@@ -72,6 +72,27 @@ public class TestMailbox extends TestCase {
             assertTrue(m.num == i);
         }
     }
+    
+    public void testPutb() {
+        int block = 100, timeout = 10, delay = 50;
+        int num = 100;
+        Mailbox<Integer> mb = new Mailbox(1,1), result = new Mailbox();
+        Task task = new Task() {
+            public void execute() throws Pausable,Exception {
+                Integer [] vals = new Integer[num];
+                Task.sleep(delay);
+                for (int ii = 0; ii < num; ii++)
+                    vals[ii] = mb.get(timeout);
+                for (int ii = 0; ii < num; ii++)
+                    result.put(vals[ii],timeout);
+            }
+        }.start();
+        int secret = 791;
+        for (int ii = 0; ii < num; ii++)
+            mb.putb(secret+ii,block);
+        for (int ii = 0; ii < num; ii++)
+            assertTrue(result.getb(block) == secret+ii);
+    }
 
     public void testSimpleTask_Pausing() {
 
