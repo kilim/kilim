@@ -451,16 +451,15 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
         final Task t = Task.getCurrentTask();
         long begin = System.currentTimeMillis();
         long time = timeoutMillis;
-        while (!put(msg, t)) {
-        	t.timer_new.setTimer(time);
+        while (!put(msg,t)) {
+            t.timer_new.setTimer(time);
             t.scheduler.scheduleTimer(t.timer_new);
             Task.pause(this);
             t.timer_new.cancel();
             removeSpaceAvailableListener(t);
-            time = timeoutMillis - (System.currentTimeMillis() - begin);
-            if (time <= 0) {
+            time = timeoutMillis-(System.currentTimeMillis()-begin);
+            if (time<=0)
                 return false;
-            }
         }
         return true;
     }
@@ -471,41 +470,52 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
 
     public class BlockingSubscriber implements EventSubscriber {
         public volatile boolean eventRcvd = false;
+        private long current = -1;
+        private long tom;
+        private long start = 0;
+
+        public BlockingSubscriber(long tom) {
+            this.tom = tom;
+            if (tom > 0)
+                start = current = System.currentTimeMillis();
+        }
+        
         public void onEvent(EventPublisher ep, Event e) {
             synchronized (Mailbox.this) {
                 eventRcvd = true;
                 Mailbox.this.notify();
             }
         }
-        public void blockingWait(final long timeoutMillis) {
-            long start = System.currentTimeMillis();
-            long remaining = timeoutMillis;
-            boolean infiniteWait = timeoutMillis == 0;
+        /** wait for either a timeout or event, returning true if the timeout occurred */        
+        public boolean blockingWait() {
+            long fin = start + tom;
             synchronized (Mailbox.this) {
-                while (!eventRcvd && (infiniteWait || remaining > 0)) {
+                while (!eventRcvd && current < fin) {
                     try {
-                        Mailbox.this.wait(infiniteWait? 0 : remaining);
-                    } catch (InterruptedException ie) {}
-                    long elapsed = System.currentTimeMillis() - start;
-                    remaining -= elapsed;
+                        Mailbox.this.wait(tom==0 ? 0 : fin-current);
+                    }
+                    catch (InterruptedException ie) {}
+                    if (tom > 0)
+                        current = System.currentTimeMillis();
                 }
+                if (!eventRcvd)
+                    removeSpaceAvailableListener(this);
             }
+            return current < fin;
         }
     }
     
     
     /**
-     * put a non-null message in the mailbox, and block the calling thread  for timeoutMillis
-     * if the mailbox is full. 
+     * put a non-null message in the mailbox, and block the calling thread for timeoutMillis
+     * if the mailbox is full
+     * @return true if the message was successfully put in the mailbox
      */
-    public void putb(T msg, final long timeoutMillis) {
-        BlockingSubscriber evs = new BlockingSubscriber();
-        if (!put(msg, evs)) {
-            evs.blockingWait(timeoutMillis);
-        }
-        if (!evs.eventRcvd) {
-            removeSpaceAvailableListener(evs);
-        }
+    public boolean putb(T msg,long timeoutMillis) {
+        BlockingSubscriber evs = new BlockingSubscriber(timeoutMillis);
+        boolean success;
+        while (!(success = put(msg, evs)) && evs.blockingWait()) {}
+        return success;
     }
 
     public synchronized int size() {
@@ -537,19 +547,9 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
      * @return null if timed out.
      */
     public T getb(final long timeoutMillis) {
-        BlockingSubscriber evs = new BlockingSubscriber();
+        BlockingSubscriber evs = new BlockingSubscriber(timeoutMillis);
         T msg;
-        
-        if ((msg = get(evs)) == null) {
-            evs.blockingWait(timeoutMillis);
-            if (evs.eventRcvd) {
-                msg = get(null); // non-blocking get.
-                assert msg  != null: "Received event, but message is null";
-            } 
-        }
-        if (msg == null) {
-            removeMsgAvailableListener(evs);
-        }
+        while ((msg = get(evs))==null && evs.blockingWait()) {}
         return msg;
     }
 
