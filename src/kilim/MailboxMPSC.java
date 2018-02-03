@@ -24,8 +24,11 @@ import kilim.concurrent.VolatileReferenceCell;
  * the form of putb(), putnb
  */
 
-public class MailboxMPSC<T> extends MPSCQueue<T> implements PauseReason, EventPublisher {
+public class MailboxMPSC<T> implements PauseReason, EventPublisher {
 	// TODO. Give mbox a config name and id and make monitorable
+
+        MPSCQueue<T> msgs;
+    
 	VolatileReferenceCell<EventSubscriber> sink = new VolatileReferenceCell<EventSubscriber>
             ();
 	Queue
@@ -55,7 +58,7 @@ public class MailboxMPSC<T> extends MPSCQueue<T> implements PauseReason, EventPu
 
 	@SuppressWarnings("unchecked")
 	public MailboxMPSC(int initialSize) {
-		super(initialSize);
+		msgs = new MPSCQueue(initialSize);
 	}
 
 	/**
@@ -68,7 +71,7 @@ public class MailboxMPSC<T> extends MPSCQueue<T> implements PauseReason, EventPu
 	 */
 	public T get(EventSubscriber eo) {
 		EventSubscriber producer = null;
-		T e = poll();
+		T e = msgs.poll();
 		if (e == null) {
 			if (eo != null) {
 				addMsgAvailableListener(eo);
@@ -87,7 +90,7 @@ public class MailboxMPSC<T> extends MPSCQueue<T> implements PauseReason, EventPu
 			throw new NullPointerException("Null is not a valid element");
 		}
 		EventSubscriber subscriber;
-		boolean b = offer(msg);
+		boolean b = msgs.offer(msg);
 		if (!b) {
 			if (eo != null) {
 				addSpaceAvailableListener(eo);
@@ -173,13 +176,13 @@ public class MailboxMPSC<T> extends MPSCQueue<T> implements PauseReason, EventPu
 		sink.set(null);
 	}
         private EventSubscriber getProducer() {
-            return srcs.size()==0 ? null : srcs.poll();
+            return srcs.poll();
         }
         private boolean srcContains(Task t) {
             return srcs.contains(t);
         }
         private long getSize() {
-            return size();
+            return msgs.size();
         }
 
 
@@ -220,14 +223,11 @@ public class MailboxMPSC<T> extends MPSCQueue<T> implements PauseReason, EventPu
 	}
 
 
-	public boolean hasMessage() {
-		return (peek() != null);
-	}
 
-	public boolean hasSpace() {
-		return hasSpace();
-	}
 
+        
+        
+        
 
 
         
@@ -248,9 +248,9 @@ public class MailboxMPSC<T> extends MPSCQueue<T> implements PauseReason, EventPu
         // Implementation of PauseReason
 	public boolean isValid(Task t) {
 		if (t == sink.get()) {
-			return !hasMessage();
+			return msgs.isEmpty();
 		} else if (srcContains(t)) {
-			return !hasSpace();
+			return !msgs.hasSpace();
 		} else {
 			return false;
 		}
