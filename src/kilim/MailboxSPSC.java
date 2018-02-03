@@ -9,6 +9,7 @@ package kilim;
 import kilim.concurrent.SPSCQueue;
 import kilim.concurrent.VolatileReferenceCell;
 
+
 /**
  * This is a typed buffer that supports single producers and a single consumer.
  * It is the basic construct used for tasks to interact and synchronize with
@@ -21,10 +22,12 @@ import kilim.concurrent.VolatileReferenceCell;
  * the form of putb(), putnb
  */
 
-public class MailboxSPSC<T> extends SPSCQueue<T> implements PauseReason,
+public class MailboxSPSC<T> implements PauseReason,
 		EventPublisher {
 	// TODO. Give mbox a config name and id and make monitorable
 
+        SPSCQueue<T> msgs;
+    
 	final
         VolatileReferenceCell<EventSubscriber> sink = new VolatileReferenceCell<EventSubscriber>
             (null);
@@ -55,7 +58,7 @@ public class MailboxSPSC<T> extends SPSCQueue<T> implements PauseReason,
 
 	@SuppressWarnings("unchecked")
 	public MailboxSPSC(int initialSize) {
-		super(initialSize);
+                msgs = new SPSCQueue(initialSize);
 	}
 
 	/**
@@ -68,17 +71,14 @@ public class MailboxSPSC<T> extends SPSCQueue<T> implements PauseReason,
 	 *         false
 	 */
 	public boolean fill(EventSubscriber eo, T[] msg) {
-		boolean b = fillnb(msg);
+		boolean b = msgs.fillnb(msg);
 		if (!b) {
 			addMsgAvailableListener(eo);
 			return false;
 		}
-		EventSubscriber producer = null;
-		producer = srcs.getAndSet(null);
-		if (producer != null) {
+		EventSubscriber producer = srcs.getAndSet(null);
+		if (producer != null)
 			producer.onEvent(this, spaceAvailble);
-		}
-
 		return true;
 	}
 	/**
@@ -86,50 +86,7 @@ public class MailboxSPSC<T> extends SPSCQueue<T> implements PauseReason,
 	 * task until all the messages put in the mailbox
 	 */
 	public void put(T[] buf) throws Pausable {
-		long currentTail = tail.get();
-		int n = buf.length;
-		for (int i = 0; i < n; i++) {
-			if (buf[i] == null) {
-				throw new NullPointerException("Null is not a valid element");
-			}
-		}
-		int count = 0;
-		Task t = Task.getCurrentTask();
-		boolean available = false;
-		EventSubscriber subscriber;
-		int m = buffer.length;
-		while (n != count) {
-			long wrapPoint = currentTail - m;
-			while (headCache.value <= wrapPoint) {
-				headCache.value = head.get();
-				if (headCache.value <= wrapPoint) {
-					if (available) {
-						// we have put atleast one new message so we should wake
-						// up if someone is waiting for message
-						tail.lazySet(currentTail);
-						subscriber = sink.getAndSet(null);
-						if (subscriber != null) {
-							removeMsgAvailableListener(subscriber);
-							subscriber.onEvent(this, messageAvailable);
-						}
-					}
-					srcs.set(t);
-					Task.pause(this);
-					removeSpaceAvailableListener(t);
-					available = false;
-				}
-			}
-			buffer[(int) (currentTail++) & mask] = buf[count++];
-			available = true;
-
-		}
-		tail.lazySet(currentTail);
-		// wake up if anybody is waiting for message
-		subscriber = sink.getAndSet(null);
-		if (subscriber != null) {
-			// sink.value = null;
-			subscriber.onEvent(this, messageAvailable);
-		}
+            msgs.putMailbox(buf,this);
 	}
 
 	/**
@@ -142,7 +99,7 @@ public class MailboxSPSC<T> extends SPSCQueue<T> implements PauseReason,
 	 */
 	public T get(EventSubscriber eo) {
 		EventSubscriber producer = null;
-		T e = poll();
+		T e = msgs.poll();
 		if (e == null) {
 			if (eo != null) {
 				addMsgAvailableListener(eo);
@@ -161,7 +118,7 @@ public class MailboxSPSC<T> extends SPSCQueue<T> implements PauseReason,
 			throw new NullPointerException("Null is not a valid element");
 		}
 		EventSubscriber subscriber;
-		boolean b = offer(msg);
+		boolean b = msgs.offer(msg);
 		if (!b) {
 			if (eo != null) {
 				addSpaceAvailableListener(eo);
@@ -253,7 +210,7 @@ public class MailboxSPSC<T> extends SPSCQueue<T> implements PauseReason,
             return srcs.get()==t;
         }
         private long getSize() {
-            return tail.get()-head.get();
+            return msgs.size();
         }
 
 
@@ -324,9 +281,9 @@ public class MailboxSPSC<T> extends SPSCQueue<T> implements PauseReason,
 	// Implementation of PauseReason
 	public boolean isValid(Task t) {
 		if (t == sink.get()) {
-			return !hasMessage();
+			return msgs.isEmpty();
 		} else if (srcContains(t)) {
-			return !hasSpace();
+			return !msgs.hasSpace();
 		} else {
 			return false;
 		}
@@ -347,5 +304,16 @@ public class MailboxSPSC<T> extends SPSCQueue<T> implements PauseReason,
 		}
 	}
 
+        public void subscribe(boolean avail,Task t,boolean set) throws Pausable {
+            EventSubscriber subscriber = avail ? sink.getAndSet(null) : null;
+            if (subscriber != null)
+                subscriber.onEvent(this,messageAvailable);
+            if (set) {
+                srcs.set(t);
+                Task.pause(this);
+                removeSpaceAvailableListener(t);
+            }
+        }
+        
 }
 

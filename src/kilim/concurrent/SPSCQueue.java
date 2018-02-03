@@ -3,6 +3,11 @@
 package kilim.concurrent;
 
 //"Inspired directly by Martin's work --> https://github.com/mjpt777/examples"
+
+import kilim.MailboxSPSC;
+import kilim.Pausable;
+import kilim.Task;
+
 public class SPSCQueue<T> {
 	protected T[] buffer;
 	public final VolatileLongCell tail = new VolatileLongCell(0L);
@@ -71,6 +76,39 @@ public class SPSCQueue<T> {
 		tail.lazySet(currentTail + 1);
 		return true;
 	}
+	public void putMailbox(T[] buf,MailboxSPSC mb) throws Pausable {
+		long currentTail = tail.get();
+		int n = buf.length;
+		for (int i = 0; i < n; i++) {
+			if (buf[i] == null) {
+				throw new NullPointerException("Null is not a valid element");
+			}
+		}
+		int count = 0;
+		Task t = Task.getCurrentTask();
+		boolean available = false;
+		int m = buffer.length;
+		while (n != count) {
+			long wrapPoint = currentTail - m;
+			while (headCache.value <= wrapPoint) {
+				headCache.value = head.get();
+				if (headCache.value <= wrapPoint) {
+					if (available) {
+						// we have put atleast one new message so we should wake
+						// up if someone is waiting for message
+						tail.lazySet(currentTail);
+					}
+                                        mb.subscribe(available,t,true);
+					available = false;
+				}
+			}
+			buffer[(int) (currentTail++) & mask] = buf[count++];
+			available = true;
+
+		}
+		tail.lazySet(currentTail);
+                mb.subscribe(true,t,false);
+	}
 
 	public boolean fillnb(T[] msg) {
 		int n = msg.length;
@@ -95,9 +133,9 @@ public class SPSCQueue<T> {
 		return true;
 	}
 
-	public boolean hasMessage() {
+	public boolean isEmpty() {
 		headCache.value = head.get();
-		return (buffer[(int) headCache.value & mask] != null);
+		return (buffer[(int) headCache.value & mask]==null);
 	}
 
 	public boolean hasSpace() {
