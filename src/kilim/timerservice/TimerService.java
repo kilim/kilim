@@ -132,7 +132,7 @@ public class TimerService {
                 if (executionTime<0)
                     t = null;
                 else if (executionTime > 0 && executionTime<=currentTime)
-                    t.es.onEvent(null,Cell.timedOut);
+                    t.es.onEvent(null,Timer.timedOut);
                 else if (!t.onHeap) {
                     timerHeap.add(t);
                     t.onHeap = true;
@@ -150,7 +150,7 @@ public class TimerService {
             t.onHeap = false;
             timerHeap.poll();
             if (executionTime >= 0)
-                t.es.onEvent(null,Cell.timedOut);
+                t.es.onEvent(null,Timer.timedOut);
         }
         return 0L;
     }

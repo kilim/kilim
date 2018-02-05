@@ -202,7 +202,7 @@ public abstract class Task<TT> implements Runnable, EventSubscriber, Fiber.Worke
         return timer_new.getExecutionTime()==-2;
     }
     public void onEvent(EventPublisher ep, Event e) {
-        if (e==Cell.timedOut)
+        if (e==kilim.timerservice.Timer.timedOut)
             timer_new.setLiteral(-2);
         boolean sched = resume();
     }

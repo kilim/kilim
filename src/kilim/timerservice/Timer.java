@@ -3,6 +3,7 @@
 package kilim.timerservice;
 
 
+import kilim.Event;
 import kilim.EventSubscriber;
 import kilim.concurrent.VolatileBoolean;
 
@@ -11,6 +12,10 @@ public class Timer implements Comparable<Timer> {
     public VolatileBoolean onQueue = new VolatileBoolean(false);  //true if timer is already on timerqueue
     public volatile boolean onHeap = false; //true if timer is already on timerHeap
 
+    public static final int                TIMED_OUT        = 3;
+    public static final Event              timedOut         = new Event(TIMED_OUT);
+    
+    
 	public int index;
 
 	public EventSubscriber es;
