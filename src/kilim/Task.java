@@ -79,7 +79,7 @@ public abstract class Task<TT> implements Runnable, EventSubscriber, Fiber.Worke
 
 
     // new timer service
-    public kilim.timerservice.Timer       timer_new;
+    public kilim.timerservice.Timer       timer;
     
     // for debugging Task.resume race conditions
     private static boolean debugRunning = false;
@@ -87,7 +87,7 @@ public abstract class Task<TT> implements Runnable, EventSubscriber, Fiber.Worke
     public Task() {
         id = idSource.incrementAndGet();
         fiber = new Fiber(this);
-        timer_new = new kilim.timerservice.Timer(this);
+        timer = new kilim.timerservice.Timer(this);
     }
     Task(boolean dummy) { id = idSource.incrementAndGet(); }
 
@@ -199,11 +199,11 @@ public abstract class Task<TT> implements Runnable, EventSubscriber, Fiber.Worke
     }
 
     boolean checkTimeout() {
-        return timer_new.getExecutionTime()==-2;
+        return timer.getExecutionTime()==-2;
     }
     public void onEvent(EventPublisher ep, Event e) {
         if (e==kilim.timerservice.Timer.timedOut)
-            timer_new.setLiteral(-2);
+            timer.setLiteral(-2);
         boolean sched = resume();
     }
 
