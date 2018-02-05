@@ -77,7 +77,7 @@
   </target>
   
 
-  <target name="weave" depends="testcompile">
+  <target name="weave" depends="compile">
     <java classname="kilim.tools.Weaver" fork ="yes">
       <classpath refid="kilim.classpath"/>
       <assertions>
@@ -91,6 +91,8 @@
       <arg value="./target/classes" />
       <arg line="./target/classes" />
     </java>
+  </target>
+  <target name="testweave" depends="testcompile">
     <java classname="kilim.tools.Weaver" fork ="yes">
       <classpath refid="kilim.classpath"/>
       <assertions>
@@ -117,7 +119,7 @@
   
   <!-- This runs those tests that do not depend on generated classes
        present in testclasses. For those, see "testwoven"  -->
-  <target name="testnotwoven" depends="weave">
+  <target name="testnotwoven" depends="weave,testweave">
     <java classname="junit.textui.TestRunner" fork="yes">
       <classpath refid="kilim.classpath"/>
       <assertions>
@@ -128,7 +130,7 @@
   </target>
   
   <!-- This runs those tests depend on generated classes in testclasses-->
-  <target name="testwoven" depends="weave">
+  <target name="testwoven" depends="weave,testweave">
     <java classname="junit.textui.TestRunner" fork="yes">
       <classpath refid="kilim.testwovenclasspath"/>
       <assertions>
