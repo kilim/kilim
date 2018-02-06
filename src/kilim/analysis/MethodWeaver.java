@@ -32,6 +32,7 @@ import org.objectweb.asm.Attribute;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.AnnotationNode;
@@ -94,14 +95,16 @@ public class MethodWeaver {
         String[] exceptions = ClassWeaver.toStringArray(mf.exceptions);
         String desc = mf.desc;
         String sig = mf.signature;
+        int access = mf.access;
         if (mf.isPausable()) {
+            access &= ~Opcodes.ACC_VARARGS;
             if (!isSAM) {
                 desc = desc.replace(")", D_FIBER_LAST_ARG);
                 if (sig != null)
                     sig = sig.replace(")", D_FIBER_LAST_ARG);
             }
         }
-        MethodVisitor mv = cv.visitMethod(mf.access, mf.name, desc, sig, exceptions);
+        MethodVisitor mv = cv.visitMethod(access, mf.name, desc, sig, exceptions);
 
         if (!mf.isAbstract()) {
             if (mf.needsWeaving()) {
