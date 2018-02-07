@@ -160,6 +160,7 @@ public abstract class Task<TT> implements Runnable, EventSubscriber, Fiber.Worke
      */
     private static boolean skipInvoke(String klass,String name) {
         return klass.startsWith("sun.reflect.")
+                | klass.startsWith("jdk.internal.reflect.")
                 | ("java.lang.reflect.Method".equals(klass) & "invoke".equals(name));
     }
     
