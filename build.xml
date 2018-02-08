@@ -40,9 +40,10 @@
   </target>
   
   <condition property="exclude8" value="kilim/examples/Userdata.java,kilim/examples/Spawn.java,kilim/test/TestLambda.java" else="">
-    <not>
-      <equals arg1="${ant.java.version}" arg2="1.8"/>
-    </not>
+    <or>
+      <equals arg1="${ant.java.version}" arg2="1.6"/>
+      <equals arg1="${ant.java.version}" arg2="1.7"/>
+    </or>
   </condition>
 
 

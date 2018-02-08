@@ -28,5 +28,8 @@ unlikely that this limitation will be relaxed
 
 
 
+### java 9 modules
 
+not currently supported but if you file an issue with a simple example that requires them
+the team is likely to add them
 

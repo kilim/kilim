@@ -157,15 +157,15 @@ details:
 * test runs the tests using the compile-time weaver, as well as some tests that don't require weaving
 * doc generates sources.jar and javadoc.jar
 * `mvn install:install-file -DpomFile=pom.xml -Dfile=target/kilim.jar -Dsources=target/sources.jar -Djavadoc=target/javadoc.jar`
-* java 8 is the recommended platform, but should build (with ant), run and test under both 6 and 7
+* java 8 is the recommended platform, but should build (with ant), run and test under 6, 7 and 9
 
 
 
-## java 7
+## java 7 or 9
   * `JAVA_HOME=path/to/java7 ant clean weave jar`
   * `mvn install:install-file -DpomFile=pom.xml -Dfile=target/kilim.jar -Dclassifier=jdk7`
   * in pom.xml use: `<classifier>jdk7</classifier>`
-  * see demos/java7 for an example java 7 project
+  * see demos/java7 and demos/battle/pom9.xml for usage examples
   * some versions may be in maven central with a jdk7 classifier, eg 2.0.0-15:jdk7
 
 

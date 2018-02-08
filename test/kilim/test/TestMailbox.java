@@ -74,9 +74,9 @@ public class TestMailbox extends TestCase {
     }
     
     public void testPutb() {
-        int block = 100, timeout = 10, delay = 50;
-        int num = 100;
-        Mailbox<Integer> mb = new Mailbox(1,1), result = new Mailbox();
+        final int block = 100, timeout = 10, delay = 50;
+        final int num = 100;
+        final Mailbox<Integer> mb = new Mailbox(1,1), result = new Mailbox();
         Task task = new Task() {
             public void execute() throws Pausable,Exception {
                 Integer [] vals = new Integer[num];
