@@ -92,6 +92,8 @@ public class HttpResponse extends HttpMsg {
                                                                                              .getBytes();
     public static final byte[]                      ST_EXPECTATION_FAILED            = "417 Expectation Failed\r\n"
                                                                                              .getBytes();
+    public static final byte[]                      ST_TEAPOT                        = "418 I'm a Teapot\r\n"
+                                                                                             .getBytes();
 
     // Server error codes
 
