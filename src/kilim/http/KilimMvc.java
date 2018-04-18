@@ -232,6 +232,8 @@ public class KilimMvc {
                 mk.accept(rr);
         }
 
+        public static Route mapping(String method,String uri) { return new Route(method,uri); }
+        
         public void add(String uri,Routeable0 rr) { add(new Route(uri,rr)); }
         public void add(String uri,Routeable1 rr) { add(new Route(uri,rr)); }
         public void add(String uri,Routeable2 rr) { add(new Route(uri,rr)); }
