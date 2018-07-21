@@ -162,12 +162,21 @@ details:
 
 
 ## java 7 or 9
+to use with java 7 need to compile with java 7:
   * `JAVA_HOME=path/to/java7 ant clean weave jar`
   * `mvn install:install-file -DpomFile=pom.xml -Dfile=target/kilim.jar -Dclassifier=jdk7`
   * in pom.xml use: `<classifier>jdk7</classifier>`
-  * see demos/java7 and demos/battle/pom9.xml for usage examples
+  * see demos/java7 for usage examples
   * some versions may be in maven central with a jdk7 classifier, eg 2.0.0-15:jdk7
 
+java 9 and java 10:
+  * the java 8 compiled version should work fine
+  * for an example with java 9 use `JAVA_HOME=path/to/java9 mvn package 
+  * see demos/battle/pom9.xml and demos/battle10/pom.xml for usage examples
+
+java 9 modules:
+  * currently, no `module-info.java` is provided, so use java 9's fallback support
+  * if you have a demo project that you can share that "depends" on modules, create an issue and it will be supported
 
 ## Running
 
