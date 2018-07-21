@@ -599,6 +599,8 @@ public abstract class Task<TT> implements Runnable, EventSubscriber, Fiber.Worke
         return mb.getb();
     }
 
+    // TODO: add documentation or support for the java futures api
+
     public ExitMsg<TT> join() throws Pausable {
         Mailbox<ExitMsg<TT>> mb = new Mailbox();
         informOnExit(mb);
