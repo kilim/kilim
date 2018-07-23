@@ -39,6 +39,20 @@ for an example of a project that uses kilim (with the trampoline for runtime wea
 [battle royale demo in this repository](https://github.com/nqzero/kilim/tree/master/demos/battle).
 clone this repository, and from that directory execute `mvn package exec:java -Dexec.mainClass=kilim.demo.Battle`
 
+#### Similarity to Java Futures
+
+[`java.util.concurrent.Future<V>` is an interface](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html) that can represents the result of an asynchronous computation.
+kilim pre-dates java futures, and uses a slightly different api, but kilim supports the same notion, ie to block until an async computation finishes:
+
+* `kilim.Task.joinb()` blocks until a `Task` completes
+* `kilim.Task.isDone()` returns true if this `Task` completed
+* cancellation isn't explicitly supported
+* `kilim.Mailbox.getb()` is also similar
+
+these methods allow synchronizing threads with async computations. however, the real power of kilim
+is in enabling communication between async computations. for this, use the `join()` and `get()` methods
+which are `Pausable`
+
 
 ## Maven
 
