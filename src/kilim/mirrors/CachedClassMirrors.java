@@ -173,7 +173,7 @@ public class CachedClassMirrors {
 
         public class Visitor extends ClassVisitor {
             Visitor() {
-                super(Opcodes.ASM5);
+                super(Opcodes.ASM6);
             }
 
             // ClassVisitor implementation
@@ -229,7 +229,7 @@ public class CachedClassMirrors {
     }
     static class DummyAnnotationVisitor extends AnnotationVisitor {
         public DummyAnnotationVisitor() {
-            super(Opcodes.ASM5);
+            super(Opcodes.ASM6);
         }
         static DummyAnnotationVisitor singleton = new DummyAnnotationVisitor();
         public void visit(String name, Object value) {}

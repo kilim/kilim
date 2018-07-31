@@ -245,7 +245,8 @@ public class MethodWeaver {
                 bsmArgs[1] = new Handle(lambdaBody.getTag(), 
                                         lambdaBody.getOwner(), 
                                         lambdaBody.getName(), 
-                                        desc.replace(")", D_FIBER_LAST_ARG));
+                                        desc.replace(")", D_FIBER_LAST_ARG),
+                                        lambdaBody.isInterface());
                 bsmArgs[2] = addFiberType((Type)bsmArgs[2]);
             }
         }
