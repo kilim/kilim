@@ -162,6 +162,8 @@ public class Weaver {
         try {
             cw = new ClassWeaver(context,is);
             cw.weave();
+            if (dbg)
+                writeClasses(cw);
         }
         catch (IOException ex) {}
         return cw;
