@@ -171,11 +171,11 @@ details:
 * test runs the tests using the compile-time weaver, as well as some tests that don't require weaving
 * doc generates sources.jar and javadoc.jar
 * `mvn install:install-file -DpomFile=pom.xml -Dfile=target/kilim.jar -Dsources=target/sources.jar -Djavadoc=target/javadoc.jar`
-* java 8 is the recommended platform, but should build (with ant), run and test under 6, 7 and 9
+* java 8 is the recommended platform, but should build (with ant), run and test under 6, 7, 8, 9 and 10
 
 
 
-## java 7 or 9
+## java 7, java 9 and java 10
 to use with java 7 need to compile with java 7:
   * `JAVA_HOME=path/to/java7 ant clean weave jar`
   * `mvn install:install-file -DpomFile=pom.xml -Dfile=target/kilim.jar -Dclassifier=jdk7`
@@ -183,14 +183,35 @@ to use with java 7 need to compile with java 7:
   * see demos/java7 for usage examples
   * some versions may be in maven central with a jdk7 classifier, eg 2.0.0-15:jdk7
 
-java 9 and java 10:
+java 9:
   * the java 8 compiled version should work fine
   * for an example with java 9 use `JAVA_HOME=path/to/java9 mvn package 
-  * see demos/battle/pom9.xml and demos/battle10/pom.xml for usage examples
-
-java 9 modules:
+  * see demos/battle/pom9.xml for usage examples
   * currently, no `module-info.java` is provided, so use java 9's fallback support
   * if you have a demo project that you can share that "depends" on modules, create an issue and it will be supported
+
+java 10:
+  * java 10 features stricter validation of lambdas
+  * throws `java.lang.NoClassDefFoundError` when attempting to load a woven fiber-less lambda
+  * instead use lambdas that take an explicit last parameter `Fiber dummy`
+      and a mating default method without that last parameter
+  * the `Fiber` argument should not be accessed in the lambda
+  * to call a `Pausable` lambda, call the default method
+
+```
+    interface Lambda {
+        void execute(Fiber fiber) throws Pausable, Exception;
+        default void execute() throws Pausable, Exception {}
+    }
+    static void dummy() throws Pausable, Exception {
+        Lambda lambda = dummy -> {
+            Task.sleep(1000);
+            System.out.println("hello world");
+        };
+        lambda.execute();
+    }
+```
+
 
 ## Running
 
