@@ -173,7 +173,7 @@ public class CachedClassMirrors {
 
         public class Visitor extends ClassVisitor {
             Visitor() {
-                super(Opcodes.ASM6);
+                super(Opcodes.ASM7_EXPERIMENTAL);
             }
 
             // ClassVisitor implementation
@@ -215,6 +215,10 @@ public class CachedClassMirrors {
             // Dummy methods
 
             public void visitSource(String source, String debug) {}
+
+            public void visitNestMemberExperimental(String nestMember) {}
+            public void visitNestHostExperimental(String nestHost) {}
+            
             public void visitOuterClass(String owner, String name, String desc) {}
             public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
                 return DummyAnnotationVisitor.singleton;
@@ -229,7 +233,7 @@ public class CachedClassMirrors {
     }
     static class DummyAnnotationVisitor extends AnnotationVisitor {
         public DummyAnnotationVisitor() {
-            super(Opcodes.ASM6);
+            super(Opcodes.ASM7_EXPERIMENTAL);
         }
         static DummyAnnotationVisitor singleton = new DummyAnnotationVisitor();
         public void visit(String name, Object value) {}

@@ -87,10 +87,15 @@ public class ClassWeaver {
         if (cf.sourceFile != null || cf.sourceDebug != null) {
             cv.visitSource(cf.sourceFile, cf.sourceDebug);
         }
+        if (cf.nestHostClassExperimental != null)
+            cv.visitNestHostExperimental(cf.nestHostClassExperimental);
         // visits outer class
         if (cf.outerClass != null) {
             cv.visitOuterClass(cf.outerClass, cf.outerMethod, cf.outerMethodDesc);
         }
+        if (cf.nestMembersExperimental != null)
+            for (String member : cf.nestMembersExperimental)
+                cv.visitNestMemberExperimental(member);
         // visits attributes and annotations
         int i, n;
         AnnotationNode an;

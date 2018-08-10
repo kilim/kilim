@@ -109,7 +109,7 @@ public class MethodFlow extends MethodNode {
             final String signature,
             final String[] exceptions,
             final Detector detector) {
-        super(Opcodes.ASM6, access, name, desc, signature, exceptions);
+        super(Opcodes.ASM7_EXPERIMENTAL, access, name, desc, signature, exceptions);
         this.classFlow = classFlow;
         this.detector = detector;
         posToLabelMap = new ArrayList<LabelNode>();

@@ -42,14 +42,14 @@ public class ClassFlow extends ClassNode {
     public byte [] code;
 
     public ClassFlow(KilimContext context,InputStream is) throws IOException {
-        super(Opcodes.ASM6);
+        super(Opcodes.ASM7_EXPERIMENTAL);
         this.context = context;
         cr = new ClassReader(is);
         code = cr.b;
     }
 
     public ClassFlow(KilimContext context,String aClassName) throws IOException {
-        super(Opcodes.ASM6);
+        super(Opcodes.ASM7_EXPERIMENTAL);
         this.context = context;
         cr = new ClassReader(aClassName);
         code = cr.b;
