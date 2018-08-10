@@ -175,7 +175,7 @@ details:
 
 
 
-## java 7, java 9 and java 10
+## Other Java versions
 to use with java 7 need to compile with java 7:
   * `JAVA_HOME=path/to/java7 ant clean weave jar`
   * `mvn install:install-file -DpomFile=pom.xml -Dfile=target/kilim.jar -Dclassifier=jdk7`
@@ -190,13 +190,19 @@ java 9:
   * currently, no `module-info.java` is provided, so use java 9's fallback support
   * if you have a demo project that you can share that "depends" on modules, create an issue and it will be supported
 
+
 java 10:
-  * java 10 features stricter validation of lambdas
+  * java 10 has a bug and refuses to load some valid lambdas
+  * https://bugs.java.com/bugdatabase/view_bug.do?bug_id=JDK-8209112
+  * this is already fixed in java 11 and expected to be fixed in the next java 10 update (oct 16, 2018)
   * throws `java.lang.NoClassDefFoundError` when attempting to load a woven fiber-less lambda
-  * instead use lambdas that take an explicit last parameter `Fiber dummy`
-      and a mating default method without that last parameter
+  * workaround: use lambdas that take an explicit last parameter `Fiber dummy`
+      and a corresponding default method without that last parameter
   * the `Fiber` argument should not be accessed in the lambda
   * to call a `Pausable` lambda, call the default method
+  * github tag: java10
+  * all lambdas that will be loaded need to be woven with this java10 "fiber-included" flavor of kilim
+  * this was briefly the primary artifact for kilim, ie `kilim:2.0.0-17` and `-18'
 
 ```
     interface Lambda {
@@ -211,6 +217,12 @@ java 10:
         lambda.execute();
     }
 ```
+
+java 11:
+  * AOT weaving works with the primary (jdk8) artifacts, runtime weaving requires a tweak
+  * ASM support for java 11 is not yet final and uses `Opcodes.ASM7_EXPERIMENTAL`
+  * there is a `java11` tag in github - cherry-pick this commit and install locally
+  * some versions may be in maven central with a jdk11 classifier, 2.0.0-19:jdk11
 
 
 ## Running
