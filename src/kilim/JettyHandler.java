@@ -34,5 +34,17 @@ public class JettyHandler extends AbstractHandler {
         String handle(String target,Request br,HttpServletRequest req,HttpServletResponse resp) throws Pausable, Exception;
     }
 
+    /**
+     * java 7 doesn't support default interface methods so we need a dummy impl of the woven handler
+     * this needs to be in a superclass, otherwise kilim will refuse to weave the real handle method
+     */
+    public static abstract class Java7Handler implements Iface {
+        public String handle(String arg0,
+                Request arg1,HttpServletRequest arg2,HttpServletResponse arg3,
+                Fiber arg4)
+                throws Pausable,Exception {
+            return null;
+        }
+    }
     
 }

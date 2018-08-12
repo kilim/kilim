@@ -9,6 +9,9 @@ import java.util.ArrayList;
 import java.util.function.Consumer;
 import kilim.Pausable;
 
+/**
+ * a minimal mvc framework for kilim, not available in java 7 or earlier
+ */
 public class KilimMvc {
     static String sep = "/";
     static String qsep = "\\?";
