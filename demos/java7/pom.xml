@@ -10,7 +10,7 @@
         <dependency>
             <groupId>org.db4j</groupId>
             <artifactId>kilim</artifactId>
-            <version>2.0.0-19-jdk7</version>
+            <version>2.0.0-20-jdk7</version>
         </dependency>
     </dependencies>
     

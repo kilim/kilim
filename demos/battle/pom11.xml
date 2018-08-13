@@ -9,8 +9,7 @@
         <dependency>
             <groupId>org.db4j</groupId>
             <artifactId>kilim</artifactId>
-            <version>2.0.0-19</version>
-	    <classifier>jdk11</classifier>
+            <version>2.0.0-20-jdk11</version>
         </dependency>
     </dependencies>
     
