@@ -8,7 +8,8 @@ import kilim.Task;
 public class HelloWorld {
 
     public static void main(String[] args) throws Exception {
-        if (kilim.tools.Kilim.trampoline(false,args)) return;
+	System.out.println("pre weave announcement (appears twice for runtime weaving)");
+        if (kilim.tools.Kilim.trampoline(true,args)) return;
         Mailbox<Integer> mb = new Mailbox(100,1000);
 
         int num = 100, delay = 1000, val = -1;

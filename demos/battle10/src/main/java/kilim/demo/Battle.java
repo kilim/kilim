@@ -54,9 +54,13 @@ public class Battle {
         try { Thread.sleep(100); }
         catch (InterruptedException ex) {}
     }
+
+    // force kilim to weave the class so we're able to detect runtime weaving
+    private void unused() throws Pausable {}
     
     public static void main(String [] args) {
-        if (kilim.tools.Kilim.trampoline(false,args)) return;
+	System.out.println("pre weave announcement (appears twice for runtime weaving)");
+        if (kilim.tools.Kilim.trampoline(true,args)) return;
         Battle battle = new Battle();
         battle.start();
         Task.idledown();
