@@ -176,23 +176,15 @@ details:
 
 
 ## Other Java versions
-naming conventions:
-  * the maven plugin won't work with a classifier, so either use the runtime weaver, package using java 8, 
-      or install locally (possibly with a jdk-specific version)
-  * to change the version string: `mvn versions:set -DnewVersion=2.0.0-19-custom`
-  * to install locally: `mvn install:install-file -DpomFile=pom.xml -Dfile=target/kilim.jar`
-  * some versions in maven central have a jdk-specific version suffix, eg `2.0.0-19-jdk7`
-  * if you don't care about AOT weaving with the maven plugin, you can use a classifier, eg: `-Dclassifier=jdk7`
 
 java 7:
   * `JAVA_HOME=path/to/java7 ant clean weave jar`
-  * see demos/java7 for usage examples
-  * the maven plugin appears to be broken for java 7
-  * maven central: `2.0.0-19-jdk7`
+  * see `demos/java7` for usage examples
+  * some features are not available, eg jetty integration and lambdas
+  * maven central: `2.0.0-20-jdk7`
 
 java 9:
   * the java 8 compiled version should work fine
-  * for an example with java 9 use `JAVA_HOME=path/to/java9 mvn package 
   * see demos/battle/pom9.xml for a usage example
   * currently, no `module-info.java` is provided, so use java 9's fallback support
   * if you have a demo project that you can share that "depends" on modules, create an issue and it will be supported
@@ -210,7 +202,7 @@ java 10:
   * all lambdas that will be loaded need to be woven with this java10 "fiber-included" flavor of kilim
   * this will work fine with java 8 or 9 as well, however it exposes the fiber to the user and
       makes it harder to detect unwoven Pausable methods, so it's use is discouraged unless you need to support java 10
-  * maven central: `2.0.0-19-jdk10`
+  * maven central: `2.0.0-20-jdk10`
 
 ```
     interface Lambda {
@@ -231,7 +223,7 @@ java 11:
   * there is a `java11` tag in github - cherry-pick this commit and install locally
   * this change should work fine for java 7, 8, 9 and 10 as well, but as the API is marked "experimental"
       so the change has not been merged into master (it will be when java 11 is released)
-  * maven central: `2.0.0-19-jdk11`
+  * maven central: `2.0.0-20-jdk11`
 
 
 ## Running
