@@ -103,79 +103,11 @@ weaving with the kilim plugin:
 * kilim.Fiber: the structure that stores the Continuation (and Task) state
 
 
-## Support
 
-public support:
-* [the mailing list](https://groups.google.com/forum/#!forum/kilimthreads)
-* [github issues](https://github.com/nqzero/kilim/issues)
+## Java Versions
 
+java 8 is the recommended platform, but 7, 8, 9 and 10 are regularly used and tested, and in theory java 6 should still work
 
-
-nqzero is currently the primary maintainer.
-he's primarily interested in making Kilim easy to use and reliable and is actively using Kilim
-
-Sriram is the original author (in 2006 !) and deserves a great deal of thanks for his excellent work.
-He continues to provide guidance on kilim and is especially interested in theory and performance,
-but is not actively using kilim today.
-He can be reached at kilim _at_ malhar.net
-
-
-## Users
-
-a number of companies (or their employees) appear to have been using Kilim recently and have contributed
-* [didichuxing.com](https://github.com/taowen/kilim)
-* [alipay](https://github.com/pfmiles/kilim-fiber)
-* [hedvig](https://github.com/kilim/kilim/commit/9b428b16489a87bc783f44052eebd0b45ed45a0d)
-
-
-## Copyright and License
-
-
-Kilim v2.0
-* Copyright (c) 2006, 2014 Sriram Srinivasan (kilim _at_ malhar.net)
-* Copyright (c) 2016 nqzero
-* Copyright (c) 2013 Nilang Shah
-* Copyright (c) 2013 Jason Pell
-* Copyright (c) 2013 Jestan Nirojan (maven plugin)
-
-This software is released under an MIT-style license (please see the
-License file). Unless otherwise noted, all files in this distribution are
-offered under these terms, and files that explicitly refer to the "MIT License"
-refer to this license
-
-
-## Building
-
-
-summary:
-
-* the primary build/test environment is ant
-* maven is used for downloading dependencies (or manually copy them to ./libs - see pom.xml)
-  * only needs to be done once
-  * `mvn initialize` (but any pom-based mvn command should work too)
-  * when upgrading versions, delete the old dependencies in `./libs`
-* maven can also be used for building, but tests are disabled
-* there's a kilim maven plugin, but it's not used here to avoid a circular dependency - the weaver is run directly instead (using ant)
-  * the plugin is only built during the maven build, but once built will be packaged by the ant build
-  * to include in an ant build, perform the build as normal, then run `mvn package`, and then rerun the
-ant packaging, typically `ant jar`
-
-simple:
-`mvn install`
-
-build with tests:
-`ant clean testjit test jar doc`
-
-details:
-* testjit runs the tests (after compiling) using the runtime weaver
-* test runs the tests using the compile-time weaver, as well as some tests that don't require weaving
-* doc generates sources.jar and javadoc.jar
-* `mvn install:install-file -DpomFile=pom.xml -Dfile=target/kilim.jar -Dsources=target/sources.jar -Djavadoc=target/javadoc.jar`
-* java 8 is the recommended platform, but should build (with ant), run and test under 6, 7, 8, 9 and 10
-
-
-
-## Other Java versions
 
 java 7:
   * `JAVA_HOME=path/to/java7 ant clean weave jar`
@@ -226,23 +158,71 @@ java 11:
   * maven central: `2.0.0-20-jdk11`
 
 
-## Running
+## Building
 
-with runtime weaver:
-```
-ant clean compile
 
-# using the runtime weaver
-java -cp "target/classes:libs/*" kilim.tools.Kilim kilim.examples.PerfTest
+summary:
 
-# Userdata calls the trampoline (implicitly triggers the runtime weaver)
-java -cp "target/classes:libs/*" kilim.examples.Userdata
+* maven and ant are used cooperatively
+* maven is used for downloading dependencies (or manually copy them to ./libs - see pom.xml)
+  * only needs to be done once (until dependencies change)
+  * `mvn initialize` (but any pom-based mvn command should work too)
+* maven can also be used for building, but tests are disabled
+* there's a kilim maven plugin, but it's not used here to avoid a circular dependency - the weaver is run directly instead (using ant)
+* the plugin is only built during the maven build, but once built will be packaged by ant as well, eg `mvn package && ant jar`
 
-# run the compile-time weaver
-ant weave
+simple:
+`mvn install`
 
-# run woven code
-java -cp "target/classes:libs/*" kilim.examples.PerfTest
-```
+build with tests:
+`ant clean testjit test jar doc`
+
+details:
+* testjit runs the tests (after compiling) using the runtime weaver
+* test runs the tests using the compile-time weaver, as well as some tests that don't require weaving
+* doc generates sources.jar and javadoc.jar
+* `mvn install:install-file -DpomFile=pom.xml -Dfile=target/kilim.jar -Dsources=target/sources.jar -Djavadoc=target/javadoc.jar`
+
+
+
+## Support
+
+public support:
+* [the mailing list](https://groups.google.com/forum/#!forum/kilimthreads)
+* [github issues](https://github.com/nqzero/kilim/issues)
+
+
+
+nqzero is currently the primary maintainer.
+he's focused on making Kilim easy to use and reliable and is actively using Kilim
+
+Sriram is the original author (in 2006 !) and deserves a great deal of thanks for his excellent work.
+He continues to provide guidance on kilim and is especially interested in theory and performance,
+but is not actively using kilim today.
+He can be reached at kilim _at_ malhar.net
+
+
+## Users
+
+a number of companies (or their employees) appear to have been using Kilim recently and have contributed
+* [didichuxing.com](https://github.com/taowen/kilim)
+* [alipay](https://github.com/pfmiles/kilim-fiber)
+* [hedvig](https://github.com/kilim/kilim/commit/9b428b16489a87bc783f44052eebd0b45ed45a0d)
+
+
+## Copyright and License
+
+
+Kilim v2.0
+* Copyright (c) 2006, 2014 Sriram Srinivasan (kilim _at_ malhar.net)
+* Copyright (c) 2016 nqzero
+* Copyright (c) 2013 Nilang Shah
+* Copyright (c) 2013 Jason Pell
+* Copyright (c) 2013 Jestan Nirojan (maven plugin)
+
+This software is released under an MIT-style license (please see the
+License file). Unless otherwise noted, all files in this distribution are
+offered under these terms, and files that explicitly refer to the "MIT License"
+refer to this license
 
 
