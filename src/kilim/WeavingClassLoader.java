@@ -115,6 +115,12 @@ public class WeavingClassLoader extends KilimClassLoader {
         return ret;
     }
 
+    public static InputStream getByteStream(ClassLoader cl,String cname) {
+        InputStream is = cl.getResourceAsStream( cname );
+        if (is==null) is = ClassLoader.getSystemResourceAsStream( cname );
+        return is;
+    }
+    
     /**
      * load the bytecode for a class of a given name from the classpath and weave it
      * @param name the fully qualified class name
@@ -122,17 +128,14 @@ public class WeavingClassLoader extends KilimClassLoader {
      */    
     public ClassWeaver weaveClass(String name) {
         String cname = makeResourceName(name);
-        
-        InputStream is = pcl.getResourceAsStream( cname );
-        if (is==null) is = ClassLoader.getSystemResourceAsStream( cname );
+        InputStream is = getByteStream(pcl,cname);
         ClassWeaver cw = weaver.weave(is);
         return cw;
     }
     protected Class<?> findClass(String name) throws ClassNotFoundException {
         String cname = makeResourceName(name);
         
-        InputStream is = pcl.getResourceAsStream( cname );
-        if (is==null) is = ClassLoader.getSystemResourceAsStream( cname );
+        InputStream is = getByteStream(pcl,cname);
         ClassWeaver cw;
         byte [] code;
 
@@ -189,8 +192,7 @@ public class WeavingClassLoader extends KilimClassLoader {
     public static byte [] findCode(ClassLoader loader,String name) {
         if (loader==null) loader = WeavingClassLoader.class.getClassLoader();
         String cname = makeResourceName(name);
-        InputStream is = loader.getResourceAsStream( cname );
-        if (is==null) is = ClassLoader.getSystemResourceAsStream( cname );
+        InputStream is = getByteStream(loader,cname);
         if (is != null)
             return readFully(is);
         return null;
