@@ -2,6 +2,7 @@
 
 package kilim;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.File;
@@ -21,6 +22,7 @@ import kilim.analysis.ClassWeaver;
 import kilim.analysis.FileLister;
 import kilim.analysis.KilimContext;
 import kilim.mirrors.CachedClassMirrors;
+import kilim.tools.Agent;
 import kilim.tools.Weaver;
 
 // TODO: this and related real-time-weaving classes could be moved to the analysis package
@@ -118,6 +120,10 @@ public class WeavingClassLoader extends KilimClassLoader {
     public static InputStream getByteStream(ClassLoader cl,String cname) {
         InputStream is = cl.getResourceAsStream( cname );
         if (is==null) is = ClassLoader.getSystemResourceAsStream( cname );
+        if (is==null & Agent.map != null) {
+            byte [] bytes = Agent.map.get(cname);
+            if (bytes != null) is = new ByteArrayInputStream(bytes);
+        }
         return is;
     }
     
