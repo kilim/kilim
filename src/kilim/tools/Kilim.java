@@ -53,9 +53,14 @@ public class Kilim {
         StackTraceElement ste = new Exception().getStackTrace()[1];
 
         try {
-            Class klass = cl.loadClass(ste.getClassName());
-            if (check && isWoven(klass))
-                return false;
+            if (check) {
+                try {
+                    Class klass = cl.loadClass(ste.getClassName());
+                    if (isWoven(klass))
+                        return false;
+                }
+                catch (ClassNotFoundException ex) {}
+            }
             kilim.tools.Kilim.run(ste.getClassName(), ste.getMethodName(), args);
         }
         catch (RuntimeException ex) { throw ex; }
