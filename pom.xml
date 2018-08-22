@@ -132,6 +132,7 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
+                            <Main-Class>kilim.tools.Kilim</Main-Class>
                             <Premain-Class>kilim.tools.Agent</Premain-Class>
                             <Built-By>db4j.org</Built-By>
                         </manifestEntries>

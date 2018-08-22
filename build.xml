@@ -189,7 +189,11 @@
       <fileset dir="target/classes">
 	<include name="kilim/examples/HttpFileServer.class" />
       </fileset>
-      <manifest><attribute name="Main-Class" value="kilim.tools.Kilim"/></manifest>	
+      <manifest>
+          <attribute name="Main-Class" value="kilim.tools.Kilim"/>
+          <attribute name="Premain-Class" value="kilim.tools.Agent"/>
+          <attribute name="Built-By" value="db4j.org"/>
+      </manifest>	
     </jar>
   </target>
 
