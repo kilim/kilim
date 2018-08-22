@@ -156,6 +156,12 @@ java 11:
   * this change should work fine for java 7, 8, 9 and 10 as well, but as the API is marked "experimental"
       so the change has not been merged into master (it will be when java 11 is released)
   * maven central: `2.0.0-20-jdk11`
+  * JEP 330 single-file source invocation works
+    * call `Kilim.trampoline` to enable weaving
+    * the JEP 330 class loader has some limitations which must be worked around
+    * use the kilim jar as a `-javaagent`
+    * all nested classes need to be accessed by the top-level class to force class loading before weaving
+    * see `demos/java11`
 
 
 ## Building

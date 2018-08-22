@@ -11,6 +11,7 @@ import kilim.Fiber;
 import kilim.Generator;
 import kilim.Pausable;
 import kilim.Continuation;
+import kilim.tools.Kilim;
 
 /**
  *  a demo and benchmark of kilim generators used to implement the xorshift PRNG
@@ -20,8 +21,10 @@ import kilim.Continuation;
  *  with modes to run the same algorithm as a Generator and as a raw Continuation (the default)
  */
 public class Xorshift {
+    static { new X1(); new X2(); }
 
     public static void main(String[] args) {
+        if (Kilim.trampoline(false,args)) return;
         long cycles = 5000000;
         int reps = 10;
         if (args.length == 0) {
