@@ -8,7 +8,7 @@
         <dependency>
             <groupId>org.db4j</groupId>
             <artifactId>kilim</artifactId>
-            <version>2.0.0-21-jdk11</version>
+            <version>2.0.0-22-jdk11</version>
         </dependency>
     </dependencies>
 </project>
