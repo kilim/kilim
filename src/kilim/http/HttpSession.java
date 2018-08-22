@@ -7,8 +7,11 @@ package kilim.http;
  */
 
 import java.io.EOFException;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.channels.FileChannel;
 
 import kilim.Pausable;
 import kilim.nio.SessionTask;
@@ -72,6 +75,55 @@ public class HttpSession extends SessionTask {
         os.write(htmlMsg.getBytes());
         os.write(post);
         sendResponse(resp);
+    }
+
+    /**
+     * send a file with content length to the client
+     * @param req the request
+     * @param resp the response
+     * @param file the file to send
+     * @param contentType if non-null, set the content type
+     * @return 0 on success, 1 for not found, 2 for couldn't send
+     */
+    public int sendFile(HttpRequest req,HttpResponse resp,File file,String contentType)
+            throws Pausable {
+        FileInputStream fis = null;
+        FileChannel fc;
+        boolean headOnly = req.method.equals("HEAD");
+
+        try {
+            fis = new FileInputStream(file);
+            fc = fis.getChannel();
+        } catch (IOException ex) {
+            try { fis.close(); } catch (Exception ex2) {}
+            return 1;
+        }
+        try {
+            if (contentType != null)
+                resp.setContentType(contentType);
+            resp.setContentLength(file.length());
+            sendResponse(resp);
+            if (!headOnly)
+                endpoint.write(fc, 0, file.length());
+        }
+        catch (IOException ex) {
+            return 2;
+        }
+        finally {
+            try { fc.close(); } catch (Exception ex) {}
+            try { fis.close(); } catch (Exception ex) {}
+        }
+        return 0;
+    }
+    public boolean check(HttpResponse resp,File file,String...bases) throws IOException, Pausable {
+        try {
+            String path = file.getCanonicalPath();
+            for (String base : bases)
+                if (path.startsWith(base))
+                    return true;
+        }
+        catch (Exception ex) {}
+        return false;
     }
 
     public interface StringRouter {

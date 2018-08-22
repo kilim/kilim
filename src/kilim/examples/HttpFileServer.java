@@ -19,6 +19,7 @@ import kilim.http.HttpRequest;
 import kilim.http.HttpResponse;
 import kilim.http.HttpServer;
 import kilim.http.HttpSession;
+import kilim.http.MimeTypes;
 
 /**
  * A simple file server over http
@@ -139,7 +140,7 @@ public class HttpFileServer extends HttpSession {
             return;
         }
         try {
-            String contentType = mimeType(file);
+            String contentType = MimeTypes.mimeType(file);
             if (contentType != null) {
                 resp.setContentType(contentType);
             }

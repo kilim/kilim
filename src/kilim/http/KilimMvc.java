@@ -302,30 +302,6 @@ public class KilimMvc {
             resp.getOutputStream().write(msg);
             sendResponse(resp);
         }
-        public void sendFile(HttpRequest req,HttpResponse resp,File file,String contentType) throws IOException, Pausable {
-            FileInputStream fis;
-            FileChannel fc;
-            boolean headOnly = req.method.equals("HEAD");
-
-            try {
-                fis = new FileInputStream(file);
-                fc = fis.getChannel();
-            } catch (IOException ioe) {
-                problem(resp, HttpResponse.ST_NOT_FOUND, "File not found...Send exception: " + ioe.getMessage());
-                return;
-            }
-            try {
-                if (contentType != null)
-                    resp.setContentType(contentType);
-                resp.setContentLength(file.length());
-                super.sendResponse(resp);
-                if (!headOnly)
-                    endpoint.write(fc, 0, file.length());
-            } finally {
-                fc.close();
-                fis.close();
-            }
-        }
     }
 
     private static void nop() {}
