@@ -136,6 +136,10 @@
                             <Built-By>db4j.org</Built-By>
                         </manifestEntries>
                     </archive>
+                    <excludes>
+                        <exclude>kilim/examples/**</exclude>
+                        <exclude>kilim/bench/**</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
         </plugins>
