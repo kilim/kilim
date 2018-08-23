@@ -186,9 +186,6 @@
       <exclude name="kilim/test/**" />
       <exclude name="kilim/examples/**" />
       <exclude name="kilim/bench/**" />
-      <fileset dir="target/classes">
-	<include name="kilim/examples/HttpFileServer.class" />
-      </fileset>
       <manifest>
           <attribute name="Main-Class" value="kilim.tools.Kilim"/>
           <attribute name="Premain-Class" value="kilim.tools.Agent"/>
