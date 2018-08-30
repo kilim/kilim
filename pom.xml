@@ -66,6 +66,15 @@
         </developer>
     </developers>
     <build>
+        <resources>
+            <resource>
+                <directory>${basedir}</directory>
+                <targetPath>META-INF</targetPath>
+                <includes>
+                    <include>License</include>
+                </includes>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
 		<groupId>org.apache.maven.plugins</groupId>
