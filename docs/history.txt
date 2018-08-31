@@ -1,3 +1,6 @@
+java 11
+  the lack of JEP 330 classloader.getResources is being tracked
+  https://bugs.openjdk.java.net/browse/JDK-8210009
 
 
 new features in 2.0 (by nqzero unless noted):
