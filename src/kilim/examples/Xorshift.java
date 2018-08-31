@@ -21,6 +21,8 @@ import kilim.tools.Kilim;
  *  with modes to run the same algorithm as a Generator and as a raw Continuation (the default)
  */
 public class Xorshift {
+    // force these nested classes to load
+    // needed for JEP 330 sourcefile launching with trampoline since the classloaders are different
     static { new X1(); new X2(); }
 
     public static void main(String[] args) {

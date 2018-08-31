@@ -8,7 +8,8 @@ JEP 330 class loading doesn't support all features, so source may need to be mod
 
 ```
 cp=$(mvn -q dependency:build-classpath -Dmdep.outputFile=/dev/fd/1)
-$java11/bin/java -javaagent:${cp/:*} -cp $cp ../../src/kilim/examples/Xorshift.java
+kilim="-javaagent:${cp/:*} -cp $cp"
+$java11/bin/java $kilim ../../src/kilim/examples/Xorshift.java
 ```
 
 
