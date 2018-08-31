@@ -187,7 +187,7 @@ details:
 * testjit runs the tests (after compiling) using the runtime weaver
 * test runs the tests using the compile-time weaver, as well as some tests that don't require weaving
 * doc generates sources.jar and javadoc.jar
-* `mvn install:install-file -DpomFile=pom.xml -Dfile=target/kilim.jar -Dsources=target/sources.jar -Djavadoc=target/javadoc.jar`
+* `mvn install:install-file -DpomFile=pom.xml -Dfile=$(target/kilim*.jar) -Dsources=target/sources.jar -Djavadoc=target/javadoc.jar`
 
 
 

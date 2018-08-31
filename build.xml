@@ -116,6 +116,10 @@
     <delete dir="./target/classes" />
     <delete dir="./target/test-classes" />
   </target>
+  <target name="cleaner">
+    <delete dir="./target" />
+    <delete dir="./libs" />
+  </target>
   
   
   <!-- This runs those tests that do not depend on generated classes
