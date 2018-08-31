@@ -71,7 +71,6 @@ public class WeavingClassLoader extends KilimClassLoader {
     }
     
     public WeavingClassLoader() {
-        if (Weaver.dbg) Weaver.outputDir = "z1";
         String classPath = System.getProperty(KILIM_CLASSPATH, "");
         String[] classPaths = classPath.split(":");
 

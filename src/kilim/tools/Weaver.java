@@ -32,7 +32,6 @@ import kilim.mirrors.CachedClassMirrors;
  */
 
 public class Weaver {
-    public static boolean dbg = false;
     public static String outputDir = null;
     public static boolean verbose = true;
     public static boolean force = false;
@@ -162,7 +161,7 @@ public class Weaver {
         try {
             cw = new ClassWeaver(context,is);
             cw.weave();
-            if (dbg)
+            if (outputDir != null)
                 writeClasses(cw);
         }
         catch (IOException ex) {}
