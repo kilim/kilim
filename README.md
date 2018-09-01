@@ -160,7 +160,6 @@ java 11:
     * call `Kilim.trampoline` to enable weaving
     * the JEP 330 class loader has some limitations which must be worked around
     * use the kilim jar as a `-javaagent`
-    * all nested classes need to be accessed by the top-level class to force class loading before weaving
     * see `demos/java11`
 
 

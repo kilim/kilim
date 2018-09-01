@@ -15,8 +15,9 @@ $java11/bin/java $kilim ../../src/kilim/examples/Xorshift.java
 
 ## caveats
 
-- need to call `Kilim.trampoline` in main
-- all nested classes need to be loaded one way or another by the top-level class
+- need to call `Kilim.trampoline` in main with a classloader template, eg:
+  - `new Object() {}`
+  - or `Xorshift.class`
 - see `kilim.examples.Xorshift`, esp the first lines of `main`
 
 

@@ -131,6 +131,9 @@ public class WeavingClassLoader extends KilimClassLoader {
         InputStream is = cl.getResourceAsStream( cname );
         if (is==null) is = ClassLoader.getSystemResourceAsStream( cname );
         if (is==null & Agent.map != null) {
+            // force the nominal class loader to load the bytecode so that the agent sees it
+            try { cl.loadClass(name); }
+            catch (Exception ex) {}
             byte [] bytes = Agent.map.get(cname);
             if (bytes != null) is = new ByteArrayInputStream(bytes);
         }
