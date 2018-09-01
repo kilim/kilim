@@ -32,10 +32,7 @@ public class Kilim {
     }
     /** run static method className.method(args) using reflection and the WeavingClassLoader */
     public static void run(String className,String method,String ... args) throws Exception {
-        WeavingClassLoader wcl = new WeavingClassLoader();
-        Class<?> mainClass = wcl.loadClass(className);
-        Method mainMethod = mainClass.getMethod(method, new Class[]{String[].class});
-        mainMethod.invoke(null,new Object[] {args});
+        new WeavingClassLoader().run(className,method,args);
     }
 
     /**
@@ -48,6 +45,20 @@ public class Kilim {
      * @throws SecurityException cascaded from Class.getField
      */
     public static boolean trampoline(boolean check,String...args) {
+        return trampoline(null,check,args);
+    }
+    /**
+     * run the calling (static) method in the WeavingClassLoader context
+     * using the classloader that was used to load example
+     * intended to be used from main
+     * @param example an object or a Class that has been loaded by the desired classloader
+     * @param check if the class is already woven then just return
+     * @param args to be passed to the target method
+     * @return true if the trampoline was called and returned
+     * @throws RuntimeException (wrapping for checked) Exceptions from the method call
+     * @throws SecurityException cascaded from Class.getField
+     */
+    public static boolean trampoline(Object example,boolean check,String...args) {
         ClassLoader cl = Kilim.class.getClassLoader();
         if (cl.getClass().getName().equals(WeavingClassLoader.class.getName())) return false;
         StackTraceElement ste = new Exception().getStackTrace()[1];
@@ -61,7 +72,11 @@ public class Kilim {
                 }
                 catch (ClassNotFoundException ex) {}
             }
-            kilim.tools.Kilim.run(ste.getClassName(), ste.getMethodName(), args);
+            Class klass = example==null
+                    ? null
+                    : example instanceof Class ? (Class) example : example.getClass();
+            ClassLoader ecl = example==null ? null:klass.getClassLoader();
+            new WeavingClassLoader(ecl,null).run(ste.getClassName(), ste.getMethodName(), args);
         }
         catch (RuntimeException ex) { throw ex; }
         catch (Exception ex) { throw new RuntimeException(ex); }

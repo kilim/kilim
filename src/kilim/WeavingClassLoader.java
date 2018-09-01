@@ -8,6 +8,7 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.CodeSigner;
@@ -51,7 +52,6 @@ public class WeavingClassLoader extends KilimClassLoader {
         catch (IOException ex) { return null; }
     }
 
-    boolean useProxy = false;
     ClassLoader pcl;
 
     public static URL [] getURLs(String [] classPaths) {
@@ -69,21 +69,32 @@ public class WeavingClassLoader extends KilimClassLoader {
         URL [] paths = urls.toArray(new URL[0]);
         return paths;
     }
+
     
     public WeavingClassLoader() {
+        this(null,getProxy());
+    }
+    private static URLClassLoader getProxy() {
         String classPath = System.getProperty(KILIM_CLASSPATH, "");
         String[] classPaths = classPath.split(":");
-
         URL [] paths = getURLs(classPaths);
-
-        ClassLoader current = getClass().getClassLoader();
-        useProxy = paths.length > 0;
-        proxy = useProxy ? new URLClassLoader(paths) : null;
-        pcl = useProxy ? proxy : current;
+        return paths.length > 0 ? new URLClassLoader(paths) : null;
+    }
+    public WeavingClassLoader(ClassLoader loader,URLClassLoader $proxy) {
+        proxy = $proxy;
+        pcl = proxy != null
+                ? proxy
+                : loader != null ? loader:getClass().getClassLoader();
 
         CachedClassMirrors ccm = new CachedClassMirrors(pcl);
         KilimContext kc = new KilimContext(ccm);
         weaver = new Weaver(kc);
+    }
+    /** run static method className.method(args) using reflection and this WeavingClassLoader */
+    public void run(String className,String method,String ... args) throws Exception {
+        Class<?> mainClass = loadClass(className);
+        Method mainMethod = mainClass.getMethod(method, new Class[]{String[].class});
+        mainMethod.invoke(null,new Object[] {args});
     }
 
     public Pattern skip = Pattern.compile( "java.*|sun.*|jdk.internal.*" );

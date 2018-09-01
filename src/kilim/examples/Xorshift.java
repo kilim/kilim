@@ -26,7 +26,7 @@ public class Xorshift {
     static { new X1(); new X2(); }
 
     public static void main(String[] args) {
-        if (Kilim.trampoline(false,args)) return;
+        if (Kilim.trampoline(new Object() {},false,args)) return;
         long cycles = 5000000;
         int reps = 10;
         if (args.length == 0) {
