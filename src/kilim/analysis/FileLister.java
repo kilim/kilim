@@ -147,8 +147,7 @@ class DirIterator extends FileContainer {
     
     DirIterator(File f) {
         root = f;
-        try { rootpath = root.getCanonicalPath(); }
-        catch (IOException ex) {}
+        rootpath = root.getPath();
         stack.push(f);
     }
 
