@@ -1,12 +1,8 @@
 package kilim.http;
 
 import java.io.EOFException;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.channels.FileChannel;
 import java.util.ArrayList;
-import java.util.function.Consumer;
 import kilim.Pausable;
 
 /**
@@ -101,7 +97,7 @@ public class KilimMvc {
     }
 
     // fixme:kilim - overriding a default method appears to cause kilim to weave incorrectly
-    public interface Routeable { default Object run(String [] keys) { return null; } };
+    public interface Routeable {};
     public interface Routeable0 extends Routeable { Object accept() throws Pausable,Exception; }
     public interface Routeable1 extends Routeable { Object accept(String s1) throws Pausable,Exception; }
     public interface Routeable2 extends Routeable { Object accept(String s1,String s2) throws Pausable,Exception; }
@@ -151,7 +147,7 @@ public class KilimMvc {
         if (hh instanceof Routeable4) return ((Routeable4) hh).accept(keys[0],keys[1],keys[2],keys[3]);
         if (hh instanceof Routeable5) return ((Routeable5) hh).accept(keys[0],keys[1],keys[2],keys[3],keys[4]);
         if (hh instanceof Routeablex) return ((Routeablex) hh).accept(keys);
-        return hh.run(keys);
+        throw new RuntimeException("Routable is not directly implementable - implement a sub-interface instead");
     }
     Object route(Router pp,Session session,Route r2,Routeable hh,String [] keys,HttpRequest req,HttpResponse resp) throws Pausable,Exception {
         // fixme - should a factory that produces a factory supply a second pp ???
@@ -184,19 +180,34 @@ public class KilimMvc {
     }
     
     public interface Preppable<PP> { void accept(PP val) throws Pausable; }
-    public interface Scannable<PP extends Router> { PP supply(Consumer<Route> router); }
+    public interface Scannable<PP extends Router> { PP supply(Clerk router); }
 
-    protected <PP extends Router> PP supply(Scannable<PP> source,Consumer<Route> router) {
+    protected <PP extends Router> PP supply(Scannable<PP> source,Clerk router) {
         PP pp = source.supply(router);
         return pp;
     }
     
+    public interface Clerk {
+        public void accept(Route router);
+    }
     
+    private class LocalConsumer implements Clerk {
+        ArrayList<Route> local;
+        LocalConsumer(ArrayList<Route> local) { this.local = local; }
+        public void accept(Route router) { local.add(router); }
+    }
+
+    private class LocalScanner<PP extends Router> implements Scannable<PP> {
+        PP pp;
+        public LocalScanner(PP pp) { this.pp = pp; }
+        public PP supply(Clerk sink) { return pp; }
+    }
+
     public <PP extends Router> PP scan(Scannable<PP> source,Preppable<PP> auth) {
         ArrayList<Route> local = new ArrayList();
-        PP pp = supply(source,rr -> local.add(rr));
+        PP pp = supply(source,new LocalConsumer(local));
         for (Route rr : local)
-            addRoute(rr,sink -> pp,source,auth);
+            addRoute(rr,new LocalScanner(pp),source,auth);
         return pp;
     }
 
@@ -216,12 +227,12 @@ public class KilimMvc {
     
     public static class Router<PP extends Router> {
         boolean first;
-        private Consumer<Route> mk;
+        private Clerk mk;
         public Session session;
         public HttpRequest req;
         public HttpResponse resp;
 
-        public Router(Consumer<Route> mk) {
+        public Router(Clerk mk) {
             this.mk = mk;
             first = mk != null;
         }

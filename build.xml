@@ -39,7 +39,7 @@
     </path>
   </target>
   
-  <condition property="exclude8" value="kilim/examples/Userdata.java,kilim/examples/Spawn.java,kilim/test/TestLambda.java,kilim/http/KilimMvc.java" else="">
+  <condition property="exclude8" value="kilim/examples/Userdata.java,kilim/examples/Spawn.java,kilim/test/TestLambda.java" else="">
     <or>
       <equals arg1="${ant.java.version}" arg2="1.6"/>
       <equals arg1="${ant.java.version}" arg2="1.7"/>
