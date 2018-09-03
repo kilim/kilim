@@ -67,7 +67,7 @@ the dependency:
     <dependency>
         <groupId>org.db4j</groupId>
         <artifactId>kilim</artifactId>
-        <version>2.0.0-20</version>
+        <version>2.0.0-23</version>
     </dependency>
 ```
 
@@ -77,7 +77,7 @@ weaving with the kilim plugin:
     <plugin>
         <groupId>org.db4j</groupId>
         <artifactId>kilim</artifactId>
-        <version>2.0.0-20</version>
+        <version>2.0.0-23</version>
         <executions>
             <execution>
                 <goals><goal>weave</goal></goals>
@@ -113,7 +113,7 @@ java 7:
   * `JAVA_HOME=path/to/java7 ant clean weave jar`
   * see `demos/java7` for usage examples
   * some features are not available, eg jetty integration and lambdas
-  * maven central: `2.0.0-20-jdk7`
+  * maven central: `2.0.0-23-jdk7`
 
 java 9:
   * the java 8 compiled version should work fine
@@ -134,7 +134,7 @@ java 10:
   * all lambdas that will be loaded need to be woven with this java10 "fiber-included" flavor of kilim
   * this will work fine with java 8 or 9 as well, however it exposes the fiber to the user and
       makes it harder to detect unwoven Pausable methods, so it's use is discouraged unless you need to support java 10
-  * maven central: `2.0.0-20-jdk10`
+  * maven central: `2.0.0-23-jdk10`
 
 ```
     interface Lambda {
