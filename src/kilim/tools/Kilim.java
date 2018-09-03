@@ -35,6 +35,8 @@ public class Kilim {
         new WeavingClassLoader().run(className,method,args);
     }
 
+    private static Object dummy = new Object();
+
     /**
      * run the calling (static) method in the WeavingClassLoader context
      * intended to be used from main
@@ -45,7 +47,7 @@ public class Kilim {
      * @throws SecurityException cascaded from Class.getField
      */
     public static boolean trampoline(boolean check,String...args) {
-        return trampoline(null,check,args);
+        return trampoline(dummy,check,args);
     }
     /**
      * run the calling (static) method in the WeavingClassLoader context
@@ -61,7 +63,9 @@ public class Kilim {
     public static boolean trampoline(Object example,boolean check,String...args) {
         ClassLoader cl = Kilim.class.getClassLoader();
         if (cl.getClass().getName().equals(WeavingClassLoader.class.getName())) return false;
-        StackTraceElement ste = new Exception().getStackTrace()[1];
+        int offset = example==dummy ? 2:1;
+        StackTraceElement ste = new Exception().getStackTrace()[offset];
+        boolean simple = example==null | example==dummy;
 
         try {
             if (check) {
@@ -72,10 +76,9 @@ public class Kilim {
                 }
                 catch (ClassNotFoundException ex) {}
             }
-            Class klass = example==null
-                    ? null
+            Class klass = simple ? null
                     : example instanceof Class ? (Class) example : example.getClass();
-            ClassLoader ecl = example==null ? null:klass.getClassLoader();
+            ClassLoader ecl = simple ? null : klass.getClassLoader();
             new WeavingClassLoader(ecl,null).run(ste.getClassName(), ste.getMethodName(), args);
         }
         catch (RuntimeException ex) { throw ex; }
