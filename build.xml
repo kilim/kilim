@@ -53,9 +53,13 @@
   
   <target name="compile" depends="init">
     <mkdir dir="target"/>
-    <javac includeantruntime="false" debug="on" srcdir="src" destdir="target/classes" 
+    <mkdir dir="target/generated-sources/plugin"/>
+    <javac includeantruntime="false" debug="on" destdir="target/classes" 
            excludes="${exclude8}"
-           classpathref="kilim.classpath"/>
+           classpathref="kilim.classpath">
+        <src path="src"/>
+        <src path="target/generated-sources/plugin"/>
+    </javac>
   </target>
   
   <pathconvert property="dotjfiles" pathsep=" ">
