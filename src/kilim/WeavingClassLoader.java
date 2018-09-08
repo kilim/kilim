@@ -97,7 +97,7 @@ public class WeavingClassLoader extends KilimClassLoader {
         mainMethod.invoke(null,new Object[] {args});
     }
 
-    public Pattern skip = Pattern.compile( "java.*|sun.*|jdk.internal.*" );
+    public Pattern skip = Pattern.compile( "java.*|sun.*|jdk.*" );
 
     public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
         Class klass;
