@@ -688,6 +688,7 @@ public abstract class Task<TT> implements Runnable, EventSubscriber, Fiber.Worke
      * @see Scheduler#idledown()
      */
     public static void idledown() {
-        Scheduler.getDefaultScheduler().idledown();
+        if (Scheduler.defaultScheduler != null)
+            Scheduler.defaultScheduler.idledown();
     }
 }
