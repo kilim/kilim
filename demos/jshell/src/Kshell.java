@@ -8,6 +8,7 @@ import java.net.URLClassLoader;
 import java.net.URLConnection;
 import java.util.Map;
 import java.util.TreeMap;
+import jdk.jshell.execution.DirectExecutionControl;
 import jdk.jshell.execution.LoaderDelegate;
 import jdk.jshell.spi.ExecutionControl;
 import jdk.jshell.spi.ExecutionControl.ClassBytecodes;
@@ -25,10 +26,28 @@ public class Kshell {
         public String name() { return "kilim"; }
 
         public ExecutionControl generate(ExecutionEnv arg0,Map<String,String> arg1) throws Throwable {
-            return new jdk.jshell.execution.DirectExecutionControl(new Loader().new Delegate());
+            return new Control(new Loader().new Delegate());
         }
     }
 
+    public static class Control extends DirectExecutionControl {
+        Loader.Delegate delegate;
+        public Control(Loader.Delegate delegate) {
+            super(delegate);
+            this.delegate = delegate;
+        }
+
+        public void close() {
+            super.close();
+            try {
+                delegate.wcl.loadClass(kilim.Task.class.getName())
+                        .getMethod("idledown", new Class[]{})
+                        .invoke(null);
+            }
+            catch (Exception ex) {}
+        }
+    }
+    
     public static class Loader extends URLClassLoader {
         TreeMap<String,byte[]> map = new TreeMap();
 
@@ -42,7 +61,7 @@ public class Kshell {
             return super.getResourceAsStream(name);
         }
 
-        class Delegate implements LoaderDelegate {
+        public class Delegate implements LoaderDelegate {
             WeavingClassLoader wcl = new WeavingClassLoader(Loader.this,null);
 
             public void load(ClassBytecodes[] codes) throws ClassInstallException {
