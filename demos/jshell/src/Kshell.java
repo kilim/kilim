@@ -129,5 +129,10 @@ public class Kshell {
         String cp = buildClassPath(kilim.Task.class,Kshell.class);
         String [] config = new String[]{ "-execution", "kilim", "--class-path", cp };
         JavaShellToolBuilder.builder().run(args.length > 0 ? args:config);
+        
+        // workaround: jshell leaves lingering threads
+        //   Preferences.timer
+        //   SourceCodeAnalysisImpl.INDEXER
+        System.exit(0);
     }
 }

@@ -27,8 +27,6 @@ jshell> for (Integer val=0; val != null;) System.out.println(val = mb.getb(2000)
 4
 null
 
-jshell> Task.idledown()
-
 jshell> /exit
 |  Goodbye
 ```
@@ -36,8 +34,8 @@ jshell> /exit
 
 notes:
 
-* jshell (not kilim) creates a timer thread that doesn't exit cleanly, and maven waits for it.
-use ctrl-c after exiting (or wait 15 seconds) when running with maven `exec:java`
+* jshell (not kilim) creates a timer thread that doesn't exit cleanly, and maven would wait for it.
+so i call `System.exit` instead
 
 * the toplevel jshell method is not pausable (similar to `main()`) so it's not possible to call pausable methods directly
 
