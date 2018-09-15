@@ -92,7 +92,7 @@
                     </execution>
 		</executions>
             </plugin>
-            <!-- the primary env is ant, tests are disabled in mvn as they don't fit the lifecycle-->
+            <!-- tests are run manually using `ant testjit test` -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
