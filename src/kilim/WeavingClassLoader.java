@@ -16,7 +16,6 @@ import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.regex.Pattern;
 
 import kilim.analysis.ClassInfo;
 import kilim.analysis.ClassWeaver;
@@ -53,6 +52,13 @@ public class WeavingClassLoader extends KilimClassLoader {
     }
 
     ClassLoader pcl;
+    static ClassLoader platform;
+    static {
+        ClassLoader last, cl = WeavingClassLoader.class.getClassLoader();
+        for (last = cl; cl != null; cl = cl.getParent())
+            last = cl;
+        platform = last;
+    }
 
     public static URL [] getURLs(String [] classPaths) {
         ArrayList<URL> urls = new ArrayList<URL>();
@@ -97,13 +103,12 @@ public class WeavingClassLoader extends KilimClassLoader {
         mainMethod.invoke(null,new Object[] {args});
     }
 
-    public Pattern skip = Pattern.compile( "java.*|javax.*|sun.*|jdk.*" );
-
     public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        Class klass;
-        if (skip.matcher( name ).matches())
-            klass = pcl.loadClass(name);
-        else synchronized (this) {
+        Class klass = null;
+        try { klass = platform.loadClass(name); } catch (ClassNotFoundException ex) {}
+        if (klass==null)
+            klass = findLoadedClass(name);
+        if (klass==null) synchronized (this) {
             klass = findLoadedClass(name);
             if (klass==null)
                 klass = findClass( name );
@@ -111,7 +116,7 @@ public class WeavingClassLoader extends KilimClassLoader {
         if (resolve) resolveClass( klass );
         return klass;
     }
-    private boolean skip(String cname) { 
+    private boolean proxy(String cname) { 
         return proxy != null && proxy.findResource(cname) == null;
     }
     
@@ -159,7 +164,7 @@ public class WeavingClassLoader extends KilimClassLoader {
         byte [] code;
 
         if (is==null) {}
-        else if (skip(cname)) {
+        else if (proxy(cname)) {
             if ((code=readFully(is)) != null)
                 return define(name,code);
         }
