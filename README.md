@@ -59,7 +59,8 @@ which are `Pausable`
 for an example of a project that uses kilim, see 
 the [kilim jetty demo in this repository](https://github.com/nqzero/kilim/tree/master/demos/jetty)
 - the `pom.xml` specifies kilim as both a dependency and a plugin for ahead-of-time weaving
-
+- this version supports java 8, 9, and 11 (and 10 if you don't use lambdas)
+- there are dedicated artifacts for java 7 and 10 (see below)
 
 the dependency:
 
@@ -113,13 +114,15 @@ java 7:
   * `JAVA_HOME=path/to/java7 ant clean weave jar`
   * see `demos/java7` for usage examples
   * some features are not available, eg jetty integration and lambdas
+  * this version is incompatible with lambdas in later java versions because default interface methods aren't supported
   * maven central: `2.0.0-25-jdk7`
 
 java 9:
-  * the java 8 compiled version should work fine
+  * the java 8 compiled version supports java 9
   * see demos/battle/pom9.xml for a usage example
   * currently, no `module-info.java` is provided, so use java 9's fallback support
-  * if you have a demo project that you can share that "depends" on modules, create an issue and it will be supported
+    * if you have a demo project that you can share that "depends" on modules, create an issue and it will be supported
+  * JShell works - see demos/jshell
 
 java 10:
   * java 10 has a bug and refuses to load some valid lambdas
@@ -150,16 +153,15 @@ java 10:
     }
 ```
 
-java 11:
+java 11 early access:
+  * the java 8 compiled version supports java 11
   * ASM support for java 11 is not yet final and uses `Opcodes.ASM7_EXPERIMENTAL`
-  * there is a `java11` tag in github - cherry-pick this commit and install locally
-  * this change should work fine for java 7, 8, 9 and 10 as well, but as the API is marked "experimental"
-      so the change has not been merged into master (it will be when java 11 is released)
-  * maven central: `2.0.0-25-jdk11`
+    * per the mailing list, there are no known or suspected issues with this java 11 support
+  * constant dynamics and preview classes are not yet supported - they will be when usage in the wild is seen
   * JEP 330 single-file source invocation works
     * call `Kilim.trampoline` to enable weaving
     * the JEP 330 class loader has some limitations which must be worked around
-    * use the kilim jar as a `-javaagent`
+    * use the kilim jar as a `-javaagent` (optimistic that this won't be necessary once java 11 final is released)
     * see `demos/java11`
 
 
