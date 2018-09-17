@@ -1,14 +1,1 @@
-<project>
-    <modelVersion>4.0.0</modelVersion>
-    <groupId>com.nqzero</groupId>
-    <artifactId>demo-java-11</artifactId>
-    <version>1.0-SNAPSHOT</version>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.db4j</groupId>
-            <artifactId>kilim</artifactId>
-            <version>2.0.0-25</version>
-        </dependency>
-    </dependencies>
-</project>
+../poms/pom11.xml
