@@ -1,7 +1,11 @@
 kilim-maven-plugin
 ==================
 
-Kilim weaver plugin for maven
+the kilim maven artifact is also a maven plugin, ie it will weave your code ahead-of-time
+
+the default phase is process tests, which is needed to weave both classes and test classes.
+if you don't want to weave tests, or you're not running process tests, you'll need to override this,
+eg, with process classes
 
 
 How to use it
@@ -15,7 +19,7 @@ in your pom.xml
           <dependency>
               <groupId>org.db4j</groupId>
               <artifactId>kilim</artifactId>
-              <version>2.0.0-2</version>
+              <version>2.0.0-23</version>
           </dependency>
       </dependencies>
 
@@ -23,13 +27,11 @@ in your pom.xml
           <plugins>
               <plugin>
                   <groupId>org.db4j</groupId>
-                  <artifactId>kilim-maven-plugin</artifactId>
-                  <version>1.0-SNAPSHOT</version>
+                  <artifactId>kilim</artifactId>
+                  <version>2.0.0-23</version>
                   <executions>
                       <execution>
-                          <id>weave</id>
-                          <phase>process-classes</phase>
-                          <goals> <goal>weave</goal> </goals>
+                          <goals><goal>weave</goal></goals>
                       </execution>
                   </executions>
               </plugin>
@@ -37,3 +39,7 @@ in your pom.xml
       </build>
 
       ............
+
+
+afaik, the versions for the plugin must match the version for the dependency
+
