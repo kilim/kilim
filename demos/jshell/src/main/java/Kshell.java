@@ -124,15 +124,33 @@ public class Kshell {
         }
         return cp;
     }
+
+    static String mergePaths(String ... classpaths) {
+        String result = "";
+        for (String cp : classpaths) {
+            for (String path : cp.split(":")) {
+                if (path.endsWith(".so")) continue;
+                if (path.endsWith(".dll")) continue;
+                result = result.isEmpty() ? path : result + ":" + path;
+            }
+        }
+        return result;
+    }
+
     
     public static void main(String[] args) throws Exception {
-        String cp = buildClassPath(kilim.Task.class,Kshell.class);
+        String cpx = System.getProperty("java.class.path");
+        String cp1 = kilim.tools.Javac.getClassPath(null,null).join();
+        String cp2 = buildClassPath(kilim.Task.class);
+        
+        String cp = mergePaths(cpx,cp1,cp2);
         String [] config = new String[]{ "-execution", "kilim", "--class-path", cp };
         JavaShellToolBuilder.builder().run(args.length > 0 ? args:config);
         
         // workaround: jshell leaves lingering threads
         //   Preferences.timer
         //   SourceCodeAnalysisImpl.INDEXER
+        //   https://bugs.openjdk.java.net/browse/JDK-8210767
         System.exit(0);
     }
 }
