@@ -148,7 +148,15 @@ public class SAMweaver implements Constants {
 
         // invoke interface
         String fiberDesc = desc.replace(")", Constants.D_FIBER + ")");
-        mv.visitMethodInsn(INVOKEINTERFACE, interfaceName, methodName, fiberDesc, true);
+        /*
+         * Fixed java.lang.IncompatibleClassChangeError
+         * Show in testcase kilim.test.TestAbstractExtends
+         */
+        if(itf) {
+        	mv.visitMethodInsn(INVOKEINTERFACE, interfaceName, methodName, fiberDesc, true);
+        } else {
+        	mv.visitMethodInsn(INVOKEVIRTUAL, interfaceName, methodName, fiberDesc, false);
+        }
 
         // store callee object reference in fiber 
         mv.visitVarInsn(ALOAD, fiberVar);

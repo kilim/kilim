@@ -25,6 +25,7 @@ public class AllWoven extends TestSuite {
         ret.addTestSuite(TestPrefThread.class);
         ret.addTestSuite(TestYield.class);
         ret.addTestSuite(TestInterface.class);
+        ret.addTestSuite(TestAbstractExtends.class);
         if (java8)
             ret.addTestSuite(lambdaClass);
         ret.addTestSuite(TestYieldExceptions.class);
