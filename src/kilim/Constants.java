@@ -10,6 +10,7 @@ import org.objectweb.asm.Opcodes;
 public interface Constants extends Opcodes {
     
     String KILIM_VERSION    = "1.0";
+    int    KILIM_ASM        = ASM7_EXPERIMENTAL;
     
     // Type descriptors
     String D_BOOLEAN        = "Z";

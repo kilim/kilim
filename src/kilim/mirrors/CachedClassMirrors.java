@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import kilim.Constants;
 import kilim.WeavingClassLoader;
 
 import org.objectweb.asm.AnnotationVisitor;
@@ -173,7 +174,7 @@ public class CachedClassMirrors {
 
         public class Visitor extends ClassVisitor {
             Visitor() {
-                super(Opcodes.ASM7_EXPERIMENTAL);
+                super(Constants.KILIM_ASM);
             }
 
             // ClassVisitor implementation
@@ -233,7 +234,7 @@ public class CachedClassMirrors {
     }
     static class DummyAnnotationVisitor extends AnnotationVisitor {
         public DummyAnnotationVisitor() {
-            super(Opcodes.ASM7_EXPERIMENTAL);
+            super(Constants.KILIM_ASM);
         }
         static DummyAnnotationVisitor singleton = new DummyAnnotationVisitor();
         public void visit(String name, Object value) {}

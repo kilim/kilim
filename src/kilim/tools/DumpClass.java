@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
+import kilim.Constants;
 
 import kilim.analysis.TypeDesc;
 
@@ -66,13 +67,13 @@ public class DumpClass extends ClassVisitor implements Opcodes {
     
 
     public DumpClass(InputStream is) throws IOException {
-        super(ASM7_EXPERIMENTAL);
+        super(Constants.KILIM_ASM);
         ClassReader cr = new ClassReader(is);
         cr.accept(this, /*flags*/ 0);
     }
 
     public DumpClass(String className) throws IOException {
-        super(ASM7_EXPERIMENTAL);
+        super(Constants.KILIM_ASM);
         ClassReader cr;
         if (className.endsWith(".class")) {
             FileInputStream fis = new FileInputStream(className);
@@ -165,7 +166,7 @@ public class DumpClass extends ClassVisitor implements Opcodes {
 
 class DummyAnnotationVisitor extends AnnotationVisitor {
     public DummyAnnotationVisitor() {
-        super(Opcodes.ASM7_EXPERIMENTAL);
+        super(Constants.KILIM_ASM);
         // TODO Auto-generated constructor stub
     }
     public void visit(String name, Object value) {
@@ -193,7 +194,7 @@ class DummyAnnotationVisitor extends AnnotationVisitor {
 class DumpMethodVisitor extends MethodVisitor implements Opcodes {
 
     public DumpMethodVisitor() {
-        super(Opcodes.ASM7_EXPERIMENTAL);
+        super(Constants.KILIM_ASM);
     }
 
     static String[] os = {

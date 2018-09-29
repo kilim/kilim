@@ -23,6 +23,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.TreeMap;
+import kilim.Constants;
 
 import kilim.KilimException;
 import kilim.mirrors.Detector;
@@ -109,7 +110,7 @@ public class MethodFlow extends MethodNode {
             final String signature,
             final String[] exceptions,
             final Detector detector) {
-        super(Opcodes.ASM7_EXPERIMENTAL, access, name, desc, signature, exceptions);
+        super(Constants.KILIM_ASM, access, name, desc, signature, exceptions);
         this.classFlow = classFlow;
         this.detector = detector;
         posToLabelMap = new ArrayList<LabelNode>();
