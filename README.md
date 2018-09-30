@@ -153,15 +153,15 @@ java 10:
     }
 ```
 
-java 11 early access:
+java 11:
   * the java 8 compiled version supports java 11
-  * ASM support for java 11 is not yet final and uses `Opcodes.ASM7_EXPERIMENTAL`
+  * ASM support for java 11 is currently beta
     * per the mailing list, there are no known or suspected issues with this java 11 support
   * constant dynamics and preview classes are not yet supported - they will be when usage in the wild is seen
   * JEP 330 single-file source invocation works
     * call `Kilim.trampoline` to enable weaving
     * the JEP 330 class loader has some limitations which must be worked around
-    * use the kilim jar as a `-javaagent` (optimistic that this won't be necessary once java 11 final is released)
+    * use the kilim jar as a `-javaagent` (fixed in openjdk, awaiting release)
     * see `demos/java11`
 
 
