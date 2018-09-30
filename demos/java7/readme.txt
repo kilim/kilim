@@ -12,7 +12,7 @@ JAVA_HOME=$java7 mvn -Dhttps.protocols=TLSv1.2 clean package exec:java -Dexec.ma
 # not all versions are available in maven central compiled for java 7, so you may need to install locally
 # in the toplevel kilim directory, build and install with java 7
 
-version=2.0.0-25-jdk7
+version=2.0.0-27-jdk7
 mvn versions:set -DnewVersion=$version
 JAVA_HOME=$java7 ant clean weave jar
 mvn install:install-file -DpomFile=pom.xml -Dfile=target/kilim.jar
