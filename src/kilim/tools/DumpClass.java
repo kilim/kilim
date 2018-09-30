@@ -158,8 +158,8 @@ public class DumpClass extends ClassVisitor implements Opcodes {
     }
 
     // fixme - if jasmin supports nestmates, then these should output the correct syntax
-    public void visitNestMemberExperimental(String nestMember) {}
-    public void visitNestHostExperimental(String nestHost) {}
+    public void visitNestMember(String nestMember) {}
+    public void visitNestHost(String nestHost) {}
 
     public void visitSource(String source, String debug) {}
 }

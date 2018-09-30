@@ -217,8 +217,8 @@ public class CachedClassMirrors {
 
             public void visitSource(String source, String debug) {}
 
-            public void visitNestMemberExperimental(String nestMember) {}
-            public void visitNestHostExperimental(String nestHost) {}
+            public void visitNestMember(String nestMember) {}
+            public void visitNestHost(String nestHost) {}
             
             public void visitOuterClass(String owner, String name, String desc) {}
             public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
