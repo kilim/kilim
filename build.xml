@@ -2,24 +2,46 @@
 <project name="kilim" default="all">
   <!-- emacs config: (setq nxml-child-indent 2) -->
 
-  <condition property="fail-libs">
-      <resourcecount when="lt" count="1">
+  <condition property="fail-libs-high">
+      <resourcecount when="gt" count="2">
+          <fileset dir="." includes="libs/asm-*.jar"/>
+      </resourcecount>
+  </condition>
+
+  <condition property="fail-libs-low">
+      <resourcecount when="lt" count="2">
           <fileset dir="." includes="libs/asm-*.jar"/>
       </resourcecount>
   </condition>
 
 
-  <target name="check-libs" if="fail-libs">
+  <target name="check-libs-low" if="fail-libs-low">
       <echo>
 	  dependencies not found (./libs)
+	  expected: asm and asm-tree
 	  
 	  the ant build requires that dependencies be downloaded to ./libs
 	  the simplest way to do this is to use 'mvn initialize'
       </echo>
       <fail message="run 'mvn initialize' to copy dependencies to ./libs" />
   </target>
+
+  <target name="check-libs-high" if="fail-libs-high">
+      <echo>
+	  multiple asm dependencies found (./libs)
+	  expected: asm and asm-tree
+	  
+	  the ant build requires that dependencies be downloaded to ./libs
+	  but by default old copies are not deleted
+	  multiple copies were found and cowardly aborting
+	  the simplest way to fix this is to run:
+	    ant cleaner
+	    mvn initialize
+      </echo>
+      <fail message="run 'ant cleaner &amp;&amp; mvn initialize' to remove duplicates and copy dependencies to ./libs" />
+  </target>
   
-  <target name="init" depends="check-libs">
+  <target name="init" depends="check-libs-high,check-libs-low">
     <mkdir dir="target/classes"/>
     <mkdir dir="target/test-classes"/>
     <path id="kilim.classpath">
