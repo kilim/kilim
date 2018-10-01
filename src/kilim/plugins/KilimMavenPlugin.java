@@ -22,52 +22,59 @@ import org.apache.maven.project.MavenProject;
         requiresDependencyResolution=ResolutionScope.RUNTIME)
 public class KilimMavenPlugin extends AbstractMojo {
 
-    /**
-     * Location of the class files.
-     */
-    @Parameter(defaultValue = "${project.build.outputDirectory}", property = "kilimIn", required = true)
-    private File inputDirectory;
+    /** additional arguments to pass to the weaver */
+    @Parameter(defaultValue="-q", property = "kilim.args", required = false)
+    private String args;
+    
+    /** location of the class files */
+    @Parameter(defaultValue = "${project.build.outputDirectory}", property = "kilim.in", required = true)
+    private File in;
 
-    @Parameter(defaultValue = "${project.build.testOutputDirectory}", property = "kilimTin", required = true)
-    private File testDirectory;
+    /** location of the test class files */
+    @Parameter(defaultValue = "${project.build.testOutputDirectory}", property = "kilim.tin", required = true)
+    private File tin;
 
-    /**
-     * Location of the woven class files.
-     */
-    @Parameter(defaultValue = "${project.build.outputDirectory}", property = "kilimOut", required = true)
-    private File outputDirectory;
+    /** destination for the woven class files */
+    @Parameter(defaultValue = "${project.build.outputDirectory}", property = "kilim.out", required = true)
+    private File out;
 
-    @Parameter(defaultValue = "${project.build.testOutputDirectory}", property = "kilimTout", required = true)
-    private File testOutputDirectory;
+    /** destination for the woven test class files */
+    @Parameter(defaultValue = "${project.build.testOutputDirectory}", property = "kilim.tout", required = true)
+    private File tout;
 
     @Parameter( defaultValue = "${project}", readonly = true, required = true )
     private MavenProject project;
 
     public void execute() throws MojoExecutionException {
         try {
-            String indir = inputDirectory.getAbsolutePath();
-            String tindir = testDirectory.getAbsolutePath();
-            String outdir = outputDirectory.getAbsolutePath();
-            String toutdir = testOutputDirectory.getAbsolutePath();
+            String indir = in.getAbsolutePath();
+            String tindir = tin.getAbsolutePath();
+            String outdir = out.getAbsolutePath();
+            String toutdir = tout.getAbsolutePath();
 
             {
-                getLog().info("kilim weaver input/output dirs are: " + indir + ", " + outdir);
+                getLog().debug("kilim weaver input/output dirs are: " + indir + ", " + outdir);
                 String [] roots = project.getCompileClasspathElements().toArray(new String[0]);
 
                 Weaver.outputDir = outdir;
+                getLog().debug("plugin.args: " + args);
+                if (args != null && args.length() > 0) {
+                    Weaver.parseArgs(args.split(" "));
+                }
+
                 int err = Weaver.doMain(new String []{ indir },roots);
-                getLog().info("kilim weaver done");
+                getLog().debug("kilim weaver done");
                 if (err > 0)
                     throw new MojoExecutionException("Error while weaving the classes");
             }
 
             {
-                getLog().info("kilim weaver test input/output dirs are: " + tindir + ", " + toutdir);
+                getLog().debug("kilim weaver test input/output dirs are: " + tindir + ", " + toutdir);
                 String [] troots = project.getTestClasspathElements().toArray(new String[0]);
 
                 Weaver.outputDir = toutdir;
                 int err = Weaver.doMain(new String []{ tindir },troots);
-                getLog().info("kilim weaver done - tests");
+                getLog().debug("kilim weaver done - tests");
                 if (err > 0)
                     throw new MojoExecutionException("Error while weaving the test classes");
             }

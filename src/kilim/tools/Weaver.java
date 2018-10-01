@@ -240,7 +240,7 @@ public class Weaver {
         System.exit(1);
     }
 
-    static ArrayList<String> parseArgs(String[] args) throws IOException {
+    public static ArrayList<String> parseArgs(String[] args) throws IOException {
         if (args.length == 0)
             help();
 
