@@ -6,3 +6,4 @@
 /demos/jetty/nb-configuration.xml
 /nb-configuration.xml
 /plugins/maven/nb-configuration.xml
+/testing/target/

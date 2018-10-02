@@ -1,0 +1,33 @@
+<project>
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.db4j</groupId>
+    <artifactId>kilim-tests-runner</artifactId>
+    <version>0.1</version>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.db4j</groupId>
+            <artifactId>kilim-tests</artifactId>
+            <version>0.1</version>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+	    <plugin>
+		<groupId>org.codehaus.mojo</groupId>
+		<artifactId>exec-maven-plugin</artifactId>
+		<version>1.6.0</version>
+		<configuration>
+		    <mainClass>junit.textui.TestRunner</mainClass>
+		    <arguments>kilim.test.AllWoven</arguments>
+		</configuration>
+	    </plugin>
+        </plugins>
+    </build>
+    <properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <netbeans.compile.on.save>none</netbeans.compile.on.save>
+    </properties>
+</project>
