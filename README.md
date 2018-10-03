@@ -68,7 +68,7 @@ the dependency:
     <dependency>
         <groupId>org.db4j</groupId>
         <artifactId>kilim</artifactId>
-        <version>2.0.0-27</version>
+        <version>2.0.0-28</version>
     </dependency>
 ```
 
@@ -78,7 +78,7 @@ weaving with the kilim plugin:
     <plugin>
         <groupId>org.db4j</groupId>
         <artifactId>kilim</artifactId>
-        <version>2.0.0-27</version>
+        <version>2.0.0-28</version>
         <executions>
             <execution>
                 <goals><goal>weave</goal></goals>
@@ -115,7 +115,7 @@ java 7:
   * see `demos/java7` for usage examples
   * some features are not available, eg jetty integration and lambdas
   * this version is incompatible with lambdas in later java versions because default interface methods aren't supported
-  * maven central: `2.0.0-27-jdk7`
+  * maven central: `2.0.0-28-jdk7`
 
 java 9:
   * the java 8 compiled version supports java 9
@@ -137,7 +137,7 @@ java 10:
   * all lambdas that will be loaded need to be woven with this java10 "fiber-included" flavor of kilim
   * this will work fine with java 8 or 9 as well, however it exposes the fiber to the user and
       makes it harder to detect unwoven Pausable methods, so it's use is discouraged unless you need to support java 10
-  * maven central: `2.0.0-27-jdk10`
+  * maven central: `2.0.0-28-jdk10`
 
 ```
     interface Lambda {
