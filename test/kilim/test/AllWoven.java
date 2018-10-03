@@ -11,7 +11,7 @@ import junit.framework.TestSuite;
 
 public class AllWoven extends TestSuite {
     private static Class lambdaClass;
-    public static boolean java8;
+    private static boolean java8;
     static {
         try {
             lambdaClass = AllWoven.class.getClassLoader().loadClass("kilim.test.TestLambda");

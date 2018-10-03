@@ -551,9 +551,10 @@ public class MethodWeaver {
     
     void makeNotWovenMethod(ClassVisitor cv, MethodFlow mf, boolean isSAM) {
         if (classWeaver.classFlow.isJava7() && classWeaver.isInterface()) {
-             MethodVisitor mv = cv.visitMethod(mf.access, mf.name, mf.desc, 
+            MethodVisitor mv = cv.visitMethod(mf.access, mf.name, mf.desc,
                     mf.signature, ClassWeaver.toStringArray(mf.exceptions));
-             mv.visitEnd();
+            visitAttrs(mv);
+            mv.visitEnd();
         } else {
             // Turn of abstract modifier
             int access = mf.access;

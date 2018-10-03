@@ -84,9 +84,7 @@ public class TestInterface extends TestCase {
         Annotation canno = klass.getAnnotation(Anno.A1.class),
                 manno = method.getAnnotation(Anno.A1.class);
         assertNotNull(canno);
-        // fixme:java7 - annotations are not preserved in the fiber-less method in java 7
-        if (AllWoven.java8)
-            assertNotNull(manno);
+        assertNotNull(manno);
     }
 
     private static class Anno {
