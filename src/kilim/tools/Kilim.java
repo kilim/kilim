@@ -35,7 +35,20 @@ public class Kilim {
         new WeavingClassLoader().run(className,method,args);
     }
 
-    private static Object dummy = new Object();
+    public static class Config {
+        boolean check;
+        Object example;
+        int offset = 1;
+        WeavingClassLoader.Excludable exclude;
+
+        public Config(boolean check,Object example,WeavingClassLoader.Excludable exclude) {
+            this.check = check;
+            this.example = example;
+            this.exclude = exclude;
+        }
+        Config offset(int offset) { this.offset = offset; return this; }
+    }
+    
 
     /**
      * run the calling (static) method in the WeavingClassLoader context
@@ -47,7 +60,7 @@ public class Kilim {
      * @throws SecurityException cascaded from Class.getField
      */
     public static boolean trampoline(boolean check,String...args) {
-        return trampoline(dummy,check,args);
+        return trampoline(new Config(check,null,null).offset(2),args);
     }
     /**
      * run the calling (static) method in the WeavingClassLoader context
@@ -61,14 +74,19 @@ public class Kilim {
      * @throws SecurityException cascaded from Class.getField
      */
     public static boolean trampoline(Object example,boolean check,String...args) {
+        return trampoline(new Config(check,example,null).offset(2),args);
+    }
+    
+    public static boolean trampoline(Config config,String...args) {
         ClassLoader cl = Kilim.class.getClassLoader();
         if (cl.getClass().getName().equals(WeavingClassLoader.class.getName())) return false;
-        int offset = example==dummy ? 2:1;
+        Object example = config.example;
+        int offset = config.offset;
         StackTraceElement ste = new Exception().getStackTrace()[offset];
-        boolean simple = example==null | example==dummy;
+        boolean simple = example==null;
 
         try {
-            if (check) {
+            if (config.check) {
                 try {
                     Class klass = cl.loadClass(ste.getClassName());
                     if (isWoven(klass))
@@ -79,7 +97,10 @@ public class Kilim {
             Class klass = simple ? null
                     : example instanceof Class ? (Class) example : example.getClass();
             ClassLoader ecl = simple ? null : klass.getClassLoader();
-            new WeavingClassLoader(ecl,null).run(ste.getClassName(), ste.getMethodName(), args);
+            WeavingClassLoader loader = new WeavingClassLoader(ecl,null);
+            if (config.exclude != null)
+                loader.exclude(config.exclude);
+            loader.run(ste.getClassName(), ste.getMethodName(), args);
         }
         catch (RuntimeException ex) { throw ex; }
         catch (Exception ex) { throw new RuntimeException(ex); }

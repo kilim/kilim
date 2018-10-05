@@ -8,6 +8,9 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -103,11 +106,33 @@ public class WeavingClassLoader extends KilimClassLoader {
         mainMethod.invoke(null,new Object[] {args});
     }
 
+    /** 
+     * replace the exclude filter which determines whether a named class should be defined
+     * definitively by this loader or instead delegated to the parent loader.
+     * this is sometimes necessary to work with classes that may have been previously loaded,
+     * eg because they were used as a java agent
+     * @param exclude the filter to run
+     * @return 
+     */
+    public WeavingClassLoader exclude(Excludable exclude) { checker = exclude; return this; }
+    public static interface Excludable {
+        /**
+         * check whether the named class should be loaded by the parent loader
+         * @param name the name of the class to check
+         * @return true if this class loader should delegate to the parent loader
+         */
+        boolean check(String name);
+    }
+    private Excludable checker;
+    
+    
     public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
         Class klass = null;
         try { klass = platform.loadClass(name); } catch (ClassNotFoundException ex) {}
         if (klass==null)
             klass = findLoadedClass(name);
+        if (klass==null & (checker != null && checker.check(name)))
+            klass = pcl.loadClass(name);
         if (klass==null) synchronized (this) {
             klass = findLoadedClass(name);
             if (klass==null)
