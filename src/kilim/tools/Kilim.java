@@ -32,7 +32,9 @@ public class Kilim {
     }
     /** run static method className.method(args) using reflection and the WeavingClassLoader */
     public static void run(String className,String method,String ... args) throws Exception {
-        new WeavingClassLoader().run(className,method,args);
+        WeavingClassLoader loader = new WeavingClassLoader();
+        Thread.currentThread().setContextClassLoader(loader);
+        loader.run(className,method,args);
     }
 
     public static class Config {
@@ -76,27 +78,32 @@ public class Kilim {
     public static boolean trampoline(Object example,boolean check,String...args) {
         return trampoline(new Config(check,example,null).offset(2),args);
     }
-    
+
+    /**
+     * run the calling (static) method in the WeavingClassLoader context using the provided config
+     * @param config the config
+     * @param args the args to pass to the method
+     * @return true if the trampoline was called and returned
+     */    
     public static boolean trampoline(Config config,String...args) {
-        ClassLoader cl = Kilim.class.getClassLoader();
-        if (cl.getClass().getName().equals(WeavingClassLoader.class.getName())) return false;
         Object example = config.example;
-        int offset = config.offset;
-        StackTraceElement ste = new Exception().getStackTrace()[offset];
-        boolean simple = example==null;
+        StackTraceElement ste = new Exception().getStackTrace()[config.offset];
+        Class klass = example==null ? null
+                : example instanceof Class ? (Class) example : example.getClass();
+        ClassLoader ecl = klass==null ? null : klass.getClassLoader();
+        ClassLoader cl = ecl==null ? Kilim.class.getClassLoader() : ecl;
+        if (cl.getClass().getName().equals(WeavingClassLoader.class.getName()))
+            return false;
 
         try {
             if (config.check) {
                 try {
-                    Class klass = cl.loadClass(ste.getClassName());
-                    if (isWoven(klass))
+                    Class check = cl.loadClass(ste.getClassName());
+                    if (isWoven(check))
                         return false;
                 }
                 catch (ClassNotFoundException ex) {}
             }
-            Class klass = simple ? null
-                    : example instanceof Class ? (Class) example : example.getClass();
-            ClassLoader ecl = simple ? null : klass.getClassLoader();
             WeavingClassLoader loader = new WeavingClassLoader(ecl,null);
             if (config.exclude != null)
                 loader.exclude(config.exclude);
