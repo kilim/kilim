@@ -2,9 +2,9 @@ package kilim.demo;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import kilim.JettyHandler.Java7Handler;
 import kilim.Pausable;
 import kilim.Task;
+import kilim.support.JettyHandler;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 
@@ -21,11 +21,11 @@ public class KilimHandler7 {
     public static void main(String[] args) throws Exception {
         Server server = new Server(9104);
         MyHandler7 handler = new MyHandler7();
-        server.setHandler(new kilim.JettyHandler(handler));
+        server.setHandler(new JettyHandler(handler));
         server.start();
     }
 
-    public static class MyHandler7 extends Java7Handler {
+    public static class MyHandler7 extends JettyHandler.Java7Handler {
         public String handle(String target,Request br,HttpServletRequest req,HttpServletResponse resp) throws Pausable,Exception {
             Task.sleep(1000);
             return "cruel world = " + req.getPathInfo();

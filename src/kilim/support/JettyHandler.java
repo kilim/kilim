@@ -1,10 +1,12 @@
-package kilim;
+package kilim.support;
 
 import java.io.IOException;
 import javax.servlet.AsyncContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import kilim.Fiber;
+import kilim.Pausable;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
