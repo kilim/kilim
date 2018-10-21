@@ -6,6 +6,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import kilim.timerservice.Timer;
 
 import kilim.timerservice.TimerService;
 import kilim.timerservice.TimerService.WatchdogContext;
@@ -32,9 +33,8 @@ public class AffineThreadPool {
     private TimerService timerService;
     
 
-    public AffineThreadPool(int numThreads,int queueSize,TimerService ts) {
+    public AffineThreadPool(int numThreads,int queueSize) {
         exes = new Executor[numThreads];
-        timerService = ts;
         for (int ii=0; ii < numThreads; ii++)
             exes[ii] = new Executor(new LinkedBlockingQueue(queueSize));
         timerService = new TimerService(exes[0]);
@@ -67,11 +67,17 @@ public class AffineThreadPool {
         exes[index].publish(task);
     }
 
+    public void scheduleTimer(Timer t) {
+        timerService.submit(t);
+    }
+
     void shutdown() {
         for (int ii=0; ii < exes.length; ii++)
             exes[ii].shutdown();
+        timerService.shutdown();
     }
 
+    public int numThreads() { return exes.length; }
 
 
     /*
@@ -81,9 +87,9 @@ public class AffineThreadPool {
      no tasks waiting to be run
         
      */
-    public boolean waitIdle(TimerService ts,int delay) {
+    public boolean waitIdle(int delay) {
         while (!Thread.interrupted()) {
-            if (resolved(ts))
+            if (resolved(timerService))
                 return true;
             try { Thread.sleep(delay); } catch (InterruptedException ex) { break; }
         }

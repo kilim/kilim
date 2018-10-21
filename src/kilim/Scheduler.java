@@ -9,7 +9,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import kilim.nio.NioSelectorScheduler.RegistrationTask;
 import kilim.timerservice.Timer;
-import kilim.timerservice.TimerService;
 
 /**
  * This is a basic FIFO Executor. It maintains a list of runnable tasks and hands them out to WorkerThreads. Note
@@ -24,15 +23,11 @@ public class Scheduler {
     public static int defaultNumberThreads;
     private static final ThreadLocal<Task> taskMgr_ = new ThreadLocal<Task>();
 
-    private int numThreads;
     private AffineThreadPool affinePool_;
     protected AtomicBoolean shutdown = new AtomicBoolean(false);
     
     /** print exceptions to standard out, default:true */
     public boolean enableExceptionLog = true;
-
-    // Added for new Timer service
-    private TimerService timerService;
 
     static {
         String s = System.getProperty("kilim.Scheduler.numThreads");
@@ -72,16 +67,14 @@ public class Scheduler {
     public Scheduler(int numThreads,int queueSize) {
         if (numThreads < 0)
             numThreads = defaultNumberThreads;
-        timerService = new TimerService();
-        affinePool_ = new AffineThreadPool(numThreads,queueSize,timerService);
-        this.numThreads = numThreads;
+        affinePool_ = new AffineThreadPool(numThreads,queueSize);
     }
 
     public boolean isEmptyish() {
         return affinePool_.isEmptyish();
     }
 
-    public int numThreads() { return numThreads; }
+    public int numThreads() { return affinePool_.numThreads(); }
         
     /**
      * Schedule a task to run.
@@ -108,7 +101,7 @@ public class Scheduler {
     }
 
     public void scheduleTimer(Timer t) {
-        timerService.submit(t);
+        affinePool_.scheduleTimer(t);
     }
 
     /**
@@ -117,7 +110,7 @@ public class Scheduler {
      * could be partially executed
      */
     public void idledown() {
-        if (affinePool_!=null&&affinePool_.waitIdle(timerService,100))
+        if (affinePool_!=null&&affinePool_.waitIdle(100))
             shutdown();
     }
 
@@ -126,7 +119,6 @@ public class Scheduler {
         if (defaultScheduler==this)
             defaultScheduler = null;
         if (affinePool_!=null) affinePool_.shutdown();
-        timerService.shutdown();
     }
 
     public boolean isShutdown() {
