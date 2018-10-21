@@ -8,6 +8,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import kilim.timerservice.TimerService;
+import kilim.timerservice.TimerService.WatchdogContext;
+import kilim.timerservice.TimerService.WatchdogTask;
 
 /*
     fixme:vestigial - release note for pre-2.0
@@ -27,13 +29,15 @@ public class AffineThreadPool {
     Executor [] exes;
     AtomicInteger index = new AtomicInteger(-1);
     private AtomicInteger count = new AtomicInteger(0);
+    private TimerService timerService;
     
 
     public AffineThreadPool(int numThreads,int queueSize,TimerService ts) {
         exes = new Executor[numThreads];
+        timerService = ts;
         for (int ii=0; ii < numThreads; ii++)
-            exes[ii] = new Executor(new LinkedBlockingQueue(queueSize),ts);
-        ts.defaultExec = exes[0];
+            exes[ii] = new Executor(new LinkedBlockingQueue(queueSize));
+        timerService = new TimerService(exes[0]);
     }
 
 
@@ -61,16 +65,6 @@ public class AffineThreadPool {
         count.incrementAndGet();
         task.setTid(index);
         exes[index].publish(task);
-    }
-
-    public static void publish(ThreadPoolExecutor executor,Runnable payload) {
-        Executor exe = (Executor) executor;
-        exe.count().incrementAndGet();
-        // warning - adding directly to the queue is "strongly discouraged"
-        // original motivation for this technique was to bypass the TPE wrapping of the task
-        // not sure if this is still a consideration
-        // fixme:verify - is it possible that executor has not yet started ???
-        executor.getQueue().add(payload);
     }
 
     void shutdown() {
@@ -113,33 +107,41 @@ public class AffineThreadPool {
         return true;
     }
 
-    public static boolean isEmptyProxy(ThreadPoolExecutor executor) {
-        Executor exe = (Executor) executor;
-        return exe.count().get()==0;
-    }
-
-    class Executor extends ThreadPoolExecutor {
+    class Executor extends ThreadPoolExecutor implements WatchdogContext {
         LinkedBlockingQueue<Task> que;
         AtomicInteger pending = new AtomicInteger();
-        private TimerService timerService;
         
-        private AtomicInteger count() { return count; }
-
         void publish(Task task) {
             pending.incrementAndGet();
             submit(task);
         }
         
-        public Executor(LinkedBlockingQueue que,TimerService ts) {
+        public Executor(LinkedBlockingQueue que) {
             super(1,1,Integer.MAX_VALUE,TimeUnit.DAYS,que);
             this.que = que;
-            timerService = ts;
         }
 
         protected void afterExecute(Runnable r,Throwable t) {
             pending.decrementAndGet();
             timerService.trigger(this);
             count.decrementAndGet();
+        }
+
+        public boolean isEmpty() {
+            return count.get()==0;
+        }
+
+        public boolean isEmptyish() {
+            return AffineThreadPool.this.isEmptyish();
+        }
+
+        public void publish(WatchdogTask dog) {
+            count.incrementAndGet();
+            // warning - adding directly to the queue is "strongly discouraged"
+            // original motivation for this technique was to bypass the TPE wrapping of the task
+            // not sure if this is still a consideration
+            // fixme:verify - is it possible that executor has not yet started ???
+            getQueue().add(dog);
         }
     }
 

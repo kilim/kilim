@@ -4,16 +4,12 @@ package kilim.timerservice;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
-import kilim.AffineThreadPool;
 
-import kilim.Cell;
 import kilim.Event;
 import kilim.EventPublisher;
 import kilim.EventSubscriber;
-import kilim.Scheduler;
 import kilim.concurrent.MPSCQueue;
 
 public class TimerService {
@@ -28,11 +24,12 @@ public class TimerService {
     // the number of watchdogs set immediately (ie, max retry), scheduled, and scheduled+run
     private static volatile int c1, c2, c3;
 
-    public TimerService() {
+    public TimerService(WatchdogContext doghouse) {
         timerHeap = new TimerPriorityHeap();
         timerQueue = new MPSCQueue<Timer>(Integer.getInteger("kilim.maxpendingtimers",100000));
         timerProxy = Executors.newSingleThreadScheduledExecutor();
         lock = new java.util.concurrent.locks.ReentrantLock();
+        defaultExec = doghouse;
     }
 
     public void shutdown() {
@@ -41,7 +38,7 @@ public class TimerService {
             System.out.format("timerservice: %d %d %d\n",c1,c2,c3);
     }
 
-    public ThreadPoolExecutor defaultExec;
+    public WatchdogContext defaultExec;
     
     // todo: verify that timer rechedule is thread safe
     // ie, under heavy load, can moving a timer cause it to be missed ?
@@ -61,19 +58,19 @@ public class TimerService {
      * return true if empty at a particular moment during the call
      *  allowing false negatives if operations are ongoing
      */
-    public boolean isEmptyLazy(ThreadPoolExecutor executor) {
+    public boolean isEmptyLazy(WatchdogContext executor) {
         return empty() && new Empty().check(executor);
     }
     private class Empty implements EventSubscriber {
         boolean empty, done;
-        ThreadPoolExecutor executor;
+        WatchdogContext executor;
         @Override
         public void onEvent(EventPublisher ep,Event e) {
-            empty = AffineThreadPool.isEmptyProxy(executor) && empty();
+            empty = executor.isEmpty() && empty();
             done = true;
             synchronized (this) { this.notify(); }
         }
-        boolean check(ThreadPoolExecutor executor) {
+        boolean check(WatchdogContext executor) {
             this.executor = executor;
             if (! timerQueue.offer(new kilim.timerservice.Timer(this)))
                 return false;
@@ -85,7 +82,7 @@ public class TimerService {
         }
     }
     
-    public void trigger(final ThreadPoolExecutor executor) {
+    public void trigger(final WatchdogContext doghouse) {
         int maxtry = 5;
 
         long clock = System.currentTimeMillis(), sched = 0;
@@ -98,16 +95,16 @@ public class TimerService {
             } finally { lock.unlock(); }
             clock = System.currentTimeMillis();
         }
-        if (! Scheduler.getDefaultScheduler().isEmptyish()) return;
+        if (! doghouse.isEmptyish()) return;
 
         WatchdogTask dragon = argos;
 
         if (retry==maxtry) {
-            AffineThreadPool.publish(executor,argos = new WatchdogTask(0));
+            doghouse.publish(argos = new WatchdogTask(0));
             c1++;
         }
         else if (sched > 0 & (dragon.done | sched < dragon.time)) {
-            Watcher watcher = new Watcher(executor,sched);
+            Watcher watcher = new Watcher(doghouse,sched);
             argos = watcher.dog;
             timerProxy.schedule(watcher,sched-clock,TimeUnit.MILLISECONDS);
             c2++;
@@ -155,28 +152,32 @@ public class TimerService {
         return 0L;
     }
     private class Watcher implements Runnable {
-        ThreadPoolExecutor executor;
+        WatchdogContext doghouse;
         WatchdogTask dog;
-        Watcher(ThreadPoolExecutor $executor,long time) { executor = $executor; dog = new WatchdogTask(time); }
+        Watcher(WatchdogContext $doghouse,long time) { doghouse = $doghouse; dog = new WatchdogTask(time); }
         @Override
         public void run() {
             if (! launch()) { dog.done = true; launch(); }
         }
         private boolean launch() {
             WatchdogTask hund = argos;
-            if ((dog.time <= hund.time | hund.done) && Scheduler.getDefaultScheduler().isEmptyish()) {
-                AffineThreadPool.publish(executor,dog);
+            if ((dog.time <= hund.time | hund.done) && doghouse.isEmptyish()) {
+                doghouse.publish(dog);
                 return true;
             }
             return false;
         }
     }
-    static class WatchdogTask implements Runnable {
+    public static class WatchdogTask implements Runnable {
         volatile boolean done;
         final long time;
         public WatchdogTask(long $time) { time = $time; }
         @Override
         public void run() { done = true; c3++; }
     }
-
+    public interface WatchdogContext {
+        boolean isEmpty();
+        boolean isEmptyish();
+        void publish(WatchdogTask dog);
+    }
 }
