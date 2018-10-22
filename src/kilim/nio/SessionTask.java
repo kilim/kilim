@@ -18,7 +18,7 @@ public class SessionTask extends Task {
             if (ex != null) Sched.log(getScheduler(),this,ex);
         }
     }
-    private static class Sched extends kilim.Scheduler {
+    private static class Sched extends kilim.AffineThreadPool {
         static void log(kilim.Scheduler sched,Object src,Object obj) { logRelay(sched,src,obj); }
     }
 }

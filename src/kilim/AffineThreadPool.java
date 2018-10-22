@@ -26,20 +26,36 @@ import kilim.timerservice.TimerService.WatchdogTask;
     however, a number of methods were removed that were not used internally
     so any external usages will now be broken
 */
-public class AffineThreadPool {
+public class AffineThreadPool extends Scheduler {
     Executor [] exes;
     AtomicInteger index = new AtomicInteger(-1);
     private AtomicInteger count = new AtomicInteger(0);
     private TimerService timerService;
     
 
+    public AffineThreadPool() {}
+    
+    /**
+     * create the scheduler
+     * @param numThreads the number of threads to use, or use the default if less than zero 
+     * @param queueSize the queue size to use
+     */
     public AffineThreadPool(int numThreads,int queueSize) {
+        if (numThreads < 0)
+            numThreads = defaultNumberThreads;
         exes = new Executor[numThreads];
         for (int ii=0; ii < numThreads; ii++)
             exes[ii] = new Executor(new LinkedBlockingQueue(queueSize));
         timerService = new TimerService(exes[0]);
     }
 
+    public void schedule(int index,Task t) {
+        publish(index,t);
+    }
+    public void idledown() {
+        if (waitIdle(100))
+            shutdown();
+    }
 
     // fixme:denial-of-service
     // seems vulnerable to periodic cost in task scheduling
@@ -71,7 +87,8 @@ public class AffineThreadPool {
         timerService.submit(t);
     }
 
-    void shutdown() {
+    public void shutdown() {
+        super.shutdown();
         for (int ii=0; ii < exes.length; ii++)
             exes[ii].shutdown();
         timerService.shutdown();
@@ -102,11 +119,6 @@ public class AffineThreadPool {
     }
 
     
-    /**
-     * are the queues empty allows false positives, but not false negatives ie, if this method returns false, then
-     * at some moment during the call at least one queue was non-empty if it returns true then for each queue there
-     * was a moment during the call when it was empty
-     */
     public boolean isEmptyish() {
         for (Executor exe : exes)
             if (!exe.que.isEmpty()) return false;

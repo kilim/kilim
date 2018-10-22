@@ -17,14 +17,13 @@ import kilim.timerservice.Timer;
  * object.
  *
  */
-public class Scheduler {
+public abstract class Scheduler {
     private static final int defaultQueueSize_ = Integer.MAX_VALUE;
     public static volatile Scheduler defaultScheduler = null;
     public static int defaultNumberThreads;
     private static final ThreadLocal<Task> taskMgr_ = new ThreadLocal<Task>();
     public static Logger defaultLogger = new BasicLogger();
 
-    private AffineThreadPool affinePool_;
     protected AtomicBoolean shutdown = new AtomicBoolean(false);
     
     private Logger logger = defaultLogger;
@@ -48,40 +47,21 @@ public class Scheduler {
         taskMgr_.set(t);
     }
 
-    protected Scheduler() {
-    }
-
     /**
      * return a new default Scheduler with default queue length
-     * @param numThreads the number of threads
+     * @param numThreads the number of threads to use, or use the default if less than zero 
      * @return the new Scheduler
      */
-    public static Scheduler make(int numThreads) { return new Scheduler(numThreads,defaultQueueSize_); }
+    public static Scheduler make(int numThreads) { return new AffineThreadPool(numThreads,defaultQueueSize_); }
     
     /**
-     * create the scheduler with a default queue size
-     * @param numThreads the number of threads to use, or use the default if less than zero 
+     * are the queues empty allows false positives, but not false negatives ie, if this method returns false, then
+     * at some moment during the call at least one queue was non-empty if it returns true then for each queue there
+     * was a moment during the call when it was empty
      */
-    public Scheduler(int numThreads) {
-        this(numThreads,defaultQueueSize_);
-    }
+    public abstract boolean isEmptyish();
 
-    /**
-     * create the scheduler
-     * @param numThreads the number of threads to use, or use the default if less than zero 
-     * @param queueSize the queue size to use
-     */
-    public Scheduler(int numThreads,int queueSize) {
-        if (numThreads < 0)
-            numThreads = defaultNumberThreads;
-        affinePool_ = new AffineThreadPool(numThreads,queueSize);
-    }
-
-    public boolean isEmptyish() {
-        return affinePool_.isEmptyish();
-    }
-
-    public int numThreads() { return affinePool_.numThreads(); }
+    public abstract int numThreads();
         
     /**
      * Schedule a task to run.
@@ -100,32 +80,21 @@ public class Scheduler {
      * @param index the index of the executor to use, or less than zero to use the default (round robin) assignment
      * @param t the task
      */
-    public void schedule(int index,Task t) {
-        if (t instanceof RegistrationTask)
-            assert (false);
-        else
-            affinePool_.publish(index,t);
-    }
+    public abstract void schedule(int index,Task t);
 
-    public void scheduleTimer(Timer t) {
-        affinePool_.scheduleTimer(t);
-    }
+    public abstract void scheduleTimer(Timer t);
 
     /**
      * block the thread till a moment at which all scheduled tasks have completed and then shutdown the scheduler
      * does not prevent scheduling new tasks (from other threads) until the shutdown is complete so such a task
      * could be partially executed
      */
-    public void idledown() {
-        if (affinePool_!=null&&affinePool_.waitIdle(100))
-            shutdown();
-    }
+    public abstract void idledown();
 
     public void shutdown() {
         shutdown.set(true);
         if (defaultScheduler==this)
             defaultScheduler = null;
-        if (affinePool_!=null) affinePool_.shutdown();
     }
 
     public boolean isShutdown() {
