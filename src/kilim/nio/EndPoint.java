@@ -113,7 +113,7 @@ public class EndPoint { // Mailbox for receiving socket ready events.
             if (n == -1) {
                 IOException ex = close2();
                 if (ex != null)
-                    Sched.log(Task.getCurrentTask().getScheduler(),ex);
+                    Sched.log(Task.getCurrentTask().getScheduler(),this,ex);
                 throw new EOFException();
             }
             if (n == 0) {
@@ -134,7 +134,7 @@ public class EndPoint { // Mailbox for receiving socket ready events.
     }
 
     private static class Sched extends kilim.Scheduler {
-        static void log(kilim.Scheduler sched,Object obj) { logRelay(sched,obj); }
+        static void log(kilim.Scheduler sched,Object src,Object obj) { logRelay(sched,src,obj); }
     }
 
     /**

@@ -22,12 +22,12 @@ public class Scheduler {
     public static volatile Scheduler defaultScheduler = null;
     public static int defaultNumberThreads;
     private static final ThreadLocal<Task> taskMgr_ = new ThreadLocal<Task>();
+    public static Logger defaultLogger = new BasicLogger();
 
     private AffineThreadPool affinePool_;
     protected AtomicBoolean shutdown = new AtomicBoolean(false);
     
-    /** print exceptions to standard out, default:true */
-    public boolean enableExceptionLog = true;
+    private Logger logger = defaultLogger;
 
     static {
         String s = System.getProperty("kilim.Scheduler.numThreads");
@@ -126,20 +126,35 @@ public class Scheduler {
     }
 
     /** a static accessor to allow log to be protected */
-    static protected void logRelay(Scheduler sched,Object obj) { sched.log(obj); }
+    static protected void logRelay(Scheduler sched,Object src,Object obj) { sched.log(src,obj); }
+    
+    public static interface Logger {
+        public void log(Object source,Object problem);
+    }
+    static class BasicLogger implements Logger {
+        public void log(Object source,Object obj) {
+            if (obj instanceof Throwable)
+                ((Throwable) obj).printStackTrace();
+            else
+                System.out.println(obj);
+        }
+    }
     
     /**
      * write to the log
-     * @param obj the obj to log
+     * @param src the source of the log object
+     * @param obj the object to log
      */
-    protected void log(Object obj) {
-        if (!enableExceptionLog)
-            return;
-        if (obj instanceof Throwable)
-            ((Throwable) obj).printStackTrace();
-        else
-            System.out.println(obj);
-    }    
+    protected void log(Object src,Object obj) {
+        if (logger != null)
+            logger.log(src,obj);
+    }
+    
+    /**
+     * set a logger
+     * @param logger the logger
+     */
+    public void setLogger(Logger logger) { this.logger = logger; }
 
     public synchronized static Scheduler getDefaultScheduler() {
         if (defaultScheduler==null)

@@ -15,10 +15,10 @@ public class SessionTask extends Task {
     public void close() {
         if (endpoint != null) {
             IOException ex = endpoint.close2();
-            if (ex != null) Sched.log(getScheduler(),ex);
+            if (ex != null) Sched.log(getScheduler(),this,ex);
         }
     }
     private static class Sched extends kilim.Scheduler {
-        static void log(kilim.Scheduler sched,Object obj) { logRelay(sched,obj); }
+        static void log(kilim.Scheduler sched,Object src,Object obj) { logRelay(sched,src,obj); }
     }
 }
