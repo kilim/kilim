@@ -11,7 +11,7 @@ public class TestPrefThread extends TestCase {
 
     public void testPreferredThread() throws Exception {
         int NUM_TASKS = 5 * 1000;
-        Scheduler s = new Scheduler(10);
+        Scheduler s = Scheduler.make(10);
         Mailbox<ExitMsg> exitMB = new Mailbox<ExitMsg>();
         Task t[] = new Task[NUM_TASKS];
         for (int i = 0; i < NUM_TASKS; i++) {

@@ -22,7 +22,7 @@ public class TestInterface extends TestCase {
     public void testIntCall() throws Exception {
         Task task = new kilim.test.ex.ExInterfaceImpl();
         Mailbox<ExitMsg> exitmb = new Mailbox<ExitMsg>();
-        Scheduler s = new Scheduler(1);
+        Scheduler s = Scheduler.make(1);
         task.informOnExit(exitmb);
         task.setScheduler(s); 
         task.start();
@@ -49,7 +49,7 @@ public class TestInterface extends TestCase {
     public void testGenericInterface() throws Exception {
         ExInterfaceGenericTask task = new ExInterfaceGenericTask(new ExInterfaceGenericImpl());
         Mailbox<ExitMsg> exitmb = new Mailbox<ExitMsg>();
-        Scheduler s = new Scheduler(1);
+        Scheduler s = Scheduler.make(1);
         task.informOnExit(exitmb);
         task.setScheduler(s); 
         task.start();

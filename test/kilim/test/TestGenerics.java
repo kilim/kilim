@@ -24,7 +24,7 @@ public class TestGenerics extends TestCase {
 
     public static void runTask(Task task) throws Exception {
         Mailbox<ExitMsg> exitmb = new Mailbox<ExitMsg>();
-        Scheduler s = new Scheduler(1);
+        Scheduler s = Scheduler.make(1);
         task.informOnExit(exitmb);
         task.setScheduler(s); 
         task.start();

@@ -10,7 +10,7 @@ import kilim.Task;
 
 public class TestLock extends TestCase{
     public void testLocks() {
-        Scheduler scheduler = new Scheduler(4);
+        Scheduler scheduler = Scheduler.make(4);
         Mailbox<ExitMsg> mb = new Mailbox<ExitMsg>();
         for (int i = 0; i < 100; i++) {
             Task t = new LockTask();

@@ -52,6 +52,13 @@ public class Scheduler {
     }
 
     /**
+     * return a new default Scheduler with default queue length
+     * @param numThreads the number of threads
+     * @return the new Scheduler
+     */
+    public static Scheduler make(int numThreads) { return new Scheduler(numThreads,defaultQueueSize_); }
+    
+    /**
      * create the scheduler with a default queue size
      * @param numThreads the number of threads to use, or use the default if less than zero 
      */
@@ -158,7 +165,7 @@ public class Scheduler {
 
     public synchronized static Scheduler getDefaultScheduler() {
         if (defaultScheduler==null)
-            defaultScheduler = new Scheduler(defaultNumberThreads);
+            defaultScheduler = Scheduler.make(defaultNumberThreads);
         return defaultScheduler;
     }
 

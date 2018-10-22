@@ -32,7 +32,7 @@ public class BigPingPong extends Task {
             }
 
             for (int i = 0 ; i < nSchedulers; i++) {
-                schedulers[i] = new Scheduler(nThreadsPerScheduler);
+                schedulers[i] = Scheduler.make(nThreadsPerScheduler);
             }
             
             BigPingPong[] tasks = new BigPingPong[nTasks];
