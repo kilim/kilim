@@ -134,7 +134,9 @@ public abstract class Scheduler {
 
     public synchronized static Scheduler getDefaultScheduler() {
         if (defaultScheduler==null)
-            defaultScheduler = Scheduler.make(defaultNumberThreads);
+            defaultScheduler = 0==10
+                    ? Scheduler.make(defaultNumberThreads)
+                    : new ForkJoinScheduler(defaultNumberThreads);
         return defaultScheduler;
     }
 

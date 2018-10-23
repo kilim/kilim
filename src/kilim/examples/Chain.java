@@ -52,6 +52,7 @@ public class Chain extends Task {
            nextms = mb;
            mb = new Mailbox<StringBuffer>();
         }
-        nextms.putnb(new StringBuffer());        
+        nextms.putnb(new StringBuffer());
+        Task.idledown();
     }
 }
