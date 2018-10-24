@@ -135,21 +135,32 @@ public abstract class Scheduler {
      */
     public void setLogger(Logger logger) { this.logger = logger; }
 
+    /** get and possibly instantiate a default scheduler */
     public synchronized static Scheduler getDefaultScheduler() {
         if (defaultScheduler==null)
-            defaultScheduler = 0==10
-                    ? Scheduler.make(defaultNumberThreads)
-                    : new ForkJoinScheduler(defaultNumberThreads);
+            defaultScheduler = Scheduler.make(defaultNumberThreads);
         return defaultScheduler;
     }
-    public synchronized static Scheduler getPinnableScheduler() {
-        if (pinnableScheduler==null)
-            pinnableScheduler = Scheduler.make(defaultNumberThreads);
+    /** get and possibly instantiate a scheduler that is pinnable */
+    public synchronized static Scheduler getDefaultPinnable() {
+        if (pinnableScheduler==null) {
+            if (defaultScheduler==null || defaultScheduler.isPinnable())
+                pinnableScheduler = getDefaultScheduler();
+            else
+                pinnableScheduler = make(defaultNumberThreads);
+        }
         return pinnableScheduler;
     }
 
-    public static void setDefaultScheduler(Scheduler s) {
+    protected Scheduler getPinnable() {
+        return isPinnable() ? this : getDefaultPinnable();
+    }
+    
+    public synchronized static void setDefaultScheduler(Scheduler s) {
         defaultScheduler = s;
+    }
+    public synchronized static void setDefaultPinnable(Scheduler s) {
+        pinnableScheduler = s;
     }
 
 }

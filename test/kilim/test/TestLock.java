@@ -14,13 +14,13 @@ public class TestLock extends TestCase{
     static int maxDelay = 30;
     static int numTasks = 20;
     static int numIters = 20;
-    static boolean affine = true;
+    static boolean force = false;
     static boolean preLock = true;
     static int ratio = 10;
     static int timeout = maxDelay/ratio*numIters*numTasks/numThreads + maxDelay*numIters;
     
     public void testLocks() {
-        Scheduler scheduler = affine ? Scheduler.make(numThreads) : new ForkJoinScheduler(numThreads);
+        Scheduler scheduler = force ? new ForkJoinScheduler(numThreads) : Scheduler.getDefaultScheduler();
         Mailbox<ExitMsg> mb = new Mailbox<ExitMsg>();
         for (int i = 0; i < numTasks; i++) {
             Task t = new LockTask();
