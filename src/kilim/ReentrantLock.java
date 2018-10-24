@@ -21,6 +21,10 @@ public class ReentrantLock extends java.util.concurrent.locks.ReentrantLock {
 
     Thread locker = null; // /***************************
 
+    public void preLock() throws Pausable {
+        Scheduler.getCurrentTask().prePin();
+    }
+    
     @Override
     public void lock() {
         super.lock();

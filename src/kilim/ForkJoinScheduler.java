@@ -27,9 +27,11 @@ public class ForkJoinScheduler extends Scheduler
     public boolean isEmpty() {
         return count.get()==0;
     }
+
+    public boolean isPinnable() { return false; }
     
     public void schedule(int index,Task task) {
-        assert(index < 0);
+        assert index < 0 : "attempt to pin task to FJS";
         ForkJoinPool current = ForkJoinTask.getPool();
         ForkedTask fajita = new ForkedTask(task);
         count.incrementAndGet();

@@ -20,6 +20,7 @@ import kilim.timerservice.Timer;
 public abstract class Scheduler {
     private static final int defaultQueueSize_ = Integer.MAX_VALUE;
     public static volatile Scheduler defaultScheduler = null;
+    public static volatile Scheduler pinnableScheduler = null;
     public static int defaultNumberThreads;
     private static final ThreadLocal<Task> taskMgr_ = new ThreadLocal<Task>();
     public static Logger defaultLogger = new BasicLogger();
@@ -62,6 +63,8 @@ public abstract class Scheduler {
     public abstract boolean isEmptyish();
 
     public abstract int numThreads();
+    
+    public boolean isPinnable() { return true; }
         
     /**
      * Schedule a task to run.
@@ -138,6 +141,11 @@ public abstract class Scheduler {
                     ? Scheduler.make(defaultNumberThreads)
                     : new ForkJoinScheduler(defaultNumberThreads);
         return defaultScheduler;
+    }
+    public synchronized static Scheduler getPinnableScheduler() {
+        if (pinnableScheduler==null)
+            pinnableScheduler = Scheduler.make(defaultNumberThreads);
+        return pinnableScheduler;
     }
 
     public static void setDefaultScheduler(Scheduler s) {

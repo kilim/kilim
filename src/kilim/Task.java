@@ -494,6 +494,12 @@ public abstract class Task<TT> implements Runnable, EventSubscriber, Fiber.Worke
         }
     }
 
+    public void prePin() throws Pausable {
+        if (scheduler.isPinnable()) return;
+        scheduler = Scheduler.getPinnableScheduler();
+        yield();
+    }
+    
     public void pinToThread() {
         numActivePins++;
     }
