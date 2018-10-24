@@ -42,14 +42,8 @@ public class ForkJoinScheduler extends Scheduler
     
     public void schedule(int index,Task task) {
         assert index < 0 : "attempt to pin task to FJS";
-        ForkJoinPool current = ForkJoinTask.getPool();
-        ForkedTask fajita = new ForkedTask(task);
-        count.incrementAndGet();
-        if (current==pool)
-            fajita.fork();
-        else
-            pool.submit(fajita);
-    }
+        publish(task);
+     }
     public void publish(Runnable task) {
         ForkJoinPool current = ForkJoinTask.getPool();
         ForkedRunnable fajita = new ForkedRunnable(task);
@@ -80,26 +74,16 @@ public class ForkJoinScheduler extends Scheduler
         shutdown();
     }
 
-    final class ForkedTask<V> extends ForkJoinTask<V> {
-        Task<V> task;
-        public ForkedTask(Task<V> task) { this.task = task; }
-        public V getRawResult() { return null; }
-        protected void setRawResult(V value) {}
-        protected boolean exec() {
-            int tid = ((ForkJoinWorkerThread) Thread.currentThread()).getPoolIndex();
-            ((Task) task).setTid(tid);
-            task.run();
-            timerService.trigger(ForkJoinScheduler.this);
-            count.decrementAndGet();
-            return true;
-        }
-    }
     final class ForkedRunnable<V> extends ForkJoinTask<V> {
         Runnable task;
         public ForkedRunnable(Runnable task) { this.task = task; }
         public V getRawResult() { return null; }
         protected void setRawResult(V value) {}
         protected boolean exec() {
+            if (task instanceof Task) {
+                int tid = ((ForkJoinWorkerThread) Thread.currentThread()).getPoolIndex();
+                ((Task) task).setTid(tid);
+            }
             task.run();
             timerService.trigger(ForkJoinScheduler.this);
             count.decrementAndGet();
