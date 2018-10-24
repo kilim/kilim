@@ -499,8 +499,14 @@ public abstract class Task<TT> implements Runnable, EventSubscriber, Fiber.Worke
         scheduler = scheduler.getPinnable();
         yield();
     }
+
+    void checkPin() {
+        if (! scheduler.isPinnable())
+            throw new AssertionError("attempt to pin and unpinnable scheduler - must call `prePin()` first");
+    }
     
     public void pinToThread() {
+        checkPin();
         numActivePins++;
     }
 

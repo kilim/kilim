@@ -24,9 +24,13 @@ public class ReentrantLock extends java.util.concurrent.locks.ReentrantLock {
     public void preLock() throws Pausable {
         Scheduler.getCurrentTask().prePin();
     }
+    protected void checkPin() {
+        Scheduler.getCurrentTask().checkPin();
+    }
     
     @Override
     public void lock() {
+        checkPin();
         super.lock();
         Thread t = Thread.currentThread();
         locker = t;
@@ -40,6 +44,7 @@ public class ReentrantLock extends java.util.concurrent.locks.ReentrantLock {
 
     @Override
     public boolean tryLock() {
+        checkPin();
         // TODO Auto-generated method stub
         boolean ret = super.tryLock();
         Thread t = Thread.currentThread();
@@ -55,6 +60,7 @@ public class ReentrantLock extends java.util.concurrent.locks.ReentrantLock {
     @Override
     public boolean tryLock(long timeout, TimeUnit unit)
                                                        throws InterruptedException {
+        checkPin();
         boolean ret = super.tryLock(timeout, unit);
         Thread t = Thread.currentThread();
         if (ret && (t != null)) {
