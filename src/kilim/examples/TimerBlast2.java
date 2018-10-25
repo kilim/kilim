@@ -50,7 +50,7 @@ public class TimerBlast2 {
     }
     
     Object monitor = new Object();
-    int nthreads = Scheduler.getDefaultScheduler().numThreads();
+    int nthreads = Scheduler.getDefaultScheduler().numThreads() + 1;
     Info [] infos = new Info[nthreads];
     public class Tock extends Task {
         int delta;
