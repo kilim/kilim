@@ -115,7 +115,8 @@ public class ForkJoinScheduler extends Scheduler
     /** run the main method from another class using this scheduler as the default scheduler */
     public static void main(String[] args) throws Exception {
         Integer numThreads = parseNum(args,0);
-        if (args.length < 2 | numThreads != null & args.length < 3) {
+        int offset = numThreads==null ? 0:1;
+        if (args.length <= offset) {
             System.out.println(
                     "usage:\n"
                     + "  java kilim.ForkJoinScheduler [numThreads] class [args]\n"
@@ -127,9 +128,9 @@ public class ForkJoinScheduler extends Scheduler
         int num = numThreads==null || numThreads <= 0 ? Scheduler.defaultNumberThreads : numThreads;
         Scheduler sched = new ForkJoinScheduler(num);
         Scheduler.setDefaultScheduler(sched);
-        String className = args[1];
-        args = processArgs(args,2);
-        run(className,"main",args);
+        String className = args[offset];
+        String [] pargs = processArgs(args,offset+1);
+        run(className,"main",pargs);
     }
     
 }
