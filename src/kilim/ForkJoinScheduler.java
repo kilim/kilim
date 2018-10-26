@@ -25,7 +25,7 @@ public class ForkJoinScheduler extends Scheduler
     private AtomicInteger count = new AtomicInteger(0);
 
     public ForkJoinScheduler(int numThreads) {
-        numThreads = numThreads < 0 ? numThreads : Scheduler.defaultNumberThreads;
+        numThreads = numThreads >= 0 ? numThreads : Scheduler.defaultNumberThreads;
         pool = new ForkJoinPool(numThreads);
         timerService = new TimerService(this);
     }
