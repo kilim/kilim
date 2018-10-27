@@ -85,10 +85,8 @@ public class ForkJoinScheduler extends Scheduler
         public V getRawResult() { return null; }
         protected void setRawResult(V value) {}
         protected boolean exec() {
-            if (task instanceof Task) {
-                int tid = ((ForkJoinWorkerThread) Thread.currentThread()).getPoolIndex();
-                ((Task) task).setTid(tid);
-            }
+            // generally would Task.setTid here, but they can't be pinned and non-pool threads can participate
+            //   so skip it
             task.run();
             timerService.trigger(ForkJoinScheduler.this);
             count.decrementAndGet();

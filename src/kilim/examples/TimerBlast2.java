@@ -7,6 +7,7 @@
 package kilim.examples;
 
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 import kilim.Mailbox;
 import kilim.Pausable;
 import kilim.Scheduler;
@@ -45,8 +46,7 @@ public class TimerBlast2 {
         
     }
     static public class Info {
-        volatile int count;
-        volatile boolean stop;
+        AtomicInteger count = new AtomicInteger();
     }
     
     Object monitor = new Object();
@@ -68,7 +68,7 @@ public class TimerBlast2 {
                 delta = delay-delta;
                 dive(10);
                 int tid = getTid();
-                infos[tid].count++;
+                infos[tid].count.incrementAndGet();
                 stop = (box.get()==1);
             }
         }
@@ -110,10 +110,10 @@ public class TimerBlast2 {
         while (true) {
             Thread.sleep(10);
             int sum = 0;
-            for (int ii=0; ii < nthreads; ii++) sum += infos[ii].count;
+            for (int ii=0; ii < nthreads; ii++) sum += infos[ii].count.get();
             if (sum==num) break;
         }
-        for (int ii=0; ii < nthreads; ii++) infos[ii].count = 0;
+        for (int ii=0; ii < nthreads; ii++) infos[ii].count.set(0);
 
         long finish = System.currentTimeMillis();
         System.out.println("time: " + (start-prev) + " -- " + (finish-start));
