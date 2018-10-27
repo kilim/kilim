@@ -4,6 +4,7 @@ package kilim.timerservice;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
@@ -27,9 +28,19 @@ public class TimerService {
     public TimerService(WatchdogContext doghouse) {
         timerHeap = new TimerPriorityHeap();
         timerQueue = new MPSCQueue<Timer>(Integer.getInteger("kilim.maxpendingtimers",100000));
-        timerProxy = Executors.newSingleThreadScheduledExecutor();
+        timerProxy = Executors.newSingleThreadScheduledExecutor(factory);
         lock = new java.util.concurrent.locks.ReentrantLock();
         defaultExec = doghouse;
+    }
+    
+    public static ThreadFactory factory = new DaemonFactory();
+    static class DaemonFactory implements ThreadFactory {
+        ThreadFactory defaultFactory = Executors.defaultThreadFactory();
+        public Thread newThread(Runnable r) {
+            Thread thread = defaultFactory.newThread(r);
+            thread.setDaemon(true);
+            return thread;
+        }
     }
 
     public void shutdown() {

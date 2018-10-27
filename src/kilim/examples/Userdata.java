@@ -62,6 +62,7 @@ public class Userdata extends Task {
     public static void main(String [] args) {
         if (kilim.tools.Kilim.trampoline(true,args)) return;
         new Userdata().start();
+        Task.idledown();
     }
     
 }

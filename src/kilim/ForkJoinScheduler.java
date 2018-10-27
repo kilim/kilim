@@ -66,12 +66,17 @@ public class ForkJoinScheduler extends Scheduler
         timerService.submit(t);
     }
 
-    private void noop() {}
-    
     public void idledown() {
-        while (! pool.awaitQuiescence(100,TimeUnit.MILLISECONDS))
-            noop();
-        shutdown();
+        while (!Thread.interrupted())
+            if (waitIdle(100)) return;
+    }
+    public boolean waitIdle(int delay) {
+        if (! pool.awaitQuiescence(delay,TimeUnit.MILLISECONDS) || ! isEmpty())
+            return false;
+        if (timerService.isEmptyLazy(this))
+            return true;
+        try { Thread.sleep(delay); } catch (InterruptedException ex) { Thread.currentThread().interrupt(); }
+        return false;
     }
 
     final class ForkedRunnable<V> extends ForkJoinTask<V> {

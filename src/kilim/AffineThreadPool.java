@@ -3,6 +3,7 @@
 package kilim;
 
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -26,7 +27,7 @@ import kilim.timerservice.TimerService.WatchdogTask;
     however, a number of methods were removed that were not used internally
     so any external usages will now be broken
 */
-public class AffineThreadPool extends Scheduler {
+public class AffineThreadPool extends Scheduler implements ThreadFactory {
     Executor [] exes;
     AtomicInteger index = new AtomicInteger(-1);
     private AtomicInteger count = new AtomicInteger(0);
@@ -53,8 +54,7 @@ public class AffineThreadPool extends Scheduler {
         publish(index,t);
     }
     public void idledown() {
-        if (waitIdle(100))
-            shutdown();
+        waitIdle(100);
     }
 
     // fixme:denial-of-service
@@ -125,6 +125,10 @@ public class AffineThreadPool extends Scheduler {
         return true;
     }
 
+    public Thread newThread(Runnable r) {
+        return TimerService.factory.newThread(r);
+    }
+
     class Executor extends ThreadPoolExecutor implements WatchdogContext {
         LinkedBlockingQueue<Task> que;
         AtomicInteger pending = new AtomicInteger();
@@ -135,7 +139,7 @@ public class AffineThreadPool extends Scheduler {
         }
         
         public Executor(LinkedBlockingQueue que) {
-            super(1,1,Integer.MAX_VALUE,TimeUnit.DAYS,que);
+            super(1,1,Integer.MAX_VALUE,TimeUnit.DAYS,que,AffineThreadPool.this);
             this.que = que;
         }
 

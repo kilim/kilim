@@ -32,6 +32,7 @@ public class Ex extends Task {
         mb.putnb("Hello ");
         mb.putnb("World\n");
         mb.putnb("done");
+        Task.idledown();
     }
 
     /**

@@ -28,6 +28,7 @@ public class  Spawn {
                 mb.put("Hello from " + fi);  // mb and fi captured from environment
             });
         }
+        Task.idledown();
     }
 
     // an example showing pausable chaining with exception inference
