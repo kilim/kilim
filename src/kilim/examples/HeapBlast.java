@@ -16,6 +16,7 @@ public class HeapBlast {
     static Random rand = new Random(0L);
     int num = 1000;
     int size = 0;
+    static int ndone;
 
     Timer [] sorted = new Timer[num];
     Timer [] polled = new Timer[num];
@@ -24,6 +25,7 @@ public class HeapBlast {
 
     
     void claim(boolean test) {
+        ndone++;
         if (! test)
             throw new RuntimeException();
     }
@@ -85,6 +87,7 @@ public class HeapBlast {
 
         for (int ii=0; ii < 100; ii++)
             blast.build();
+        System.out.println("completed timers: " + ndone);
     }
 
 }

@@ -21,11 +21,14 @@ import kilim.Pausable;
 public class Fib extends Generator<BigInteger> {
 
     public static void main(String[] args) {
+        int n;
         if (args.length == 0) {
             System.out.println("java kilim.examples.Fib <n> for the n_th fibonacci number");
-            System.exit(0);
+            System.out.println("  using default ...");
+            n = 19;
         }
-        int n = Integer.parseInt(args[0]);
+        else
+            n = Integer.parseInt(args[0]);
         Fib fib = new Fib();
 
         // Iterate through and waste the first n fibonacci numbers
