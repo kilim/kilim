@@ -68,7 +68,7 @@ the dependency:
     <dependency>
         <groupId>org.db4j</groupId>
         <artifactId>kilim</artifactId>
-        <version>2.0.0-28</version>
+        <version>2.0.0-29</version>
     </dependency>
 ```
 
@@ -78,7 +78,7 @@ weaving with the kilim plugin:
     <plugin>
         <groupId>org.db4j</groupId>
         <artifactId>kilim</artifactId>
-        <version>2.0.0-28</version>
+        <version>2.0.0-29</version>
         <executions>
             <execution>
                 <goals><goal>weave</goal></goals>
@@ -107,15 +107,23 @@ weaving with the kilim plugin:
 
 ## Java Versions
 
-java 8 is the recommended platform, but 7, 8, 9 and 10 are regularly used and tested, and in theory java 6 should still work
+java 8 and java 11 are the recommended platforms, but 7, 8, 9, and 10 are regularly tested, and in theory java 6 could probably still be made to work without too much work
 
+java 8, java 9 and java 11:
+  * maven central: `org.db4j : kilim : 2.0.0-29`
+  * compiled with java 8 bytecode
+  * ASM 7.0 supports all versions of java through java 11 (and java 12 semi-officially)
+  * this version should also work with java 12 (no new bytecodes) but not being actively tested yet
+
+
+### other versions and notes on limitations
 
 java 7:
   * `JAVA_HOME=path/to/java7 ant clean weave jar`
   * see `demos/java7` for usage examples
   * some features are not available, eg jetty integration and lambdas
   * this version is incompatible with lambdas in later java versions because default interface methods aren't supported
-  * maven central: `2.0.0-28-jdk7`
+  * maven central: `2.0.0-29-jdk7`
 
 java 9:
   * the java 8 compiled version supports java 9
@@ -154,11 +162,8 @@ java 10:
 ```
 
 java 11:
-  * the java 8 compiled version supports java 11
-  * ASM support for java 11 is currently beta
-    * per the mailing list, there are no known or suspected issues with this java 11 support
   * constant dynamics and preview classes are not yet supported - they will be when usage in the wild is seen
-  * JEP 330 single-file source invocation works
+  * JEP 330 single-file source invocation works with java 11
     * call `Kilim.trampoline` to enable weaving
     * the JEP 330 class loader has some limitations which must be worked around
     * use the kilim jar as a `-javaagent` (fixed in openjdk, awaiting release)
@@ -174,6 +179,7 @@ summary:
 * maven is used for downloading dependencies (or manually copy them to ./libs - see pom.xml)
   * only needs to be done once (until dependencies change)
   * `mvn initialize` (but any pom-based mvn command should work too)
+  * `and cleaner` to delete the copied jars
 * maven can also be used for building, but tests are disabled
 * there's a kilim maven plugin, but it's not used here to avoid a circular dependency - the weaver is run directly instead (using ant)
 * the plugin is only built during the maven build, but once built will be packaged by ant as well, eg `mvn package && ant jar`
