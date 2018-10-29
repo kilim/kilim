@@ -3,8 +3,6 @@ package kilim;
 import java.lang.reflect.Method;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
-import java.util.concurrent.ForkJoinWorkerThread;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import kilim.timerservice.Timer;
 import kilim.timerservice.TimerService;
@@ -71,7 +69,9 @@ public class ForkJoinScheduler extends Scheduler
             if (waitIdle(100)) return;
     }
     public boolean waitIdle(int delay) {
-        if (! pool.awaitQuiescence(delay,TimeUnit.MILLISECONDS) || ! isEmpty())
+        // avoid the java 8 feature to simplify the java 7 build
+        // if (! pool.awaitQuiescence(delay,java.util.concurrent.TimeUnit.MILLISECONDS)) return false;
+        if (! isEmpty())
             return false;
         if (timerService.isEmptyLazy(this))
             return true;
