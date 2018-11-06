@@ -68,7 +68,7 @@ the dependency:
     <dependency>
         <groupId>org.db4j</groupId>
         <artifactId>kilim</artifactId>
-        <version>2.0.0-29</version>
+        <version>2.0.0</version>
     </dependency>
 ```
 
@@ -78,7 +78,7 @@ weaving with the kilim plugin:
     <plugin>
         <groupId>org.db4j</groupId>
         <artifactId>kilim</artifactId>
-        <version>2.0.0-29</version>
+        <version>2.0.0</version>
         <executions>
             <execution>
                 <goals><goal>weave</goal></goals>
@@ -110,7 +110,7 @@ weaving with the kilim plugin:
 java 8 and java 11 are the recommended platforms, but 7, 8, 9, and 10 are regularly tested, and in theory java 6 could probably still be made to work without too much work
 
 java 8, java 9 and java 11:
-  * maven central: `org.db4j : kilim : 2.0.0-29`
+  * maven central: `org.db4j : kilim : 2.0.0`
   * compiled with java 8 bytecode
   * ASM 7.0 supports all versions of java through java 11 (and java 12 semi-officially)
   * this version should also work with java 12 (no new bytecodes) but not being actively tested yet
@@ -123,7 +123,7 @@ java 7:
   * see `demos/java7` for usage examples
   * some features are not available, eg jetty integration and lambdas
   * this version is incompatible with lambdas in later java versions because default interface methods aren't supported
-  * maven central: `2.0.0-29-jdk7`
+  * maven central: `2.0.0-jdk7`
 
 java 9:
   * the java 8 compiled version supports java 9
