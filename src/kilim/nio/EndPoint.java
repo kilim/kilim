@@ -133,7 +133,7 @@ public class EndPoint { // Mailbox for receiving socket ready events.
         return buf;
     }
 
-    private static class Sched extends kilim.AffineThreadPool {
+    private static class Sched extends kilim.AffineScheduler {
         static void log(kilim.Scheduler sched,Object src,Object obj) { logRelay(sched,src,obj); }
     }
 

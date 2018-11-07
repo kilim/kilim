@@ -52,7 +52,7 @@ public abstract class Scheduler {
      * @param numThreads the number of threads to use, or use the default if less than one
      * @return the new Scheduler
      */
-    public static Scheduler make(int numThreads) { return new AffineThreadPool(numThreads,0); }
+    public static Scheduler make(int numThreads) { return new AffineScheduler(numThreads,0); }
     
     /**
      * are the queues empty allows false positives, but not false negatives ie, if this method returns false, then

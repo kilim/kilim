@@ -27,21 +27,21 @@ import kilim.timerservice.TimerService.WatchdogTask;
     however, a number of methods were removed that were not used internally
     so any external usages will now be broken
 */
-public class AffineThreadPool extends Scheduler implements ThreadFactory {
+public class AffineScheduler extends Scheduler implements ThreadFactory {
     protected Executor [] exes;
     protected AtomicInteger index = new AtomicInteger(-1);
     protected AtomicInteger count = new AtomicInteger(0);
     protected TimerService timerService;
     
 
-    protected AffineThreadPool() {}
+    protected AffineScheduler() {}
     
     /**
      * create the scheduler
      * @param numThreads the number of threads to use, or use the default if less than one
      * @param queueSize the queue size to use, or use the default if less than one
      */
-    public AffineThreadPool(int numThreads,int queueSize) {
+    public AffineScheduler(int numThreads,int queueSize) {
         if (numThreads <= 0)
             numThreads = defaultNumberThreads;
         if (queueSize <= 0)
@@ -141,7 +141,7 @@ public class AffineThreadPool extends Scheduler implements ThreadFactory {
         }
         
         public Executor(LinkedBlockingQueue que) {
-            super(1,1,Integer.MAX_VALUE,TimeUnit.DAYS,que,AffineThreadPool.this);
+            super(1,1,Integer.MAX_VALUE,TimeUnit.DAYS,que,AffineScheduler.this);
             this.que = que;
         }
 
@@ -156,7 +156,7 @@ public class AffineThreadPool extends Scheduler implements ThreadFactory {
         }
 
         public boolean isEmptyish() {
-            return AffineThreadPool.this.isEmptyish();
+            return AffineScheduler.this.isEmptyish();
         }
 
         public void publish(WatchdogTask dog) {
