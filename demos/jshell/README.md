@@ -45,7 +45,7 @@ so i call `System.exit` instead
 
 * calling pausable methods directly causes a `KilimException` and causes jshell to terminate. since this can be inconvenient, it may be handled more gracefully in the future
 
-* there's a java 10 bug that openjdk expects to fix in 10.3 (expected mid october) that affects some kilim lambdas. use a `-jdk10` versioned artifact in the meantime if you experience errors such as `java.lang.NoClassDefFoundError thrown: REPL/$JShell$17$$Lambda$437`
+* there's a java 10 bug that openjdk fixed in java 11 (but won't backport to 10) that affects some kilim lambdas. use a `-jdk10` versioned artifact in the meantime if you experience errors such as `java.lang.NoClassDefFoundError thrown: REPL/$JShell$17$$Lambda$437`
 
 
 
