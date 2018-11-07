@@ -28,22 +28,24 @@ import kilim.timerservice.TimerService.WatchdogTask;
     so any external usages will now be broken
 */
 public class AffineThreadPool extends Scheduler implements ThreadFactory {
-    Executor [] exes;
-    AtomicInteger index = new AtomicInteger(-1);
-    private AtomicInteger count = new AtomicInteger(0);
-    private TimerService timerService;
+    protected Executor [] exes;
+    protected AtomicInteger index = new AtomicInteger(-1);
+    protected AtomicInteger count = new AtomicInteger(0);
+    protected TimerService timerService;
     
 
-    public AffineThreadPool() {}
+    protected AffineThreadPool() {}
     
     /**
      * create the scheduler
-     * @param numThreads the number of threads to use, or use the default if less than zero 
-     * @param queueSize the queue size to use
+     * @param numThreads the number of threads to use, or use the default if less than one
+     * @param queueSize the queue size to use, or use the default if less than one
      */
     public AffineThreadPool(int numThreads,int queueSize) {
-        if (numThreads < 0)
+        if (numThreads <= 0)
             numThreads = defaultNumberThreads;
+        if (queueSize <= 0)
+            queueSize = Integer.MAX_VALUE;
         exes = new Executor[numThreads];
         for (int ii=0; ii < numThreads; ii++)
             exes[ii] = new Executor(new LinkedBlockingQueue(queueSize));
@@ -66,7 +68,7 @@ public class AffineThreadPool extends Scheduler implements ThreadFactory {
     // if the threads are not saturated, this round robbin approach still triggers each thread
     // seems more efficient to saturate 1 thread before triggering the others
     // ie, to prevent context switching
-    private int next() {
+    protected int next() {
         int value = 0, newValue = 0;
         do {
             value = index.get();
@@ -113,7 +115,7 @@ public class AffineThreadPool extends Scheduler implements ThreadFactory {
         return false;
     }
 
-    private boolean resolved(TimerService ts) {
+    protected boolean resolved(TimerService ts) {
         if (count.get() > 0) return false;
         return ts.isEmptyLazy(exes[0]);
     }
@@ -129,11 +131,11 @@ public class AffineThreadPool extends Scheduler implements ThreadFactory {
         return TimerService.factory.newThread(r);
     }
 
-    class Executor extends ThreadPoolExecutor implements WatchdogContext {
-        LinkedBlockingQueue<Task> que;
-        AtomicInteger pending = new AtomicInteger();
+    protected class Executor extends ThreadPoolExecutor implements WatchdogContext {
+        protected LinkedBlockingQueue<Task> que;
+        protected AtomicInteger pending = new AtomicInteger();
         
-        void publish(Task task) {
+        protected void publish(Task task) {
             pending.incrementAndGet();
             submit(task);
         }

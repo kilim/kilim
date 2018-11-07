@@ -18,7 +18,6 @@ import kilim.timerservice.Timer;
  *
  */
 public abstract class Scheduler {
-    private static final int defaultQueueSize_ = Integer.MAX_VALUE;
     public static volatile Scheduler defaultScheduler = null;
     public static volatile Scheduler pinnableScheduler = null;
     public static int defaultNumberThreads;
@@ -50,10 +49,10 @@ public abstract class Scheduler {
 
     /**
      * return a new default Scheduler with default queue length
-     * @param numThreads the number of threads to use, or use the default if less than zero 
+     * @param numThreads the number of threads to use, or use the default if less than one
      * @return the new Scheduler
      */
-    public static Scheduler make(int numThreads) { return new AffineThreadPool(numThreads,defaultQueueSize_); }
+    public static Scheduler make(int numThreads) { return new AffineThreadPool(numThreads,0); }
     
     /**
      * are the queues empty allows false positives, but not false negatives ie, if this method returns false, then
