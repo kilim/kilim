@@ -11,7 +11,6 @@ import java.util.ArrayList;
 
 import kilim.NotPausable;
 import kilim.Pausable;
-import kilim.analysis.AsmDetector;
 import kilim.mirrors.CachedClassMirrors.ClassMirror;
 import kilim.mirrors.CachedClassMirrors.MethodMirror;
 
@@ -83,9 +82,6 @@ public class Detector {
                 return METHOD_NOT_PAUSABLE;
             }
         } catch (ClassMirrorNotFoundException ignore) {
-
-        } catch (VerifyError ve) {
-            return AsmDetector.getPausableStatus(className, methodName, desc, this);
         }
         return ret;
     }
