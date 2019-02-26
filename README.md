@@ -59,7 +59,7 @@ which are `Pausable`
 for an example of a project that uses kilim, see 
 the [kilim jetty demo in this repository](https://github.com/nqzero/kilim/tree/master/demos/jetty)
 - the `pom.xml` specifies kilim as both a dependency and a plugin for ahead-of-time weaving
-- this version supports java 8, 9, and 11 (and 10 if you don't use lambdas)
+- this version supports java 8, 9, 11 and 12 (and 10 if you don't use lambdas)
 - there are dedicated artifacts for java 7 and 10 (see below)
 
 the dependency:
@@ -107,13 +107,13 @@ weaving with the kilim plugin:
 
 ## Java Versions
 
-java 8 and java 11 are the recommended platforms, but 7, 8, 9, and 10 are regularly tested, and in theory java 6 could probably still be made to work without too much work
+java 8, 11 and 12 are the recommended platforms, but 7, 8, 9, and 10 are regularly tested, and in theory java 6 could probably still be made to work without too much work
 
-java 8, java 9 and java 11:
+java 8, java 9, java 11 and java 12:
   * maven central: `org.db4j : kilim : 2.0.1`
   * compiled with java 8 bytecode
   * ASM 7.0 supports all versions of java through java 11 (and java 12 semi-officially)
-  * this version should also work with java 12 (no new bytecodes) but not being actively tested yet
+  * this version also works with the java 12 release candidates (no new bytecodes)
 
 
 ### other versions and notes on limitations
@@ -135,7 +135,7 @@ java 9:
 java 10:
   * java 10 has a bug and refuses to load some valid lambdas
   * https://bugs.java.com/bugdatabase/view_bug.do?bug_id=JDK-8209112
-  * this is already fixed in java 11 and expected to be fixed in the next java 10 update (oct 16, 2018)
+  * this is already fixed in java 11 but will not be fixed in java 10 due to the new release cycle
   * throws `java.lang.NoClassDefFoundError` when attempting to load a woven fiber-less lambda
   * workaround: use lambdas that take an explicit last parameter `Fiber dummy`
       and a corresponding default method without that last parameter
