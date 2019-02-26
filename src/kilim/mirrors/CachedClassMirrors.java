@@ -62,7 +62,7 @@ public class CachedClassMirrors {
         return r2==null ? r1:r2;
     }
 
-    /** get the major version of klass by loading the bytecode from source */
+    /** get the major version of klass by loading the bytecode from source, unused but useful for debugging */
     public static int getVersion(ClassLoader source,Class klass) {
         String cname = WeavingClassLoader.makeResourceName(klass.getName());
         DataInputStream in = new DataInputStream(source.getResourceAsStream(cname));
