@@ -150,7 +150,7 @@
   
   <!-- This runs those tests that do not depend on generated classes
        present in test-classes. For those, see "testwoven"  -->
-  <target name="testnotwoven" depends="weave,testweave">
+  <target name="testnotwoven" depends="weave,testcompile">
     <java classname="junit.textui.TestRunner" fork="yes">
       <classpath refid="kilim.classpath"/>
       <assertions>
