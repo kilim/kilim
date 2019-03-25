@@ -23,6 +23,7 @@ import static org.objectweb.asm.Opcodes.RETURN;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 
 import kilim.Constants;
 import kilim.mirrors.Detector;
@@ -38,6 +39,7 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.InvokeDynamicInsnNode;
 import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.LocalVariableNode;
 import org.objectweb.asm.tree.LookupSwitchInsnNode;
 import org.objectweb.asm.tree.TableSwitchInsnNode;
@@ -197,6 +199,9 @@ public class MethodWeaver {
         MethodFlow mf = methodFlow;
         genPrelude(mv);
         BasicBlock lastBB = null;
+        boolean dsl = dslName.equals(mf.name) & dslDesc.equals(mf.desc);
+        if (dsl)
+            preweaveDeserializeLambda();
         for (BasicBlock bb : mf.getBasicBlocks()) {
             int from = bb.startPos;
             
@@ -230,6 +235,52 @@ public class MethodWeaver {
             if (l != null) {
                 l.accept(mv);
             }
+        }
+    }
+    static String dslName = "$deserializeLambda$";
+    static String dslDesc = "(Ljava/lang/invoke/SerializedLambda;)Ljava/lang/Object;";
+    private static String addFiber(String type) {
+        return type.replace(")", Constants.D_FIBER_LAST_ARG);
+    }
+
+    /** 
+     * at least with openjdk 8-11, deserializing lambdas checks the signature or the target.
+     * FIXME: this method is implementation dependent (probably unfixable, but want this line to show in a grep)
+     */
+    public void preweaveDeserializeLambda() {
+        int maxState = 22;
+        int state = 0;
+        String cname = null;
+        String mname = null;
+
+        int num = methodFlow.instructions.size(); 
+        for (int ii=0; ii < num; ii++) {
+            AbstractInsnNode node = methodFlow.instructions.get(ii);
+
+            int opcode = node.getOpcode();
+            if (opcode != Opcodes.LDC) {
+                if (opcode==Opcodes.INVOKEDYNAMIC || opcode==Opcodes.LOOKUPSWITCH)
+                    state = 0;
+                continue;
+            }
+            LdcInsnNode ldc = (LdcInsnNode) node;
+
+
+            switch (state) {
+                case 0: cname = (String) ldc.cst; break;
+                case 1: mname = (String) ldc.cst; break;
+                case 2:
+                    String mdesc = (String) ldc.cst;
+                    if (detector.getPausableStatus(cname,mname,mdesc)==Detector.PAUSABLE_METHOD_FOUND)
+                        ldc.cst = addFiber(mdesc);
+                    else
+                        state = maxState;
+                    break;
+
+
+                case 4: ldc.cst = addFiber((String) ldc.cst); break;
+            }
+            state++;
         }
     }
 
