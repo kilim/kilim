@@ -1,10 +1,21 @@
 package kilim.test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamClass;
+import java.io.Serializable;
+import java.lang.reflect.Method;
+import java.util.function.Supplier;
 import junit.framework.TestCase;
 import kilim.ExitMsg;
 import kilim.Mailbox;
 import kilim.Pausable;
 import kilim.Task;
+import kilim.test.TestLambda.Demo.SerSpawn;
 import static kilim.test.TestYield.runTask;
 import static kilim.test.ex.ExCatch.restoreArgument;
 import static kilim.test.ex.ExYieldBase.fd;
@@ -153,6 +164,93 @@ public class TestLambda extends TestCase {
         runLambda(ex);
         assertTrue(ex.verify());
     }
+
     
+    public static void testSerialization() {
+        Demo.deser("hello world");
+    }
+    public static class Demo implements Serializable, Supplier<String> {
+        public interface SerSpawn extends Serializable, Pausable.Fork {}
+        String val;
+        SerSpawn body2 = () -> {
+            Task.sleep(50);
+            val = "fork has slept: " + this.getClass();
+        };
+        public String get() { Task.fork(body2).joinb(); return val; }
+        public static void deser(String args) {
+            Demo body = new Demo();
+            String v1 = body.get();
+            byte [] bytes = save(body);
+            Supplier<String> next = (Supplier<String>) load(bytes);
+            String v2 = next.get();
+            if (!v1.equals(v2)) fail("deserialized responce mismatch");
+        }
+    }
+    public static byte [] save(Object obj) {
+        ByteArrayOutputStream fos = null;
+        ObjectOutputStream out = null;
+        try {
+            fos = new ByteArrayOutputStream();
+            out = new ObjectOutputStream(fos);
+            out.writeObject(obj);
+            return fos.toByteArray();
+        }
+        catch (Exception ex) { fail("failed to save object to byte array: " + ex.getMessage()); }
+        finally {
+            try { out.close(); }
+            catch (Exception ex) { fail("failed to close output stream: " + ex.getMessage()); }
+        }
+        return null;
+    }
+    public static Object load(byte [] bytes) {
+        Loader loader = new Loader();
+        loader.load(Demo.class);
+        loader.load(SerSpawn.class);
+        ObjectInputStream in = null;
+        try {
+            ByteArrayInputStream fin = new ByteArrayInputStream(bytes);
+            in = loader.new ObjectStream(fin);
+            return in.readObject();
+        }
+        catch (Exception ex) { fail("failed to load object from byte array: " + ex.getMessage()); }
+        finally {
+            try { in.close(); }
+            catch (Exception ex) { fail("failed to close input stream: " + ex.getMessage()); }
+        }
+        return null;
+    } 
+    
+    public static class Loader extends ClassLoader {
+        public Loader() { super(TestLambda.class.getClassLoader()); }
+        void load(Class klass) {
+            String name = klass.getName();
+            String cname = cname(name);
+            ClassLoader cl = TestLambda.class.getClassLoader();
+            InputStream in = cl.getResourceAsStream(cname);
+            byte [] bytes = new byte[1<<14];
+            try {
+                int num = in.read(bytes);
+                Class<?> c = super.defineClass(name,bytes,0,num);
+                super.resolveClass(c);
+            }
+            catch (Exception ex) {
+                fail("failed to define class: " + name + ", " + ex.getMessage());
+            }
+        }
+        public class ObjectStream extends ObjectInputStream {
+            public ObjectStream(final InputStream inputStream) throws IOException {
+                super(inputStream);
+            }
+            @Override
+            protected Class<?> resolveClass(final ObjectStreamClass klass) throws IOException, ClassNotFoundException {
+                try {
+                    return Class.forName(klass.getName(),false,Loader.this);
+                } catch (ClassNotFoundException ex) {
+                    return super.resolveClass(klass);
+                }
+            }
+        }
+    }
+    static public String cname(String name) { return name.replace( '.', '/' ) + ".class"; }
 }
 
