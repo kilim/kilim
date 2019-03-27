@@ -7,6 +7,7 @@
 package kilim.test;
 
 import junit.framework.TestCase;
+import kilim.test.ex.ExCatch;
 
 public class TestYieldExceptions extends TestCase {
     /*
@@ -39,7 +40,11 @@ public class TestYieldExceptions extends TestCase {
     public void testTryCatchFinally() throws Exception {
         TestYield.runTask(new kilim.test.ex.ExCatch(3));
     }
-    
+
+    public void testTryTry() throws Exception {
+        for (int ii=ExCatch.tryThrowStart; ii < ExCatch.tryThrowEnd; ii++)
+            TestYield.runTask(new kilim.test.ex.ExCatch(ii));
+    }
     
     public void testPausableBlocksBeforeCatch() throws Exception {
         TestYield.runTask(new kilim.test.ex.ExCatch(4));
