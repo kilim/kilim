@@ -343,11 +343,12 @@ public class MethodFlow extends MethodNode {
                     getLabelPosition(tcb.start),
                     getLabelPosition(tcb.end) - 1, // end is inclusive
                     tcb.type, 
-                    getOrCreateBasicBlock(tcb.handler)));
+                    getOrCreateBasicBlock(tcb.handler),
+                    i));
         }
+        origHandlers = new ArrayList(handlers);
         Collections.sort(handlers, Handler.startComparator());
-        origHandlers = handlers;
-        buildHandlerMap();
+        buildHandlerMap(handlers);
     }
     private void assignCatchHandlers() {
         if (origHandlers==null) return;
@@ -359,14 +360,14 @@ public class MethodFlow extends MethodNode {
     }
     
     private int [] handlerMap;
-    private void buildHandlerMap() {
+    private void buildHandlerMap(ArrayList<Handler> sorted) {
         handlerMap = new int[instructions.size()];
         for (int ki=0; ki < handlerMap.length; ki++) handlerMap[ki] = -1;
         int ki = 0;
-        for (int kh=0; kh < origHandlers.size(); kh++) {
-            Handler ho = origHandlers.get(kh);
+        for (int kh=0; kh < sorted.size(); kh++) {
+            Handler ho = sorted.get(kh);
             for (; ki <= ho.from; ki++)
-                handlerMap[ki] = kh;
+                handlerMap[ki] = ho.from;
         }
     }
 
@@ -374,7 +375,7 @@ public class MethodFlow extends MethodNode {
     int mapHandler(int start) {
         if (handlerMap==null || start >= handlerMap.length) return -1;
         int map = handlerMap[start];
-        return map < 0 ? -1 : origHandlers.get(map).from;
+        return map;
     }
     
     

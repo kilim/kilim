@@ -1164,7 +1164,7 @@ public class BasicBlock implements Comparable<BasicBlock> {
             } else {
                 Range ri = Range.intersect(startPos, endPos, h.from, h.to);
                 if (ri != null) {
-                    handlers.add(new Handler(ri.from, ri.to, h.type, h.catchBB));
+                    handlers.add(new Handler(ri.from, ri.to, h));
                 }
             }
         }
@@ -1336,9 +1336,10 @@ public class BasicBlock implements Comparable<BasicBlock> {
                 dup.handlers = new ArrayList<Handler>(orig.handlers.size());
                 if (orig.handlers.size() > 0) {
                     for (Handler oh : orig.handlers) {
-                        Handler h = new Handler(dup.startPos
-                                + (oh.from - orig.startPos), dup.endPos
-                                + (oh.to - orig.endPos), oh.type, oh.catchBB);
+                        Handler h = new Handler(
+                                dup.startPos + (oh.from - orig.startPos),
+                                dup.endPos + (oh.to - orig.endPos),
+                                oh);
                         dup.handlers.add(h);
                     }
                 }

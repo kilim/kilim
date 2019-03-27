@@ -35,7 +35,14 @@ public class Handler {
      */
     public BasicBlock catchBB;
 
-    public Handler(int aFrom, int aTo, String aType, BasicBlock aCatchBB) {
+    /** the position of the corresponding entry in the unwoven exception table */    
+    public int pos;
+
+    public Handler(int aFrom, int aTo, Handler h) {
+        this(aFrom,aTo,h.type,h.catchBB,h.pos);
+    }
+    
+    public Handler(int aFrom,int aTo,String aType,BasicBlock aCatchBB,int pos) {
         from = aFrom;
         to = aTo;
         if (aType == null) {
@@ -45,6 +52,7 @@ public class Handler {
         }
         type = aType;
         catchBB = aCatchBB;
+        this.pos = pos;
     }
     
     private int comparePos(Handler h) {
@@ -66,9 +74,19 @@ public class Handler {
             }
             newList.add(c);
         }
+        Collections.sort(newList,resort);
         return newList;
     }
 
+    private static Resort resort = new Resort();
+    private static class Resort implements Comparator<Handler> {
+        public int compare(Handler o1,Handler o2) {
+            return o1.pos < o2.pos ? -1 : o1.pos==o2.pos ? 0:1;
+        }
+    }
+    
+    
+    
     /** return a Comparator that orders the handlers by start position */
     public static Comparator<Handler> startComparator() { return comp; }
     private static Comp comp = new Comp();
