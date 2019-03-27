@@ -63,6 +63,22 @@ public class WeavingClassLoader extends KilimClassLoader {
         platform = last;
     }
 
+    public InputStream getResourceAsStream(String cname) {
+        if (cname==null || !cname.endsWith(".class") || proxy(cname))
+            return super.getResourceAsStream(cname);
+        String name = unmakeResourceName(cname);
+        InputStream is = getByteStream(pcl,name,cname,false);
+
+        if (is==null) return null;
+
+        byte [] code = null;
+        ClassWeaver cw = weaver.weave(is);
+        for (ClassInfo ci : cw.getClassInfos())
+            if (ci.className.equals(name)) code = ci.bytes;
+        if (code==null) code = cw.classFlow.code;
+        return code==null ? null : new ByteArrayInputStream(code);
+    }
+
     public static URL [] getURLs(String [] classPaths) {
         ArrayList<URL> urls = new ArrayList<URL>();
         for (String name : classPaths) {
@@ -157,9 +173,9 @@ public class WeavingClassLoader extends KilimClassLoader {
         return ret;
     }
 
-    public static InputStream getByteStream(ClassLoader cl,String name,String cname) {
+    public static InputStream getByteStream(ClassLoader cl,String name,String cname,boolean system) {
         InputStream is = cl.getResourceAsStream( cname );
-        if (is==null) is = ClassLoader.getSystemResourceAsStream( cname );
+        if (is==null && system) is = ClassLoader.getSystemResourceAsStream( cname );
         if (is==null & Agent.map != null) {
             // force the nominal class loader to load the bytecode so that the agent sees it
             try { cl.loadClass(name); }
@@ -177,14 +193,14 @@ public class WeavingClassLoader extends KilimClassLoader {
      */    
     public ClassWeaver weaveClass(String name) {
         String cname = makeResourceName(name);
-        InputStream is = getByteStream(pcl,name,cname);
+        InputStream is = getByteStream(pcl,name,cname,true);
         ClassWeaver cw = weaver.weave(is);
         return cw;
     }
     protected Class<?> findClass(String name) throws ClassNotFoundException {
         String cname = makeResourceName(name);
         
-        InputStream is = getByteStream(pcl,name,cname);
+        InputStream is = getByteStream(pcl,name,cname,true);
         ClassWeaver cw;
         byte [] code;
 
@@ -231,6 +247,7 @@ public class WeavingClassLoader extends KilimClassLoader {
      */
     // https://docs.oracle.com/javase/8/docs/technotes/guides/lang/resources.html#res_names
     public static String makeResourceName(String name) { return name.replace('.','/') + ".class"; }
+    public static String unmakeResourceName(String cname) { return cname.replace(".class","").replace('/','.'); }
     
     /** 
      * read bytecode for the named class from a source classloader
@@ -241,7 +258,7 @@ public class WeavingClassLoader extends KilimClassLoader {
     public static byte [] findCode(ClassLoader loader,String name) {
         if (loader==null) loader = WeavingClassLoader.class.getClassLoader();
         String cname = makeResourceName(name);
-        InputStream is = getByteStream(loader,name,cname);
+        InputStream is = getByteStream(loader,name,cname,true);
         if (is != null)
             return readFully(is);
         return null;
