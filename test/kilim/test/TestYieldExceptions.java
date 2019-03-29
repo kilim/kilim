@@ -41,9 +41,14 @@ public class TestYieldExceptions extends TestCase {
         TestYield.runTask(new kilim.test.ex.ExCatch(3));
     }
 
-    public void testTryTry() throws Exception {
+    public void testTryThrow() throws Exception {
         for (int ii=0; ii < 16; ii++)
             TestYield.runTask(new kilim.test.ex.ExCatch.TryThrow(ii));
+    }
+    
+    public void testTryThrowVars() throws Exception {
+        for (int ii=0; ii < 16; ii++)
+            TestYield.runTask(new kilim.test.ex.ExCatch.TryThrowVars(ii));
     }
     
     public void testPausableBlocksBeforeCatch() throws Exception {

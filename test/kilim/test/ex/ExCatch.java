@@ -144,20 +144,41 @@ public class ExCatch extends ExYieldBase {
         verify(l);
     }
 
+    public static void same(int v1,int t1,int v2) {
+        if (v1==(v2 > 0 ? 0:t1)) {
+            throw new RuntimeException("false");
+        }
+    }
+    public static void diff(int v1,int t1,int v2) {
+        if (v1==(v2 > 0 ? t1:0)) {
+            throw new RuntimeException("false");
+        }
+    }
     static class Thrower {
         int base;
+        int result;
         Thrower(int base) { this.base = base; }
         void execute() throws Pausable {
+            result |= 0x01;
             if ((base & 0x04) > 0)
                 Task.sleep(10);
             if ((base & 0x01) > 0)
                 throw new RuntimeException();
+            result |= 0x02;
         }
         void executeFallback() throws Pausable {
+            result |= 0x04;
             if ((base & 0x08) > 0)
                 Task.sleep(10);
             if ((base & 0x02) > 0)
                 throw new RuntimeException();
+            result |= 0x08;
+        }
+        void check() {
+            same(result & 0x01,1,1);
+            diff(result & 0x02,2,base & 0x01);
+            same(result & 0x04,4,base & 0x01);
+            same(result & 0x08,8,(base & 0x01) > 0 & (base & 0x02)==0 ? 1:0);
         }
     }
     
@@ -166,7 +187,37 @@ public class ExCatch extends ExYieldBase {
         public TryThrow(int base) { this.base = base; }
         
         public void execute() throws Pausable {
-            tryThrow(new Thrower(base));
+            Thrower obj;
+            tryThrow(obj = new Thrower(base));
+            obj.check();
+        }
+    
+    
+        void tryThrow(Thrower obj) throws Pausable {
+            try {
+                obj.execute();
+            }
+            catch (Exception ex1) {
+                try {
+                    obj.executeFallback();
+                }
+                catch (Exception ex2) {
+                }
+                finally {
+                }
+            }
+            finally {
+            }
+        }
+    }
+    public static class TryThrowVars extends ExYieldBase {
+        int base;
+        public TryThrowVars(int base) { this.base = base; }
+        
+        public void execute() throws Pausable {
+            Thrower obj;
+            tryThrow(obj = new Thrower(base));
+            obj.check();
         }
     
     
