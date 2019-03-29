@@ -8,8 +8,6 @@ import kilim.Continuation;
 import kilim.Task;
 
 public class ExCatch extends ExYieldBase {
-    public static int tryThrowStart = 10;
-    public static int tryThrowEnd = 14;
     public ExCatch(int test) {
         testCase = test;
     }
@@ -42,12 +40,7 @@ public class ExCatch extends ExYieldBase {
             case 7: restoreArgument(fd); break;
             case 8: correctException(); break;
             case 9: pausableInvokeCatch(); break;
-            default: {
-                if (testCase >= tryThrowStart & testCase < tryThrowEnd)
-                    tryThrow(testCase-tryThrowStart);
-                else
-                    throw new IllegalStateException("Unknown test case: " + testCase);
-            }
+            default: throw new IllegalStateException("Unknown test case: " + testCase);
         }
 
         
@@ -155,47 +148,61 @@ public class ExCatch extends ExYieldBase {
         int base;
         Thrower(int base) { this.base = base; }
         void execute() throws Pausable {
+            if ((base & 0x04) > 0)
+                Task.sleep(10);
             if ((base & 0x01) > 0)
                 throw new RuntimeException();
         }
         void executeFallback() throws Pausable {
+            if ((base & 0x08) > 0)
+                Task.sleep(10);
             if ((base & 0x02) > 0)
                 throw new RuntimeException();
         }
     }
-    void tryThrow(int base) throws Pausable {
-        Thrower obj = new Thrower(base);
-        short sh = 0; 
-        String  s = null;
-        double  d = 0;
-        long   l = 0;
-        byte b = 0;
-        try {
-            obj.execute();
-            sh = fsh;
+    
+    public static class TryThrow extends ExYieldBase {
+        int base;
+        public TryThrow(int base) { this.base = base; }
+        
+        public void execute() throws Pausable {
+            tryThrow(new Thrower(base));
         }
-        catch (Exception ex1) {
+    
+    
+        void tryThrow(Thrower obj) throws Pausable {
+            short sh = 0; 
+            String  s = null;
+            double  d = 0;
+            long   l = 0;
+            byte b = 0;
             try {
-                obj.executeFallback();
-                b = fb;
+                obj.execute();
+                sh = fsh;
             }
-            catch (Exception ex2) {
-                d = fd;
+            catch (Exception ex1) {
+                try {
+                    obj.executeFallback();
+                    b = fb;
+                }
+                catch (Exception ex2) {
+                    d = fd;
+                }
+                finally {
+                    l = fl;
+                }
             }
             finally {
-                l = fl;
+                s = fs;
             }
+            boolean x = (base & 0x01)==0;
+            boolean y = (base & 0x02)==0;
+            verify(s);
+            verify(sh, x     ? fsh:0);
+            verify(b, !x & y ? fb:0);
+            verify(d, x|y    ? 0:fd);
+            verify(l, x      ? 0:fd);
         }
-        finally {
-            s = fs;
-        }
-        boolean x = (base & 0x01)==0;
-        boolean y = (base & 0x02)==0;
-        verify(s);
-        verify(sh, x     ? fsh:0);
-        verify(b, !x & y ? fb:0);
-        verify(d, x|y    ? 0:fd);
-        verify(l, x      ? 0:fd);
     }
 
     private class MyFile {
