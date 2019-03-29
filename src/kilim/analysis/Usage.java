@@ -55,9 +55,6 @@ public class Usage {
      */
     private BitSet def;
 
-    /** the born value has not yet been modified */
-    boolean firstBorn = true;
-
     public Usage(int numLocals) {
         nLocals = numLocals;
         in = new BitSet(numLocals);
@@ -140,7 +137,7 @@ public class Usage {
     /** merge def into born */
     void mergeBorn() { born.or(def); }
     /** set born - used for the first BB only, others are calculated */
-    void initBorn(BitSet first) { born.or(first); firstBorn = false; }
+    void initBorn(BitSet first) { born.or(first); }
 
     /** 
      * evolve the born value a single iteration by mixing in either pred or combo
@@ -151,11 +148,7 @@ public class Usage {
     boolean evalBornIn(Usage pred,BitSet combo) {
         BitSet old = (BitSet) born.clone();
         if (combo==null) combo = pred.born;
-        if (firstBorn)
-            born.or(combo);
-        else
-            born.and(combo);
-        firstBorn = false;
+        born.or(combo);
         return ! old.equals(born);
     }
     

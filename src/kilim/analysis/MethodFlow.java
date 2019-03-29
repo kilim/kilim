@@ -99,9 +99,6 @@ public class MethodFlow extends MethodNode {
     /** copy of handlers provided by asm - null after being assigned to the BBs */
     ArrayList<Handler> origHandlers;
     
-    /** stored value of the initial born variables */
-    private BitSet firstBorn;
-    
     public MethodFlow(
             ClassFlow classFlow,
             final int access,
@@ -395,9 +392,8 @@ public class MethodFlow extends MethodNode {
     private boolean calcBornOnce() {
         BBList bbs = getBasicBlocks();
         LinkedList<BasicBlock> pending = new LinkedList();
-        boolean changed = false, first = true;
+        boolean changed = false;
         pending.add(bbs.get(0));
-        bbs.get(0).usage.evalBornIn(null,new BitSet());
         while (! pending.isEmpty()) {
             BasicBlock bb = pending.pop();
             if (bb.visited) continue;
@@ -407,13 +403,10 @@ public class MethodFlow extends MethodNode {
                 pending.addFirst(ho.catchBB);
             }
             BitSet combo = bb.usage.getCombo();
-            if (first)
-                combo.or(firstBorn);
             for (BasicBlock so : bb.successors) {
-                changed |= so.usage.evalBornIn(bb.usage,combo);
+                changed |= so.usage.evalBornIn(null,combo);
                 pending.addFirst(so);
             }
-            first = false;
         }
         return changed;
     }
@@ -424,7 +417,6 @@ public class MethodFlow extends MethodNode {
         //   mix def into born
         while (true)
             if (! calcBornOnce()) break;
-        getBasicBlocks().get(0).usage.initBorn(firstBorn);
         for (BasicBlock bb : getBasicBlocks())
             bb.usage.mergeBorn();
     }
@@ -448,7 +440,7 @@ public class MethodFlow extends MethodNode {
         ArrayList<BasicBlock> bbs = getBasicBlocks();
         Collections.sort(bbs); // sorts in increasing startPos order
         
-        firstBorn = setArgsBorn(bbs.get(0));
+        setArgsBorn(bbs.get(0));
         
         boolean changed;
         calcBornUsage();
@@ -461,7 +453,7 @@ public class MethodFlow extends MethodNode {
         if (debugPrintLiveness) printUsage(bbs);
     }
 
-    private BitSet setArgsBorn(BasicBlock bb) {
+    private void setArgsBorn(BasicBlock bb) {
         BitSet born = new BitSet(bb.flow.maxLocals);
         int offset = 0;
         if (!isStatic())
@@ -470,7 +462,7 @@ public class MethodFlow extends MethodNode {
             born.set(offset);
             offset += TypeDesc.isDoubleWord(arg) ? 2 : 1;
         }
-        return born;
+        bb.usage.initBorn(born);
     }
     
     void printUsage(ArrayList<BasicBlock> bbs) {
