@@ -164,9 +164,9 @@ java 10:
 java 11:
   * constant dynamics and preview classes are not yet supported - they will be when usage in the wild is seen
   * JEP 330 single-file source invocation works with java 11
-    * call `Kilim.trampoline` to enable weaving
+    * call `Kilim.trampoline` in main to enable weaving
     * the JEP 330 class loader has some limitations which must be worked around
-    * use the kilim jar as a `-javaagent` (fixed in openjdk, awaiting release)
+    * for java 11, use the kilim jar as a `-javaagent` (fixed in java 12)
     * see `demos/java11`
 
 
