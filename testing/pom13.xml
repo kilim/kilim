@@ -1,0 +1,44 @@
+<project>
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.db4j</groupId>
+    <artifactId>kilim-tests</artifactId>
+    <version>0.1</version>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.db4j</groupId>
+            <artifactId>kilim</artifactId>
+            <version>2.0.2</version>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>3.8.1</version>
+        </dependency>
+    </dependencies>
+    <build>
+        <sourceDirectory>src</sourceDirectory>
+        <plugins>
+            <plugin>
+                <groupId>org.db4j</groupId>
+                <artifactId>kilim</artifactId>
+                <version>2.0.2</version>
+		<configuration>
+		    <args>-q -x ExInvalid</args>
+		</configuration>
+                <executions>
+                    <execution>
+                        <goals><goal>weave</goal></goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+    <properties>
+        <maven.compiler.source>13</maven.compiler.source>
+        <maven.compiler.target>13</maven.compiler.target>
+        <maven.compiler.release>13</maven.compiler.release>
+        <netbeans.compile.on.save>none</netbeans.compile.on.save>
+    </properties>
+</project>

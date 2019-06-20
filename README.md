@@ -59,7 +59,7 @@ which are `Pausable`
 for an example of a project that uses kilim, see 
 the [kilim jetty demo in this repository](https://github.com/nqzero/kilim/tree/master/demos/jetty)
 - the `pom.xml` specifies kilim as both a dependency and a plugin for ahead-of-time weaving
-- this version supports java 8, 9, 11 and 12 (and 10 if you don't use lambdas)
+- this version supports java 8, 9, 11, 12 and 13-ea (and 10 if you don't use lambdas)
 - there are dedicated artifacts for java 7 and 10 (see below)
 
 the dependency:
@@ -109,11 +109,10 @@ weaving with the kilim plugin:
 
 java 8, 11 and 12 are the recommended platforms, but 7, 8, 9, and 10 are regularly tested, and in theory java 6 could probably still be made to work without too much work
 
-java 8, java 9, java 11 and java 12:
-  * maven central: `org.db4j : kilim : 2.0.1`
+java 8, java 9, java 11, java 12 and java 13-ea:
+  * maven central: `org.db4j : kilim : 2.0.2`
   * compiled with java 8 bytecode
-  * ASM 7.0 supports all versions of java through java 11 (and java 12 semi-officially)
-  * this version also works with the java 12 release candidates (no new bytecodes)
+  * ASM 7.1 supports all versions of java through java 13-ea (and presumably, java 13 when it's released)
 
 
 ### other versions and notes on limitations
@@ -128,8 +127,7 @@ java 7:
 java 9:
   * the java 8 compiled version supports java 9
   * see demos/battle/pom9.xml for a usage example
-  * currently, no `module-info.java` is provided, so use java 9's fallback support
-    * if you have a demo project that you can share that "depends" on modules, create an issue and it will be supported
+  * kilim does not explicitly support modules, but works with the builtin fallback support, see below
   * JShell works - see demos/jshell
 
 java 10:
@@ -164,10 +162,46 @@ java 10:
 java 11:
   * constant dynamics and preview classes are not yet supported - they will be when usage in the wild is seen
   * JEP 330 single-file source invocation works with java 11
-    * call `Kilim.trampoline` in main to enable weaving
     * the JEP 330 class loader has some limitations which must be worked around
     * for java 11, use the kilim jar as a `-javaagent` (fixed in java 12)
     * see `demos/java11`
+
+
+### specific java features
+
+lambdas:
+ * working
+ * serialization of woven lambdas is problematic and possibly cannot be supported generally
+ * http://mail.openjdk.java.net/pipermail/core-libs-dev/2014-July/027726.html
+
+jshell:
+ * working
+ * see `demos/jshell` for an example of automatic weaving
+
+JEP-330 single file source invocation
+ * working
+ * see `demos/java11` for an example
+ * for java 11, a java agent (included) is needed, see above (this is fixed in java 12)
+ * call `Kilim.trampoline` in main to enable weaving
+ * eg for java 12:
+```
+    public static void main(String[] args) {
+        if (kilim.tools.Kilim.trampoline(new Object() {},false,args)) return;
+    ...
+```
+ 
+
+modules:
+ * kilim works with java 9 and later using the builtin fallback support
+ * no `module-info.java` is provided
+    * if you have a demo project that you can share that "depends" on modules, create an issue and it will be investigated
+
+Project Loom:
+ * Project Loom is not yet released and is not yet supported by kilim
+   * some testing has been done
+ * Loom attempts to run a much larger subset of the java language than kilim,
+     at least initially at the expense of performance
+ * when it is released, kilim will integrate with Loom fibers in whatever capacity makes sense
 
 
 ## Building
