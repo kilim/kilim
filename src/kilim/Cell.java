@@ -158,7 +158,7 @@ public class Cell<T> implements PauseReason, EventPublisher {
 
     public void addMsgAvailableListener(EventSubscriber msgSub) {
         if (sink.get() != null && sink.get() != msgSub) {
-            throw new AssertionError("Error: A mailbox can not be shared by two consumers.  New = "
+            throw new AssertionError("Error: A cell can not be shared by two consumers.  New = "
                     + msgSub + ", Old = " + sink);
         }
         sink.compareAndSet(null, msgSub);
