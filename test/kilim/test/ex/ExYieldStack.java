@@ -23,7 +23,7 @@ public class ExYieldStack extends ExYieldBase {
             case 2: testStackBottom_av(); break;
             case 3: testFactorial_st(); break;
             case 4: testFactorial_av(); break;
-            default: new IllegalStateException("Unknown testCase " + testCase);
+            default: throw new IllegalStateException("Unknown testCase " + testCase);
         }
     }
 
