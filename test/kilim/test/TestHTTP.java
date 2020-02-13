@@ -58,6 +58,27 @@ public class TestHTTP extends TestCase {
         in.close();
     }
     
+    public void testDateHeader() throws IOException {
+        String path = "/foo";
+        URL url = new URL("http://localhost:" + port + path);
+        String date1 = "";
+        BufferedReader in = null;
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        try {
+			conn.setDefaultUseCaches(false);
+			in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+			while (in.readLine() != null); //read all
+			date1 = conn.getHeaderField("Date");
+			in.close();
+		} finally {
+			if (in != null) {
+				in.close();
+			}
+			conn.disconnect();
+		}
+        assertTrue(date1 != null && !date1.isEmpty());
+    }
+    
     public void testQuery() throws IOException {
         String path = "/%7ekilim/home.html?info?code=200&desc=Rolls%20Royce";
         URL url = new URL("http://localhost:" + port + path);

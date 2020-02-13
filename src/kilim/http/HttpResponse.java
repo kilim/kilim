@@ -10,10 +10,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 
 import kilim.Constants;
@@ -128,12 +125,13 @@ public class HttpResponse extends HttpMsg {
     public ArrayList<String>                        values                           = new ArrayList<String>();
     public ExposedBaos                              bodyStream;
 
-    public static final SimpleDateFormat            gmtdf;
-
-    static {
-        gmtdf = new SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss");
-        gmtdf.setTimeZone(TimeZone.getTimeZone("GMT:00"));
-    }
+    //moved to ServerDateHolder
+//    public static final SimpleDateFormat            gmtdf;
+//
+//    static {
+//        gmtdf = new SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss");
+//        gmtdf.setTimeZone(TimeZone.getTimeZone("GMT:00"));
+//    }
 
     public HttpResponse() {
         this(ST_OK);
@@ -187,8 +185,8 @@ public class HttpResponse extends HttpMsg {
         dos.write(status);
 
         dos.write(F_DATE);
-        byte[] date = gmtdf.format(new Date()).getBytes();
-        dos.write(date);
+//        byte[] date = gmtdf.format(new Date()).getBytes();
+        dos.write(GlobalServerDateHolder.INSTANCE.get());
         dos.write(CRLF);
 
         dos.write(F_SERVER);
