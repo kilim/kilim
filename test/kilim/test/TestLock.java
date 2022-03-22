@@ -30,7 +30,7 @@ public class TestLock extends TestCase{
         }
         boolean ok = true;
         for (int i = 0; i < numTasks; i++) {
-            ExitMsg em = mb.getb(timeout);
+            ExitMsg em = mb.blockingGet(timeout);
             assertNotNull("Timed out. #tasks finished = " + i + " of " + numTasks, em);
             if (em.result instanceof Exception) {
                 ok = false; break;

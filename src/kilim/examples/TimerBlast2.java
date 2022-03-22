@@ -98,7 +98,7 @@ public class TimerBlast2 {
         for (int ii=10; ii >= 0; ii--)
             loop(ii==0 ? 1:0);
         
-        tick.box.putb(0L);
+        tick.box.blockingPut(0L);
         tick.joinb();
     }
 
@@ -122,7 +122,7 @@ public class TimerBlast2 {
     }
     void broadcast(long val) {
         for (int ii=0; ii < num; ii++) 
-            tocks[ii].box.putb(val);
+            tocks[ii].box.blockingPut(val);
     }
     
     

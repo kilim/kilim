@@ -25,11 +25,11 @@ public class SimpleTask2 extends Task {
     public static void main(String[] args) throws Exception {
         Task t = new SimpleTask2().start();
         t.informOnExit(exitmb);
-        mb.putnb("Hello ");
-        mb.putnb("World\n");
-        mb.putnb("done");
+        mb.nonBlockingPut("Hello ");
+        mb.nonBlockingPut("World\n");
+        mb.nonBlockingPut("done");
         
-        exitmb.getb();
+        exitmb.blockingGet();
         System.exit(0);
     }
 

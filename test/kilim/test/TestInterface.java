@@ -27,7 +27,7 @@ public class TestInterface extends TestCase {
         task.setScheduler(s); 
         task.start();
         
-        ExitMsg m = exitmb.getb();
+        ExitMsg m = exitmb.blockingGet();
         if (m == null) {
             fail("Timed Out");
         } else {
@@ -54,7 +54,7 @@ public class TestInterface extends TestCase {
         task.setScheduler(s); 
         task.start();
         
-        ExitMsg m = exitmb.getb();
+        ExitMsg m = exitmb.blockingGet();
         if (m == null) {
             fail("Timed Out");
         } else {

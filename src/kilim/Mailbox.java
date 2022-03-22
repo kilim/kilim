@@ -100,8 +100,8 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
      * @param eo. If non-null, registers this observer and calls it with an SpaceAvailable event 
      * when there's space.
      * @return buffered message if there's one, or null
-     * @see #putnb(Object)
-     * @see #putb(Object) 
+     * @see #nonBlockingPut(Object)
+     * @see #blockingPut(Object)
      */
     @SuppressWarnings("unchecked")
     public boolean put(T msg, EventSubscriber eo) {
@@ -156,7 +156,7 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
      * 
      * @return stored message, or null if no message found.
      */
-    public T getnb() {
+    public T nonBlockingGet() {
         return get(null);
     }
 
@@ -358,7 +358,7 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
      * Attempt to put a message, and return true if successful. The thread is not blocked, nor is the task
      * paused under any circumstance. 
      */
-    public boolean putnb(T msg) {
+    public boolean nonBlockingPut(T msg) {
         return put(msg, null);
     }
 
@@ -397,8 +397,8 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
         return true;
     }
     
-    public void putb(T msg) {
-        putb(msg, 0 /* infinite wait */);
+    public void blockingPut(T msg) {
+        blockingPut(msg, 0 /* infinite wait */);
     }
 
     public class BlockingSubscriber implements EventSubscriber {
@@ -444,7 +444,7 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
      * if the mailbox is full
      * @return true if the message was successfully put in the mailbox
      */
-    public boolean putb(T msg,long timeoutMillis) {
+    public boolean blockingPut(T msg, long timeoutMillis) {
         BlockingSubscriber evs = new BlockingSubscriber(timeoutMillis);
         boolean success;
         while (!(success = put(msg, evs)) && evs.blockingWait()) {}
@@ -469,8 +469,8 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
      * the thread.
      */
 
-    public T getb() {
-        return getb(0);
+    public T blockingGet() {
+        return blockingGet(0);
     }
 
     /**
@@ -479,7 +479,7 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
      * @param millis. max wait time
      * @return null if timed out.
      */
-    public T getb(final long timeoutMillis) {
+    public T blockingGet(final long timeoutMillis) {
         BlockingSubscriber evs = new BlockingSubscriber(timeoutMillis);
         T msg;
         while ((msg = get(evs))==null && evs.blockingWait()) {}

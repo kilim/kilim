@@ -18,12 +18,12 @@ public class TaskGroup extends Task {
         while (!tasks.isEmpty() || addedTasksMB.hasMessage()) {
             switch (Mailbox.select(addedTasksMB, exitmb)) {
             case 0: 
-                Task t = addedTasksMB.getnb();
+                Task t = addedTasksMB.nonBlockingGet();
                 t.informOnExit(exitmb);
                 tasks.add(t);
                 break;
             case 1: 
-                ExitMsg em = exitmb.getnb();
+                ExitMsg em = exitmb.nonBlockingGet();
                 results.add(em);
                 tasks.remove(em.task);
                 break;
@@ -46,6 +46,6 @@ public class TaskGroup extends Task {
 
     public void add(Task t) {
         t.informOnExit(exitmb);
-        addedTasksMB.putnb(t); // will wake up join if it is waiting.
+        addedTasksMB.nonBlockingPut(t); // will wake up join if it is waiting.
     }
 }

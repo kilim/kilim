@@ -30,7 +30,7 @@ public class TimedTask extends Task {
         }
         
         for (int i = 0; i < numTasks; i++) { 
-            exitmb.getb();
+            exitmb.blockingGet();
         }
         
         System.exit(0);

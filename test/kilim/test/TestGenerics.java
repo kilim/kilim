@@ -29,7 +29,7 @@ public class TestGenerics extends TestCase {
         task.setScheduler(s); 
         task.start();
         
-        ExitMsg m = exitmb.getb();
+        ExitMsg m = exitmb.blockingGet();
         if (m == null) {
             fail("Timed Out");
         } else {

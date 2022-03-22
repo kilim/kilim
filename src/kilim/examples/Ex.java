@@ -29,9 +29,9 @@ public class Ex extends Task {
     public static void main(String[] args) throws Exception {
         new Ex().start();
         Thread.sleep(10);
-        mb.putnb("Hello ");
-        mb.putnb("World\n");
-        mb.putnb("done");
+        mb.nonBlockingPut("Hello ");
+        mb.nonBlockingPut("World\n");
+        mb.nonBlockingPut("done");
         Task.idledown();
     }
 

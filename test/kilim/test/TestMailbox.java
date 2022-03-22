@@ -26,7 +26,7 @@ public class TestMailbox extends TestCase {
             new Thread() {
                 public void run() {
                     for (int j = 0; j < nTimes; j++) {
-                        mb.putnb(new Msg(id, j));
+                        mb.nonBlockingPut(new Msg(id, j));
                         Thread.yield();
                     }
                 }
@@ -37,7 +37,7 @@ public class TestMailbox extends TestCase {
         HashMap<Integer, Integer> lastRcvd = new HashMap<Integer,Integer>();
         int nNewThreads = 0;
         for (int i = 0; i < nMsgs; i++) {
-            Msg m = mb.getb();
+            Msg m = mb.blockingGet();
             // assert that the number received is one more than the last received 
             // from that thread.
             Integer last = lastRcvd.put(m.tid, m.num);
@@ -58,7 +58,7 @@ public class TestMailbox extends TestCase {
         }
         try {Thread.sleep(1000);} catch (InterruptedException ignore) {}
         // Make sure there are no extra messages floating around.
-        assertTrue(mb.getnb() == null); 
+        assertTrue(mb.nonBlockingGet() == null);
     }
     
     public void testSimpleTask_NotPausing() {
@@ -68,7 +68,7 @@ public class TestMailbox extends TestCase {
         TaskMB_NoPause t = new TaskMB_NoPause(mainmb, numMsgs);
         t.start(); 
         for (int i = 0; i < numMsgs ; i++) {
-            Msg m = mainmb.getb(1000);
+            Msg m = mainmb.blockingGet(1000);
             assertTrue(m.num == i);
         }
     }
@@ -89,9 +89,9 @@ public class TestMailbox extends TestCase {
         }.start();
         int secret = 791;
         for (int ii = 0; ii < num; ii++)
-            mb.putb(secret+ii,block);
+            mb.blockingPut(secret+ii,block);
         for (int ii = 0; ii < num; ii++)
-            assertTrue(result.getb(block) == secret+ii);
+            assertTrue(result.blockingGet(block) == secret+ii);
     }
 
     public void testSimpleTask_Pausing() {
@@ -105,13 +105,13 @@ public class TestMailbox extends TestCase {
         for (int i = 0; i < nTasks ; i++) {
             TaskMB t = new TaskMB(mainmb);
             t.start(); 
-            t.mymb.putnb(new Msg(i, nTimes));
+            t.mymb.nonBlockingPut(new Msg(i, nTimes));
         }
         
         HashMap<Integer, Integer> lastRcvd = new HashMap<Integer,Integer>();
         int nNewThreads = 0;
         for (int i = 0; i < nMsgs; i++) {
-            Msg m = mainmb.getb();
+            Msg m = mainmb.blockingGet();
             // assert that the number received is one more than the last received 
             // from that thread.
             Integer last = lastRcvd.put(m.tid, m.num);
@@ -132,7 +132,7 @@ public class TestMailbox extends TestCase {
         }
         try {Thread.sleep(1000);} catch (InterruptedException ignore) {}
         // Make sure there are no extra messages floating around.
-        assertTrue(mainmb.getnb() == null); 
+        assertTrue(mainmb.nonBlockingGet() == null);
 
     }
     
@@ -142,16 +142,16 @@ public class TestMailbox extends TestCase {
         
         TaskMB t = new TaskMB(mainmb);
         t.start();
-        t.mymb.putnb(new Msg(1, 100));
+        t.mymb.nonBlockingPut(new Msg(1, 100));
         for (int i = 0; i < 100; i++) {
             if (i % 5 == 0) {
                 // Every so often, make sure that the task is forced to block on put, by delaying draining the mbx
                 try {Thread.sleep(100);} catch (InterruptedException ignore) {}
             }
-            mainmb.getb();
+            mainmb.blockingGet();
         }
         try {Thread.sleep(500);} catch (InterruptedException ignore) {}
-        assertTrue(mainmb.getnb() == null);
+        assertTrue(mainmb.nonBlockingGet() == null);
     }
         
     public void testTasks() {
@@ -165,13 +165,13 @@ public class TestMailbox extends TestCase {
         for (int i = 0; i < nTasks ; i++) {
             TaskMB t = new TaskMB(/*mainmb=*/mb);
             t.start();
-            t.mymb.putnb(new Msg(i, nTimes));
+            t.mymb.nonBlockingPut(new Msg(i, nTimes));
         }
         
         HashMap<Integer, Integer> lastRcvd = new HashMap<Integer,Integer>();
         int nNewThreads = 0;
         for (int i = 0; i < nMsgs; i++) {
-            Msg m = mb.getb();
+            Msg m = mb.blockingGet();
             // assert that the number received is one more than the last received 
             // from that thread.
             Integer last = lastRcvd.put(m.tid, m.num);
@@ -192,7 +192,7 @@ public class TestMailbox extends TestCase {
         }
         try {Thread.sleep(1000);} catch (InterruptedException ignore) {}
         // Make sure there are no extra messages floating around.
-        assertTrue(mb.getnb() == null); 
+        assertTrue(mb.nonBlockingGet() == null);
     }
     
     // Send messages on two mailboxes and collect them back on one mailbox.
@@ -209,15 +209,15 @@ public class TestMailbox extends TestCase {
         final int n = 10;
         for (int i = 0; i < n; i++) {
             Msg m = new Msg();
-            assertTrue(t.mymb2.putnb(m));
+            assertTrue(t.mymb2.nonBlockingPut(m));
             sentMsgs.add(m);
             try {Thread.sleep(10);} catch (InterruptedException ignore) {}
             m = new Msg();
-            assertTrue(t.mymb1.putnb(m));
+            assertTrue(t.mymb1.nonBlockingPut(m));
             sentMsgs.add(m);
         }
         for (int i = 0; i < n*2; i++) {
-            Msg m = mainmb.getb(1000);
+            Msg m = mainmb.blockingGet(1000);
             assertTrue(m != null && sentMsgs.contains(m));
         }
     }
@@ -282,7 +282,7 @@ class TaskMB_NoPause extends Task {
         int n = numMsgs;
         
         for (int i = 0; i < n; i++) {
-            mainmb.putnb(new Msg(id, i));
+            mainmb.nonBlockingPut(new Msg(id, i));
         }
     }
 }
@@ -307,11 +307,11 @@ class SelectTaskMB extends Task {
             // will flag an error.
             switch (Mailbox.select(mymb1, mymb2)) {
                 case 0: 
-                    m = mymb1.getnb();
+                    m = mymb1.nonBlockingGet();
                     mainmb.put(m);
                     break;
                 case 1:
-                    m = mymb2.getnb();
+                    m = mymb2.nonBlockingGet();
                     if (m == null) m = new Msg();
                     mainmb.put(m);
                     break;
@@ -364,8 +364,8 @@ class Consumer extends Task {
 
         t2.start();
         // wait for both producer and consumer to finish task
-        exitmb1.getb();
-        exitmb2.getb();
+        exitmb1.blockingGet();
+        exitmb2.blockingGet();
 
     }
 }

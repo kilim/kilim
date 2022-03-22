@@ -245,7 +245,7 @@ public abstract class Task<TT> implements Runnable, EventSubscriber, Fiber.Worke
     
     public synchronized void informOnExit(Mailbox<ExitMsg<TT>> exit) {
         if (done) {
-            exit.putnb(new ExitMsg(this, exitResult));
+            exit.nonBlockingPut(new ExitMsg(this, exitResult));
             return;
         }
         if (exitMBs == null) {
@@ -572,7 +572,7 @@ public abstract class Task<TT> implements Runnable, EventSubscriber, Fiber.Worke
                 if (exitMBs != null) {
                     ExitMsg msg = new ExitMsg(this, exitResult);
                     for (Mailbox<ExitMsg<TT>> exitMB: exitMBs) {
-                        exitMB.putnb(msg);
+                        exitMB.nonBlockingPut(msg);
                     }
                 }
             }
@@ -608,7 +608,7 @@ public abstract class Task<TT> implements Runnable, EventSubscriber, Fiber.Worke
     public ExitMsg<TT> joinb() {
         Mailbox<ExitMsg<TT>> mb = new Mailbox();
         informOnExit(mb);
-        return mb.getb();
+        return mb.blockingGet();
     }
 
     public ExitMsg<TT> join() throws Pausable {

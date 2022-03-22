@@ -179,17 +179,17 @@ public class EndPoint { // Mailbox for receiving socket ready events.
     // TODO. Need to introduce session timeouts for read and write
     public void pauseUntilReadable() throws Pausable, IOException {
         SockEvent ev = new SockEvent(box, sockch, SelectionKey.OP_READ);
-        sched.regbox.putnb(ev);
+        sched.regbox.nonBlockingPut(ev);
         box.get();
     }
     public void pauseUntilWritable() throws Pausable, IOException {
         SockEvent ev = new SockEvent(box, sockch, SelectionKey.OP_WRITE);
-        sched.regbox.putnb(ev);
+        sched.regbox.nonBlockingPut(ev);
         box.get();
     }
     public void pauseUntilAcceptable() throws Pausable, IOException {
         SockEvent ev = new SockEvent(box, sockch, SelectionKey.OP_ACCEPT);
-        sched.regbox.putnb(ev);
+        sched.regbox.nonBlockingPut(ev);
         box.get();
     }
 

@@ -12,7 +12,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.nio.channels.spi.AbstractSelectableChannel;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -130,7 +129,7 @@ public class NioSelectorScheduler {
                         sk.interestOps(0);
                         assert(o instanceof SockEvent);
                         SockEvent ev = (SockEvent) o;
-                        ev.replyTo.putnb(ev);
+                        ev.replyTo.nonBlockingPut(ev);
                     }
                 }
                 if (update.getAndSet(false))

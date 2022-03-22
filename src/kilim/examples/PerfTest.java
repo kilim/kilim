@@ -56,8 +56,8 @@ public class PerfTest extends Task {
 
             p1.start();
             t2.start();
-            exitmb1.getb();
-            exitmb2.getb();
+            exitmb1.blockingGet();
+            exitmb2.blockingGet();
             final long duration = System.nanoTime() - start;
             final long ops = (REPETITIONS * 1000L * 1000L * 1000L) / duration;
             if (result != TEST_VALUE) throw new RuntimeException("wrong value: " + result);
