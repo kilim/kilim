@@ -123,42 +123,42 @@ public class TimerService {
     }
     
     private long doTrigger(long currentTime) {
-        Timer[] buf = new Timer[100];
-        for (Timer t; (t = timerHeap.peek())!=null && t.getExecutionTime()==-1;) {
-            t.onHeap = false;
+        Timer[] timeBuffer = new Timer[100];
+        for (Timer time; (time = timerHeap.peek())!=null && time.getExecutionTime()==-1;) {
+            time.onHeap = false;
             timerHeap.poll();
         }
         int i = 0;
-        timerQueue.fill(buf);
+        timerQueue.fill(timeBuffer);
         do {
-            for (i = 0; i<buf.length; i++) {
-                Timer t = buf[i];
-                if (t==null)
+            for (i = 0; i<timeBuffer.length; i++) {
+                Timer newTime = timeBuffer[i];
+                if (newTime==null)
                     break;
-                t.onQueue.set(false);
-                long executionTime = t.getExecutionTime();
+                newTime.onQueue.set(false);
+                long executionTime = newTime.getExecutionTime();
                 if (executionTime<0)
-                    t = null;
+                    newTime = null;
                 else if (executionTime > 0 && executionTime<=currentTime)
-                    t.es.onEvent(null,Timer.timedOut);
-                else if (!t.onHeap) {
-                    timerHeap.add(t);
-                    t.onHeap = true;
+                    newTime.es.onEvent(null,Timer.timedOut);
+                else if (!newTime.onHeap) {
+                    timerHeap.add(newTime);
+                    newTime.onHeap = true;
                 }
                 else 
-                    timerHeap.reschedule(t.index);
-                buf[i] = null;
+                    timerHeap.reschedule(newTime.index);
+                timeBuffer[i] = null;
             }
         } while (i==100);
         while (!timerHeap.isEmpty()) {
-            Timer t = timerHeap.peek();
-            long executionTime = t.getExecutionTime();
+            Timer timer = timerHeap.peek();
+            long executionTime = timer.getExecutionTime();
             if (executionTime > currentTime)
                 return executionTime;
-            t.onHeap = false;
+            timer.onHeap = false;
             timerHeap.poll();
             if (executionTime >= 0)
-                t.es.onEvent(null,Timer.timedOut);
+                timer.es.onEvent(null,Timer.timedOut);
         }
         return 0L;
     }
