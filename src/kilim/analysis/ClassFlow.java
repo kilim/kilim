@@ -95,35 +95,40 @@ public class ClassFlow extends ClassNode {
 
             cr = null; // We don't need this any more.
             classDesc = TypeDesc.getInterned("L" + name + ';');
-            ArrayList<MethodFlow> flows = new ArrayList<MethodFlow>(methods.size());
-            String msg = "";
-            for (Object o : methods) {
-                try {
-                    MethodFlow mf = (MethodFlow) o;
-                    if (mf.isBridge()) {
-                        MethodFlow mmf = getOrigWithSameSig(mf);
-                        if (mmf != null)
-                            mf.setPausable(mmf.isPausable());
-                    }
-                    mf.verifyPausables();
-                    if (mf.isPausable())
-                        isPausable = true;
-                    if ((mf.needsWeaving() || forceAnalysis) && (!mf.isAbstract())) {
-                        mf.analyze();
-                    }
-                    flows.add(mf);
-                } catch (KilimException ke) {
-                    msg = msg + ke.getMessage() + "\n-------------------------------------------------\n";
-                }
-            }
-            if (msg.length() > 0) {
-                throw new KilimException(msg);
-            }
+            ArrayList<MethodFlow> flows=getMethodFlow(forceAnalysis);
             methodFlows = flows;
             return flows;
 
         } finally {
         }
+    }
+
+    ArrayList<MethodFlow> getMethodFlow(boolean forceAnalysis){
+        ArrayList<MethodFlow> flows = new ArrayList<MethodFlow>(methods.size());
+        String msg = "";
+        for (Object o : methods) {
+            try {
+                MethodFlow mf = (MethodFlow) o;
+                if (mf.isBridge()) {
+                    MethodFlow mmf = getOrigWithSameSig(mf);
+                    if (mmf != null)
+                        mf.setPausable(mmf.isPausable());
+                }
+                mf.verifyPausables();
+                if (mf.isPausable())
+                    isPausable = true;
+                if ((mf.needsWeaving() || forceAnalysis) && (!mf.isAbstract())) {
+                    mf.analyze();
+                }
+                flows.add(mf);
+            } catch (KilimException ke) {
+                msg = msg + ke.getMessage() + "\n-------------------------------------------------\n";
+            }
+        }
+        if (msg.length() > 0) {
+            throw new KilimException(msg);
+        }
+        return flows;
     }
 
     private MethodFlow getOrigWithSameSig(MethodFlow bridgeMethod) {
