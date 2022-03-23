@@ -198,6 +198,7 @@ public class HttpRequest extends HttpMsg {
             headerLength += n;
         } while (n > 2 || headerLength <= 2); // until blank line (CRLF), but just blank line is not enough.
         // dumpBuffer(buffer);
+
         HttpRequestParser.initHeader(this, headerLength);
         contentOffset = headerLength; // doesn't mean there's necessarily any content.
         String cl = getHeader("Content-Length");

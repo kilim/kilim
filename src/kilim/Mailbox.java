@@ -66,7 +66,7 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
 
     /**
      * Non-blocking, nonpausing get. 
-     * @param eo. If non-null, registers this observer and calls it with a MessageAvailable event when
+     * //@param eo. If non-null, registers this observer and calls it with a MessageAvailable event when
      *  a put() is done.
      * @return buffered message if there's one, or null 
      */
@@ -97,7 +97,7 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
     
     /**
      * Non-blocking, nonpausing put. 
-     * @param eo. If non-null, registers this observer and calls it with an SpaceAvailable event 
+     * //@param eo. If non-null, registers this observer and calls it with an SpaceAvailable event
      * when there's space.
      * @return buffered message if there's one, or null
      * @see #nonBlockingPut(Object)
@@ -476,7 +476,7 @@ public class Mailbox<T> implements PauseReason, EventPublisher {
     /**
      * retrieve a msg, and block the Java thread for the time given.
      * 
-     * @param millis. max wait time
+     * //@param millis. max wait time
      * @return null if timed out.
      */
     public T blockingGet(final long timeoutMillis) {
