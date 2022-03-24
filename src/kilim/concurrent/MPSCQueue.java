@@ -8,7 +8,10 @@ import java.util.concurrent.locks.LockSupport;
 // "Inspired directly by Nitasan's work --> https://github.com/nitsanw/QueueEvolution"
 abstract class MPSCQueueL0Pad {
 	public long p00, p01, p02, p03, p04, p05, p06, p07;
+	public long p10, p11, p12, p13, p14, p15, p16;
+	public long p20, p21, p22, p23, p24, p25, p26;
 	public long p30, p31, p32, p33, p34, p35, p36, p37;
+	public long p40, p41, p42, p43, p44, p45, p46;
 }
 
 abstract class MPSCQueueColdFields<E> extends MPSCQueueL0Pad {
@@ -25,6 +28,8 @@ abstract class MPSCQueueColdFields<E> extends MPSCQueueL0Pad {
 	protected final int capacity;
 	protected final long mask;
 	protected final E[] buffer;
+
+
 
 	@SuppressWarnings("unchecked")
 	public MPSCQueueColdFields(int capacity) {
@@ -49,8 +54,7 @@ abstract class MPSCQueueColdFields<E> extends MPSCQueueL0Pad {
 }
 
 abstract class MPSCQueueL1Pad<E> extends MPSCQueueColdFields<E> {
-	public long p10, p11, p12, p13, p14, p15, p16;
-	public long p30, p31, p32, p33, p34, p35, p36, p37;
+
 
 	public MPSCQueueL1Pad(int capacity) {
 		super(capacity);
@@ -66,8 +70,7 @@ abstract class MPSCQueueTailField<E> extends MPSCQueueL1Pad<E> {
 }
 
 abstract class MPSCQueueL2Pad<E> extends MPSCQueueTailField<E> {
-	public long p20, p21, p22, p23, p24, p25, p26;
-	public long p30, p31, p32, p33, p34, p35, p36, p37;
+
 
 	public MPSCQueueL2Pad(int capacity) {
 		super(capacity);
@@ -111,8 +114,7 @@ abstract class MPSCQueueL3Pad<E> extends MPSCQueueHeadField<E> {
 			throw new RuntimeException(e);
 		}
 	}
-	public long p40, p41, p42, p43, p44, p45, p46;
-	public long p30, p31, p32, p33, p34, p35, p36, p37;
+
 
 	public MPSCQueueL3Pad(int capacity) {
 		super(capacity);
