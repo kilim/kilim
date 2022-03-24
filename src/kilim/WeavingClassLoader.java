@@ -71,13 +71,12 @@ public class WeavingClassLoader extends KilimClassLoader {
 
         if (is==null) return null;
 
-        byte [] code = null;
-        ClassWeaver cw = weaver.weave(is);
-        for (ClassInfo ci : cw.getClassInfos())
-            if (ci.className.equals(name)) code = ci.bytes;
-        if (code==null) code = cw.classFlow.code;
-        return code==null ? null : new ByteArrayInputStream(code);
+       ClassWeaver cw= weaveClass(name);
+       return cw.getCode(weaver,is,name);
+
     }
+
+
 
     public static URL [] getURLs(String [] classPaths) {
         ArrayList<URL> urls = new ArrayList<URL>();

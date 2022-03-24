@@ -15,6 +15,7 @@ import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.RETURN;
 import static org.objectweb.asm.Opcodes.V1_1;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -26,6 +27,7 @@ import kilim.Constants;
 import kilim.KilimException;
 import kilim.mirrors.Detector;
 
+import kilim.tools.Weaver;
 import org.objectweb.asm.Attribute;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -55,9 +57,16 @@ public class ClassWeaver {
     
 
     public KilimContext context;
-    
-    
-    
+
+
+    public InputStream getCode(Weaver weaver,InputStream is, String name){
+        byte [] code = null;
+        ClassWeaver cw = weaver.weave(is);
+        for (ClassInfo ci : cw.getClassInfos())
+            if (ci.className.equals(name)) code = ci.bytes;
+        if (code==null) code = cw.classFlow.code;
+        return code==null ? null : new ByteArrayInputStream(code);
+    }
     
     
     public ClassWeaver(KilimContext context,InputStream is) throws IOException {
