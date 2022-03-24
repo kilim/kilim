@@ -24,25 +24,16 @@ import kilim.concurrent.VolatileReferenceCell;
  * the form of putb(), putnb
  */
 
-public class MailboxMPSC<T> implements PauseReason, EventPublisher {
+public class MailboxMPSC<T> extends MainMailbox {
 	// TODO. Give mbox a config name and id and make monitorable
 
-        MPSCQueue<T> msgs;
-    
-	VolatileReferenceCell<EventSubscriber> sink = new VolatileReferenceCell<EventSubscriber>
-            ();
-	Queue
-            <EventSubscriber> srcs = new 
-                ConcurrentLinkedQueue<EventSubscriber>();
 
 	// FIX: I don't like this event design. The only good thing is that
 	// we don't create new event objects every time we signal a client
 	// (subscriber) that's blocked on this mailbox.
-	public static final int SPACE_AVAILABLE = 1;
-	public static final int MSG_AVAILABLE = 2;
-	public static final int TIMED_OUT = 3;
 
-        public static final Event spaceAvailble = new Event(SPACE_AVAILABLE);
+
+
         public static final Event messageAvailable = new Event(MSG_AVAILABLE);
 	public static final Event timedOut = new Event(TIMED_OUT);
 
@@ -61,29 +52,7 @@ public class MailboxMPSC<T> implements PauseReason, EventPublisher {
 		msgs = new MPSCQueue(initialSize);
 	}
 
-	/**
-	 * Non-blocking, nonpausing get.
-	 * 
-	 * @param eo
-	 *            . If non-null, registers this observer and calls it with a
-	 *            MessageAvailable event when a put() is done.
-	 * @return buffered message if there's one, or null
-	 */
-	public T get(EventSubscriber eo) {
-		EventSubscriber producer = null;
-		T e = msgs.poll();
-		if (e == null) {
-			if (eo != null) {
-				addMsgAvailableListener(eo);
-			}
-		}
 
-		producer = getProducer();
-		if (producer != null) {
-			producer.onEvent(this, spaceAvailble);
-		}
-		return e;
-	}
 
 	public boolean put(T msg, EventSubscriber eo) {
 		if (msg == null) {
@@ -96,7 +65,7 @@ public class MailboxMPSC<T> implements PauseReason, EventPublisher {
 				addSpaceAvailableListener(eo);
 			}
 		}
-		subscriber = sink.getAndSet(null);
+		subscriber = (EventSubscriber) sink.getAndSet(null);
 		if (subscriber != null) {
 			subscriber.onEvent(this, messageAvailable);
 		}
@@ -110,7 +79,7 @@ public class MailboxMPSC<T> implements PauseReason, EventPublisher {
 	 * @return stored message, or null if no message found.
 	 */
 	public T getnb() {
-		return get(null);
+		return (T) get(null);
 	}
 
 	/**
@@ -119,38 +88,16 @@ public class MailboxMPSC<T> implements PauseReason, EventPublisher {
 	 */
 	public T get() throws Pausable {
 		Task t = Task.getCurrentTask();
-		T msg = get(t);
+		T msg = (T) get(t);
 		while (msg == null) {
 			Task.pause(this);
 			removeMsgAvailableListener(t);
-			msg = get(t);
+			msg = (T) get(t);
 		}
 		return msg;
 	}
 
-	/**
-	 * @return non-null message, or null if timed out.
-	 * @throws Pausable
-	 */
-	public T get(long timeoutMillis) throws Pausable {
-		final Task t = Task.getCurrentTask();
-		T msg = get(t);
-		long begin = System.currentTimeMillis();
-		long time = timeoutMillis;
-		while (msg == null) {
-			t.timer.setTimer(time);
-			t.scheduler.scheduleTimer(t.timer);
-			Task.pause(this);
-			t.timer.cancel();
-			removeMsgAvailableListener(t);
-			time = timeoutMillis - (System.currentTimeMillis() - begin);
-			if (time <= 0) {
-				break;
-			}
-			msg = get(t);
-		}
-		return msg;
-	}
+
         /**
 	 * Attempt to put a message, and return true if successful. The thread is
 	 * not blocked, nor is the task paused under any circumstance.
@@ -167,17 +114,7 @@ public class MailboxMPSC<T> implements PauseReason, EventPublisher {
 	public void removeSpaceAvailableListener(EventSubscriber spcSub) {
 		srcs.remove(spcSub);
 	}
-        synchronized 
-	public void addMsgAvailableListener(EventSubscriber msgSub) {
-		sink.set(msgSub);
-	}
-        synchronized 
-	public void removeMsgAvailableListener(EventSubscriber msgSub) {
-		sink.set(null);
-	}
-        private EventSubscriber getProducer() {
-            return srcs.poll();
-        }
+
         private boolean srcContains(Task t) {
             return srcs.contains(t);
         }
